@@ -8,7 +8,6 @@
 |Unit Level|Projects (Mandatory)|Individual Lab Rooms|APIs, permissions, quotas, and billing links.|
 |Base Level|Resources|Equipment inside the room|VMs, Cloud Storage buckets, Databases, GPUs.|
 
-
 # Create an Organization
 
 Here is the summary roadmap to establish the independent GCP Organization for `**dpi.ait.ac.th**`:
