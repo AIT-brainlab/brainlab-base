@@ -60,3 +60,28 @@ To ensure high availability and blast-radius isolation, general compute workload
 └─────────────────────────┘                     └─────────────────────────┘
 
 ```
+
+
+## 3. Project & Governance Metadata
+
+| Attribute           | Details                               |
+| ------------------- | ------------------------------------- |
+| **GCP Project Name**    | AIT Brainlab Management               |
+| **GCP Project ID**      | ait-brainlab-mgmt                     |
+| **Parent Organization** | AIT Organization (ait.ac.th)          |
+| **Primary Region**      | asia-southeast1 (Bangkok / Singapore) |
+| **Billing Account**     | Linked (Thailand / Local Currency)    |
+| **Core Administrators** | 2 Infrastructure Owners (Lead Admins) |
+## 4. DNS
+
+We simply use `Cloud DNS` and only authorized account can access it.
+
+The zone being managed are (1) `brain.cs.ait.ac.th` and (2) `dpi.ait.ac.th`
+
+## 5. Access Control
+
+There are only 2 persons who can manage this project
+
+1. Akraradet Sinsamersuk: 089-122-2061
+2. Phue Pwint Thwe: 062-638-0858
+
