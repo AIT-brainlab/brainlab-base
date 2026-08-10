@@ -82,6 +82,7 @@ The zone being managed are (1) `brain.cs.ait.ac.th` and (2) `dpi.ait.ac.th`
 
 There are only 2 persons who can manage this project
 
-1. Akraradet Sinsamersuk: 089-122-2061
-2. Phue Pwint Thwe: 062-638-0858
+1. Akraradet Sinsamersuk: `089-122-2061`
+2. Phue Pwint Thwe: `062-638-0858`
+
 
