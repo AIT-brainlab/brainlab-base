@@ -85,40 +85,45 @@ The `ait-brainlab-mgmt` GCP project is currently owned and managed by **3 author
 
 ---
 
-## 7. Infrastructure Implementation Tracking Checklist
+## 7. Master Implementation & On-Premise Migration Task Checklist
 
 Legend: 🔴 Not Started | 🟡 In Progress | 🟢 Completed | 🔵 Verified
 
 ### Phase 1: GCP Billing & Root Governance Setup
+| Task ID | Task Description                                                                                          | Target Identity                    | Status | Notes / Output                          |
+| :------ | :-------------------------------------------------------------------------------------------------------- | :--------------------------------- | :----: | :-------------------------------------- |
+| `1.1`   | Upgrade expired GCP Billing Account to Standard Billing in GCP Console                                    | Akraradet (`akraradets@gmail.com`) |   🔵   | Requires credit/debit card verification |
+| `1.2`   | Confirm `roles/owner` is assigned to `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com` | Akraradet                          |   🔵   | Guarantees multi-account access safety  |
+| `1.3`   | Confirm `ait-brainlab-mgmt` is linked to permanent active billing account                                 | Akraradet                          |   🔵   | Protects Cloud DNS from downtime        |
+
+### Phase 2: DNS Migration (On-Premise DNS $\rightarrow$ GCP Cloud DNS)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `1.1` | Upgrade expired GCP Billing Account to Standard Billing in GCP Console | Akraradet (`akraradets@gmail.com`) | 🔴 | Requires credit/debit card verification |
-| `1.2` | Confirm `roles/owner` is assigned to `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com` | Akraradet | 🔴 | Guarantees multi-account access safety |
-| `1.3` | Confirm `ait-brainlab-mgmt` is linked to permanent active billing account | Akraradet | 🔴 | Protects Cloud DNS from downtime |
+| `2.1` | Export active DNS records (A, CNAME, TXT) from on-premise DNS server | Phue Pwint Thwe | 🔴 | Audit existing zone files |
+| `2.2` | Replicate zone records in GCP Cloud DNS (`brain.cs.ait.ac.th` & `dpi.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Managed zones in `ait-brainlab-mgmt` |
+| `2.3` | Submit GCP NS record updates to parent domain registrar (`cs.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Delegate NS authority to GCP |
+| `2.4` | Test public DNS resolution via `dig brain.cs.ait.ac.th +short` & `dig @8.8.8.8` | Phue Pwint Thwe | 🔴 | Verify dual resolution |
+| `2.5` | Decommission on-premise local DNS server after TTL expiration | Phue Pwint Thwe | 🔴 | Safe shutdown after 24-48 hrs |
 
-### Phase 2: Cloud DNS Verification & Delegation
-| Task ID | Task Description | Target Identity | Status | Notes / Output |
-| :--- | :--- | :--- | :---: | :--- |
-| `2.1` | Verify Cloud DNS Managed Zone 1: `brain.cs.ait.ac.th` | Phue Pwint Thwe | 🔴 | Zone active in `ait-brainlab-mgmt` |
-| `2.2` | Verify Cloud DNS Managed Zone 2: `dpi.ait.ac.th` | Phue Pwint Thwe | 🔴 | Zone active in `ait-brainlab-mgmt` |
-| `2.3` | Test public DNS resolution via `dig brain.cs.ait.ac.th +short` | Phue Pwint Thwe | 🔴 | Verify NS record delegation |
-
-### Phase 3: NetBird Zero-Trust Mesh VPN Deployment
+### Phase 3: NetBird Migration (Self-Hosted On-Prem $\rightarrow$ NetBird Cloud)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
 | `3.1` | Create NetBird Cloud account at `app.netbird.io` via `brainlab@ait.asia` | Akraradet | 🔴 | Free Tier (up to 100 devices) |
 | `3.2` | Configure Google OAuth2 SSO integration in NetBird dashboard | Akraradet | 🔴 | Enables 1-click Google login |
 | `3.3` | Send NetBird invitations to lab members (`@ait.asia` & `@gmail.com`) | Akraradet | 🔴 | Invite members by email |
-| `3.4` | Install NetBird agent on local compute nodes and NAS (`cairo`) | Phue Pwint Thwe | 🔴 | `netbird up --key <setup-key>` |
-| `3.5` | Verify ping and WireGuard mesh connectivity across all nodes | Whole Team | 🔴 | Test ping across NetBird IPs |
+| `3.4` | Re-key local compute nodes and NAS (`cairo`): `netbird down && netbird up --key <new-key>` | Phue Pwint Thwe | 🔴 | Re-connect nodes to NetBird Cloud |
+| `3.5` | Verify ping and WireGuard mesh connectivity across all nodes on `app.netbird.io` | Whole Team | 🔴 | Test ping across NetBird IPs |
+| `3.6` | Decommission on-premise NetBird server containers | Phue Pwint Thwe | 🔴 | Stop & remove old NetBird containers |
 
-### Phase 4: Central User Auth & LDAP Directory (`lldap`)
+### Phase 4: LDAP Migration (On-Prem LDAP $\rightarrow$ Cloud `lldap`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `4.1` | Deploy `lldap` container (Cloud Run Serverless or `e2-micro` VM) | Phue Pwint Thwe | 🔴 | Config Base DN: `dc=brain,dc=cs,dc=ait,dc=ac,dc=th` |
-| `4.2` | Create user entries in `lldap` mapping `@ait.asia`/`@gmail.com` to UIDs | Phue Pwint Thwe | 🔴 | Assign Unix usernames (e.g. `akraradet`) |
-| `4.3` | Configure `sssd` / `pam_ldap` on local Linux compute nodes & NAS (`cairo`)| Phue Pwint Thwe | 🔴 | Point to LDAP port `:389` |
-| `4.4` | Test `getent passwd` and NFS home directory permissions (`/home/user`) | Phue Pwint Thwe | 🔴 | Verify UID mapping on NAS |
+| `4.1` | Export user accounts, UIDs, and GIDs from on-premise LDAP server | Phue Pwint Thwe | 🔴 | Dump posixAccount attributes |
+| `4.2` | Deploy `lldap` container (Cloud Run Serverless or `e2-micro` VM) | Phue Pwint Thwe | 🔴 | Base DN: `dc=brain,dc=cs,dc=ait,dc=ac,dc=th` |
+| `4.3` | Import user entries in `lldap` aligning UIDs/GIDs with NAS (`cairo`) permissions | Phue Pwint Thwe | 🔴 | Preserves `/mnt/HDD/home` file owners |
+| `4.4` | Update `/etc/sssd/sssd.conf` on compute nodes & NAS (`cairo`) pointing to `lldap` `:389` | Phue Pwint Thwe | 🔴 | Point to Cloud Run/VM `lldap` IP |
+| `4.5` | Test `getent passwd <user>` and verify NFS home directory read/write access | Phue Pwint Thwe | 🔴 | Test SSH & file access on `cairo` |
+| `4.6` | Decommission on-premise OpenLDAP server (`sudo systemctl stop slapd`) | Phue Pwint Thwe | 🔴 | Shut down old LDAP service |
 
 ### Phase 5: Web Services & JupyterHub Google OIDC Integration
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
