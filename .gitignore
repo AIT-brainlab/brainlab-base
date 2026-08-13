@@ -8,3 +8,5 @@ __pycache__
 # AITGPT secrete
 /api/aitgpt/code/.streamlit
 /.obsidian/workspace.json
+
+.DS_Store
