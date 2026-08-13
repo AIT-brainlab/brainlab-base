@@ -63,24 +63,23 @@ To guarantee 100% uptime for core DNS and identity services, infrastructure is s
 
 Detailed documentation is organized into dedicated topic files:
 
-1. [**Infrastructure Implementation Plan & Tracking Checklist**](implementation_plan.md)
-   - Step-by-step implementation roadmap, task tracking status table (Phases 1–6), weekly schedule, and task owners.
-
-2. [**`ait_brainlab-mgmt` Infrastructure Documentation**](ait_brainlab_mgmt.md)
+1. [**`ait_brainlab-mgmt` Infrastructure & Implementation Checklist**](ait_brainlab_mgmt.md)
    - Deep dive into the **Multi-Account Architecture** supporting `@ait.asia` & `@gmail.com` members for **~$0.45 - $7.45/month**.
-   - NetBird Managed Cloud setup ($0.00/mo), Google OIDC authentication ($0.00/mo), `lldap` directory mapping for Linux SSSD and NAS (`cairo:/mnt/HDD/home`), and GCP Cloud DNS.
+   - Contains the **Project Access List**, **Master Task Tracking Checklist (Phases 1–6)**, NetBird Managed Cloud setup ($0.00/mo), Google OIDC authentication ($0.00/mo), `lldap` directory mapping for Linux SSSD and NAS (`cairo:/mnt/HDD/home`), and GCP Cloud DNS.
 
-3. [**How to Get Free Google Cloud Research Credits & TPUs**](research_credits_guide.md)
+2. [**How to Get Free Google Cloud Research Credits & TPUs**](research_credits_guide.md)
    - Guide for researchers, PhD students ($1,000/yr), and Faculty ($5,000/yr) on applying for direct Google Cloud Research Grants.
    - Free TPU access via the **TPU Research Cloud (TRC)** program.
    - Step-by-step application walkthrough and GCP Pricing Calculator requirements.
 
 ---
 
-## 4. Quick Contacts
+## 4. `ait-brainlab-mgmt` Authorized Access List
 
-| Role | Name / Email | Contact |
+The `ait-brainlab-mgmt` GCP project is currently accessible and owned by **3 authorized accounts**:
+
+| Authorized Account Email | Role / Scope | Purpose & Description |
 | :--- | :--- | :--- |
-| **Shared Lab Management** | `brainlab@ait.asia` | Core Team Account |
-| **Lead Admin & Billing Owner** | Akraradet Sinsamersuk | `089-122-2061` |
-| **Co-Infrastructure Lead** | Phue Pwint Thwe | `062-638-0858` |
+| **`brainlab@ait.asia`** | Institutional Owner (`roles/owner`) | Primary non-expiring shared team account for lab management. |
+| **`st121413@ait.asia`** | Lead Admin (`roles/owner`) | Akraradet Sinsamersuk's university account for daily administration. |
+| **`akraradets@gmail.com`** | Billing Owner (`roles/owner` / `Billing Admin`) | Akraradet Sinsamersuk's personal billing owner identity. |

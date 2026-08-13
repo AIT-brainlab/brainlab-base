@@ -73,16 +73,15 @@ The solution is **ultra-lightweight, near-zero cost (~$0.45 to $7.45 / month tot
 
 ---
 
-## 6. Ownership & Access Control
+## 6. Project Access Control & Authorized Accounts
 
-| Attribute / Role | Details |
-| :--- | :--- |
-| **GCP Project Name** | AIT Brainlab Management |
-| **GCP Project ID** | `ait-brainlab-mgmt` |
-| **Primary Region** | `asia-southeast1` (Bangkok / Singapore) |
-| **Institutional Owner** | `brainlab@ait.asia` (`roles/owner`) |
-| **Lead Admin & Billing Owner** | Akraradet Sinsamersuk (`089-122-2061`) |
-| **Co-Infrastructure Lead** | Phue Pwint Thwe (`062-638-0858`) |
+The `ait-brainlab-mgmt` GCP project is currently owned and managed by **3 authorized accounts**:
+
+| Account Email | Account Type | GCP IAM Role Granted | Purpose & Rationale |
+| :--- | :--- | :--- | :--- |
+| **`brainlab@ait.asia`** | Shared Team Account | `Owner` (`roles/owner`) | **Institutional Primary Owner**: Non-expiring shared identity for the AIT Brainlab management team. |
+| **`st121413@ait.asia`** | University Account | `Owner` (`roles/owner`) | **Lead Admin (Academic Identity)**: Akraradet Sinsamersuk's university account for daily administration. |
+| **`akraradets@gmail.com`** | Personal Account | `Owner` (`roles/owner`) / `Billing Admin` | **Lead Admin (Personal & Billing Identity)**: Akraradet Sinsamersuk's billing owner identity for continuous payment backup. |
 
 ---
 
@@ -93,8 +92,8 @@ Legend: 🔴 Not Started | 🟡 In Progress | 🟢 Completed | 🔵 Verified
 ### Phase 1: GCP Billing & Root Governance Setup
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `1.1` | Upgrade expired GCP Billing Account to Standard Billing in GCP Console | Akraradet | 🔴 | Requires credit/debit card verification |
-| `1.2` | Assign `roles/owner` to `brainlab@ait.asia` across all projects | Akraradet | 🔴 | Guarantees non-expiring ownership |
+| `1.1` | Upgrade expired GCP Billing Account to Standard Billing in GCP Console | Akraradet (`akraradets@gmail.com`) | 🔴 | Requires credit/debit card verification |
+| `1.2` | Confirm `roles/owner` is assigned to `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com` | Akraradet | 🔴 | Guarantees multi-account access safety |
 | `1.3` | Confirm `ait-brainlab-mgmt` is linked to permanent active billing account | Akraradet | 🔴 | Protects Cloud DNS from downtime |
 
 ### Phase 2: Cloud DNS Verification & Delegation
