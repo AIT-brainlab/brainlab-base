@@ -97,13 +97,13 @@ Legend: 🔴 Not Started | 🟡 In Progress | 🟢 Completed | 🔵 Verified
 | `1.3`   | Confirm `ait-brainlab-mgmt` is linked to permanent active billing account                                 | Akraradet                          |   🔵   | Protects Cloud DNS from downtime        |
 
 ### Phase 2: DNS Migration (On-Premise DNS $\rightarrow$ GCP Cloud DNS)
-| Task ID | Task Description | Target Identity | Status | Notes / Output |
-| :--- | :--- | :--- | :---: | :--- |
-| `2.1` | Export active DNS records (A, CNAME, TXT) from on-premise DNS server | Phue Pwint Thwe | 🔴 | Audit existing zone files |
-| `2.2` | Replicate zone records in GCP Cloud DNS (`brain.cs.ait.ac.th` & `dpi.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Managed zones in `ait-brainlab-mgmt` |
-| `2.3` | Submit GCP NS record updates to parent domain registrar (`cs.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Delegate NS authority to GCP |
-| `2.4` | Test public DNS resolution via `dig brain.cs.ait.ac.th +short` & `dig @8.8.8.8` | Phue Pwint Thwe | 🔴 | Verify dual resolution |
-| `2.5` | Decommission on-premise local DNS server after TTL expiration | Phue Pwint Thwe | 🔴 | Safe shutdown after 24-48 hrs |
+| Task ID | Task Description                                                                 | Target Identity | Status | Notes / Output                       |
+| :------ | :------------------------------------------------------------------------------- | :-------------- | :----: | :----------------------------------- |
+| `2.1`   | Export active DNS records (A, CNAME, TXT) from on-premise DNS server             | Phue Pwint Thwe |   🔵   | Audit existing zone files            |
+| `2.2`   | Replicate zone records in GCP Cloud DNS (`brain.cs.ait.ac.th` & `dpi.ait.ac.th`) | Phue Pwint Thwe |   🔵   | Managed zones in `ait-brainlab-mgmt` |
+| `2.3`   | Submit GCP NS record updates to parent domain registrar (`cs.ait.ac.th`)         | Phue Pwint Thwe |   🔴   | Delegate NS authority to GCP         |
+| `2.4`   | Test public DNS resolution via `dig brain.cs.ait.ac.th +short` & `dig @8.8.8.8`  | Phue Pwint Thwe |   🔴   | Verify dual resolution               |
+| `2.5`   | Decommission on-premise local DNS server after TTL expiration                    | Phue Pwint Thwe |   🔴   | Safe shutdown after 24-48 hrs        |
 
 ### Phase 3: NetBird Migration (Self-Hosted On-Prem $\rightarrow$ NetBird Cloud)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
