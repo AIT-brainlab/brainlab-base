@@ -104,34 +104,7 @@ Legend: 🔴 Not Started | 🟡 In Progress | 🟢 Completed | 🔵 Verified
 | `2.3`   | Submit GCP NS record updates to parent domain registrar (`cs.ait.ac.th`)         | Phue Pwint Thwe |   🔴   | Delegate NS authority to GCP         |
 | `2.4`   | Test public DNS resolution via `dig brain.cs.ait.ac.th +short` & `dig @8.8.8.8`  | Phue Pwint Thwe |   🔴   | Verify dual resolution               |
 | `2.5`   | Decommission on-premise local DNS server after TTL expiration                    | Phue Pwint Thwe |   🔴   | Safe shutdown after 24-48 hrs        |
-**
 
-Objective: Make MOSIP deployment lighter and faster  
-Problem: 
-
-MOSIP RDI is designed to set up the “MOSIP reference architecture” in an automated way. It removes the human-error thus reduce the time to deploy MOSIP cluster. Consequently, it helps smoothing MOSIP POC with countries.
-
-On the other hand, R&D organizations who wants to use MOSIP has to either deploy 
-
-MOSIP is being use in 2 setting (1) deploying in country and (2) deploying in research lab 
-
-MOSIP RDI is optimized for deploying in country
-
-Alan Turing and AIT align on the point that RDI is not applicable for research setting.
-
-Alan Turing initiative is another deployment script that suited their needs.
-
-  
-
-While a separate deployment script solve the research lab problem, the consequent of this is maintainability. 
-
-AIT approach is to build on top of the RDI, use RDI as an engine to deploy MOSIP cluster.
-
-This approach of load the deployment logic to RDI where consistently maintain by MOSIP team and AIT configure the packing the system that (1) suited research needs (2) work out of the box 
-
-Thus, we bridge the gap where the deployment is fast and maintainable by MOSIP
-
-**
 ### Phase 3: NetBird Migration (Self-Hosted On-Prem $\rightarrow$ NetBird Cloud)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
