@@ -6,17 +6,24 @@ NetBird establishes an encrypted, zero-trust peer-to-peer WireGuard network inte
 ---
 
 ## 1. Network Topology
-- **Managed Control Plane**: [`app.netbird.io`](https://app.netbird.io) (Managed Cloud SaaS).
+- **Unified Control Plane**: Co-hosted on Management VM (`ait-brainlab-mgmt`) at `https://netbird.brain.cs.ait.ac.th`.
 - **Authentication**: Single Sign-On via Google OAuth2 (`@ait.asia` & `@gmail.com`).
-- **Data Plane**: Direct peer-to-peer WireGuard UDP tunneling with automatic STUN/TURN NAT traversal.
+- **Data Plane**: Direct peer-to-peer (P2P) WireGuard UDP tunneling with automatic STUN/TURN NAT traversal (zero cloud bandwidth costs).
 
 ---
 
-## 2. Onboarding a New Lab Machine
-Run the setup script with the lab enrollment key:
+## 2. Onboarding a Headless Lab Server
+Run the setup script with the lab enrollment key fetched from GCP Secret Manager:
+
 ```bash
+# 1. Install NetBird client
 sudo curl -fsSL https://pkgs.netbird.io/install.sh | sh
-sudo netbird up --management-url https://api.netbird.io --key <LAB_SETUP_KEY>
+
+# 2. Fetch enrollment key from Secret Manager
+SETUP_KEY=$(gcloud secrets versions access latest --secret="netbird-setup-key" --project="ait-brainlab-mgmt")
+
+# 3. Connect to the mesh
+sudo netbird up --management-url https://netbird.brain.cs.ait.ac.th --key "$SETUP_KEY"
 ```
 
 ---

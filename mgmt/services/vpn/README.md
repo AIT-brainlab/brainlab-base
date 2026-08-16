@@ -26,7 +26,7 @@ To connect a physical server or cloud VM to the NetBird mesh:
 
 ```bash
 # 1. Fetch the setup key from GCP Secret Manager
-SETUP_KEY=$(gcloud secrets versions access latest --secret="netbird-onprem-setup-key" --project="ait-brainlab-mgmt")
+SETUP_KEY=$(gcloud secrets versions access latest --secret="netbird-setup-key" --project="ait-brainlab-mgmt")
 
 # 2. Run the enrollment script
 chmod +x setup_node.sh

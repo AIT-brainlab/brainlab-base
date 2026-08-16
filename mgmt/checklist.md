@@ -10,7 +10,7 @@
 - [x] **Multi-Email Binding**: Single POSIX UID supports `@ait.asia`, `@ait.ac.th`, and personal alumni `@gmail.com` with zero data copying on TrueNAS.
 - [x] **Zero Internal TLS Overhead**: Internal LDAP runs over NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890`).
 - [x] **Unified Control Plane VM**: Co-hosts LLDAP + Self-Hosted NetBird on a single lightweight VM (< 400 MB RAM).
-- [x] **Modular Terraform Architecture**: Refactored into 3 independent modules (`iam/`, `dns/`, `secrets/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
+- [x] **Modular Terraform Architecture**: All 3 modules (`iam/`, `dns/`, `secrets/`) deployed and synchronized in GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
 
 ---
 
@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart LR
-    Step1["👥 Phase 1: IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 Phase 2: DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 Phase 3: Secrets<br/>(terraform/secrets/)<br/>🔴 CURRENT STEP"] --> Step4["🖥️ Phase 4: Control VM<br/>(LLDAP + NetBird)"]
+    Step1["👥 Phase 1: IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 Phase 2: DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 Phase 3: Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ Phase 4: Control VM<br/>(LLDAP + NetBird)<br/>🔴 CURRENT STEP"]
 ```
 
 ---
@@ -45,15 +45,15 @@ flowchart LR
 ### 🔐 Phase 3: Secret Manager Deployment (`mgmt/terraform/secrets`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `3.1` | Run `terraform init` and `terraform apply` in `mgmt/terraform/secrets/` | Akraradet | 🔴 **CURRENT STEP** | Generates LLDAP JWT, Admin Password, and NetBird key |
-| `3.2` | Verify secret versions in GCP Console / Secret Manager | Akraradet | 🔴 | Protected by `prevent_destroy = true` |
+| `3.1` | Run `terraform init` and `terraform apply` in `mgmt/terraform/secrets/` | Akraradet | 🔵 | Generated `lldap-jwt`, `lldap-admin-password`, `netbird-setup-key` |
+| `3.2` | Automated zero-leakage secret verification via `bash check_secrets.sh` | Akraradet | 🔵 | All secrets verified live in Secret Manager |
 
 ---
 
 ### 🖥️ Phase 4: Unified Management VM Deployment (LLDAP + NetBird)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `4.1` | Spin up lightweight Management VM (e2-small on GCP or on-prem container) | Akraradet / Phue Pwint Thwe | 🔴 | < 400 MB RAM total |
+| `4.1` | Spin up lightweight Management VM (e2-small on GCP or on-prem container) | Akraradet / Phue Pwint Thwe | 🔴 **CURRENT STEP** | < 400 MB RAM total |
 | `4.2` | Deploy unified Docker Compose stack (`traefik` + `lldap` + `netbird`) | Phue Pwint Thwe | 🔴 | Base DN: `dc=brain,dc=cs,dc=ait,dc=ac,dc=th` |
 | `4.3` | Verify automated Let's Encrypt SSL on `auth.brain.cs.ait.ac.th` & `vpn.brain.cs.ait.ac.th` | Phue Pwint Thwe | 🔴 | HTTPS operational |
 
@@ -72,7 +72,7 @@ flowchart LR
 ### 📡 Phase 6: NetBird Mesh Enrollment
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `6.1` | Fetch setup key from GCP Secret Manager: `gcloud secrets versions access latest --secret=netbird-onprem-setup-key` | Phue Pwint Thwe | 🔴 | Automatic enrollment token |
+| `6.1` | Fetch setup key from GCP Secret Manager: `gcloud secrets versions access latest --secret=netbird-setup-key` | Phue Pwint Thwe | 🔴 | Automatic enrollment token |
 | `6.2` | Enroll on-prem servers (`la`, `tokyo`, `cairo`): `sudo netbird up --management-url https://vpn.brain.cs.ait.ac.th --key <KEY>` | Phue Pwint Thwe | 🔴 | Connect physical nodes |
 | `6.3` | Verify peer-to-peer ping across mesh network | Whole Team | 🔴 | Direct WireGuard P2P |
 

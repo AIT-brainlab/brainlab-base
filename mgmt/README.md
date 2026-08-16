@@ -64,7 +64,7 @@ flowchart TD
 
 ## 📁 Repository Layout
 
-* [`checklist.md`](checklist.md): Step-by-step master migration & implementation checklist.
-* [`terraform/`](terraform/): Infrastructure as Code to provision DNS, Secrets, IAM, and Monitoring.
-* [`services/identity/`](services/identity/): LLDAP directory configuration and SSSD templates.
-* [`services/vpn/`](services/vpn/): NetBird node enrollment scripts.
+* [`checklist.md`](checklist.md): Master 7-phase implementation checklist with live verification statuses.
+* [`terraform/`](terraform/): Modular Terraform IaC (`iam/`, `dns/`, `secrets/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
+* [`services/identity/`](services/identity/): LLDAP directory configuration, POSIX schema, and SSSD templates.
+* [`services/vpn/`](services/vpn/): NetBird WireGuard mesh architecture and server enrollment runbooks.

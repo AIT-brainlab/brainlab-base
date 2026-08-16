@@ -42,7 +42,7 @@ resource "random_password" "lldap_admin_password" {
 
 # Secret 1: LLDAP JWT Secret Key (Protected against destroy)
 resource "google_secret_manager_secret" "jwt_secret" {
-  secret_id = "lldap-jwt-secret"
+  secret_id = "lldap-jwt"
 
   replication {
     auto {}
@@ -82,7 +82,7 @@ resource "google_secret_manager_secret_version" "admin_password_version" {
 
 # Secret 3: NetBird Server Setup Key (Protected against destroy)
 resource "google_secret_manager_secret" "netbird_key_secret" {
-  secret_id = "netbird-onprem-setup-key"
+  secret_id = "netbird-setup-key"
 
   replication {
     auto {}

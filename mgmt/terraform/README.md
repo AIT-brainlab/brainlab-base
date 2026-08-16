@@ -35,7 +35,7 @@ flowchart LR
 | :---: | :--- | :--- | :---: | :--- |
 | **1** | [**`iam/`**](iam/README.md) | **Governance First**: Locks down Project Owners (`brainlab`, `st121413`, `akraradets`) and provisions the automation service account (`roles/dns.admin`). | `iam` | [`iam/README.md`](iam/README.md) |
 | **2** | [**`dns/`**](dns/README.md) | **Network & Routing**: Authoritative Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) and live service records. | `dns` | [`dns/README.md`](dns/README.md) |
-| **3** | [**`secrets/`**](secrets/README.md) | **Credentials & Keys**: Secret Manager storage for `lldap-jwt-secret`, `lldap-admin-password`, and `netbird-onprem-setup-key`. | `secrets` | [`secrets/README.md`](secrets/README.md) |
+| **3** | [**`secrets/`**](secrets/README.md) | **Credentials & Keys**: Secret Manager storage for `lldap-jwt`, `lldap-admin-password`, and `netbird-setup-key`. | `secrets` | [`secrets/README.md`](secrets/README.md) |
 
 ---
 
