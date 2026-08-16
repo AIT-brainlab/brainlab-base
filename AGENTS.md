@@ -10,12 +10,14 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 ### 1. Core Management Plane (`mgmt/`) — `ait-brainlab-mgmt`
 - **Purpose**: Permanent, decoupled, low-cost ($0.45-$7.45/mo) management control plane.
 - **Unified Control Plane VM**: Co-hosts **LLDAP** (Identity/POSIX) and **Self-Hosted NetBird** (VPN Control Plane & Signal) on a single lightweight VM (< 400 MB RAM total) with automated Traefik Let's Encrypt SSL. Permanently eliminates device limits.
-- **Core Services**:
-  - **Cloud DNS**: Authoritative DNS zones for `brain.cs.ait.ac.th` and `dpi.ait.ac.th` (protected with `prevent_destroy = true`).
-  - **Identity & Directory (`lldap`)**: POSIX UID/GID mapping for TrueNAS NFS permissions and Linux SSSD.
-  - **NetBird Mesh VPN**: Zero-trust WireGuard mesh with Google OAuth2 SSO.
+- **Modular Terraform Multi-State Layout**: `mgmt/terraform/` is strictly split into 3 independent modules:
+  1. `iam/` (Sequence 1): Project Owners & Service Accounts.
+  2. `dns/` (Sequence 2): Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) & live records.
+  3. `secrets/` (Sequence 3): Secret Manager keys & tokens.
+- **GCS Remote State Backend**: All modules use `backend "gcs"` targeting `gs://ait-brainlab-mgmt-tfstate` with unique prefixes (`iam`, `dns`, `secrets`).
+- **One-Time Foundation Boundary**: GCP Project, Billing, and State Bucket are one-time prerequisites; all subsequent deployments and CI/CD assume these exist.
 - **Root Governance**: Owned by `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com`.
-- **Implementation Tracker**: Master task checklist (Phases 1–6) in [`mgmt/checklist.md`](mgmt/checklist.md).
+- **Implementation Tracker**: Master task checklist (Phases 1–7) in [`mgmt/checklist.md`](mgmt/checklist.md).
 - **Invariant**: **Never** provision heavy GPU compute or transient research workloads inside `ait-brainlab-mgmt`.
 
 ### 2. Identity & Access Governance (`mgmt/services/identity/`)
@@ -59,7 +61,7 @@ brainlab-base/
 │   ├── README.md                  # Control plane architecture & governance
 │   ├── checklist.md               # Master migration & implementation checklist
 │   ├── migration_plan.md          # Zero-downtime on-prem to cloud migration SOP
-│   ├── terraform/                 # Dedicated Terraform IaC for Cloud DNS & IAM
+│   ├── terraform/                 # Modular Terraform IaC (iam, dns, secrets)
 │   └── services/                  # Core services (dns, identity/lldap, vpn/netbird)
 │
 ├── infra/                         # 🛠️ Infrastructure Admin Domain
