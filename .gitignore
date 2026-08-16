@@ -1,12 +1,62 @@
-/api/*/.vscode-server
-/api/*/code/mlruns
+# ==========================================
+# 🛑 AIT Brainlab - Security & DevOps .gitignore
+# ==========================================
+
+# --- Terraform State & Secrets ---
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+.terraform/
+.terraform.lock.hcl
+
+# --- Environment & Secret Files ---
+.env
+*.env
+*.env.local
+*.secret
+*.secret.*
+**/secrets.toml
+**/.streamlit/secrets.toml
+credentials.json
+client_secret*.json
+service-account*.json
+
+# --- SSH & SSL Certificates ---
+*.pem
+*.key
+*.crt
+*.csr
+*.pfx
+*.p12
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+letsencrypt/
+acme.json
+
+# --- Runtime Data & Databases ---
+data/
+**/data/
+*.sqlite
+*.sqlite3
+*.db
+
+# --- Logs & Cache ---
 /api/*/cache/*
 /api/*/logs/*
-__pycache__
-!.keeps
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
 
-# AITGPT secrete
-/api/aitgpt/code/.streamlit
+# --- IDE & Editors ---
+.DS_Store
+.idea/
+.vscode/
+/api/*/.vscode-server
 /.obsidian/workspace.json
 
-.DS_Store
+# --- Preserved Placeholders ---
+!.keeps

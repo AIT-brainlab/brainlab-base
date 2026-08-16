@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
   }
 }
 
@@ -13,7 +17,7 @@ provider "google" {
   region  = var.region
 }
 
-# Required GCP APIs for Management Plane
+# Required GCP APIs for Management Plane (ait-brainlab-mgmt)
 resource "google_project_service" "mgmt_services" {
   for_each = toset([
     "dns.googleapis.com",
@@ -22,6 +26,8 @@ resource "google_project_service" "mgmt_services" {
     "iam.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "billingbudgets.googleapis.com",
+    "secretmanager.googleapis.com",
+    "monitoring.googleapis.com",
   ])
 
   project            = var.project_id

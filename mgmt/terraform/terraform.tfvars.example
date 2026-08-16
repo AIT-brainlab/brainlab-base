@@ -1,2 +1,5 @@
-project_id = "ait-brainlab-mgmt"
-region     = "asia-southeast1"
+project_id      = "ait-brainlab-mgmt"
+region          = "asia-southeast1"
+onprem_la_ip    = "192.41.170.85"
+onprem_tokyo_ip = "192.41.170.85"
+alert_email     = "brainlab@ait.asia"

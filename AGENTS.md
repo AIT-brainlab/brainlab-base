@@ -9,26 +9,37 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 
 ### 1. Core Management Plane (`mgmt/`) — `ait-brainlab-mgmt`
 - **Purpose**: Permanent, decoupled, low-cost ($0.45-$7.45/mo) management control plane.
+- **Unified Control Plane VM**: Co-hosts **LLDAP** (Identity/POSIX) and **Self-Hosted NetBird** (VPN Control Plane & Signal) on a single lightweight VM (< 400 MB RAM total) with automated Traefik Let's Encrypt SSL. Permanently eliminates device limits.
 - **Core Services**:
-  - **Cloud DNS**: Authoritative DNS zones for `brain.cs.ait.ac.th` and `dpi.ait.ac.th`.
+  - **Cloud DNS**: Authoritative DNS zones for `brain.cs.ait.ac.th` and `dpi.ait.ac.th` (protected with `prevent_destroy = true`).
   - **Identity & Directory (`lldap`)**: POSIX UID/GID mapping for TrueNAS NFS permissions and Linux SSSD.
   - **NetBird Mesh VPN**: Zero-trust WireGuard mesh with Google OAuth2 SSO.
 - **Root Governance**: Owned by `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com`.
 - **Implementation Tracker**: Master task checklist (Phases 1–6) in [`mgmt/checklist.md`](mgmt/checklist.md).
+- **Invariant**: **Never** provision heavy GPU compute or transient research workloads inside `ait-brainlab-mgmt`.
 
-### 2. Infrastructure Admin Domain (`infra/`)
+### 2. Identity & Access Governance (`mgmt/services/identity/`)
+- **AuthN (Google OAuth2)**: Handles 100% of identity verification, passwords, and 2FA. Supports `@ait.asia`, `@ait.ac.th`, and approved alumni `@gmail.com`. Graduation/deactivation by AIT automatically revokes access.
+- **AuthZ (LLDAP Passwordless Directory)**: LLDAP acts strictly as an authorization and POSIX mapping directory (mapping email $\rightarrow$ UID/GID/home path). LLDAP stores **NO user passwords** for web services.
+- **2-Tier Zero-Compute Gatekeeping**: Unprovisioned users fail at the LLDAP lookup stage (< 2ms) without spawning Docker containers or consuming GPU/RAM.
+- **Multi-Email Binding**: A single POSIX user record (`username`, numeric `UID`, `GID`, home path `/mnt/HDD/home/<username>/work`) can bind multiple authorized emails (e.g. `stXXXXXX@ait.asia` + `user@gmail.com`) for seamless alumni/graduate continuation without data copying or `chown`.
+- **Zero Internal TLS Overhead**: All internal LDAP communication across TrueNAS, Linux SSSD, and Ubuntu Desktops runs through the NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890` with `ldap_id_use_start_tls = false`). No self-signed certificates or Python `ldap3` package hacks.
+
+### 3. Infrastructure Admin Domain (`infra/`)
 - **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `tokyo.cs.ait.ac.th`, `cairo`).
 - **NVIDIA CUDA & Runtime**: NVIDIA driver management and Container Toolkit (`runtime: nvidia`).
 - **TrueNAS Storage**: Central NFS home directory storage mounted at `/mnt/HDD/home`.
 - **Institutional Proxy**: CSIM forward proxy required for outbound traffic (`http://192.41.170.23:3128`).
 - **Research Cloud Workloads (`infra/cloud/`)**: Spot GPU templates, GCS buckets, and research grants ($5k Faculty / $1k PhD).
+- **Network & VPN (`infra/network/`)**: NetBird mesh VPN, CSIM proxy routing, and DNS topology.
 
-### 3. Service Admin Domain (`services/`)
+### 4. Service Admin Domain (`services/`)
 - **JupyterHub (`services/jupyterhub/`)**: Multi-user hub using `DockerSpawner` mapping user UIDs/GIDs and allocating GPUs with environments (`default`, `nlp`, `cv`).
+- **Identity & Access (`services/identity/`)**: `lldap` user directory, Google OAuth2 SSO, and Linux SSSD client configurations.
 - **MLflow Platform (`services/mlflow/`)**: Experiment tracking server on `tokyo.cs.ait.ac.th:5000` with TrueNAS artifact storage.
 - **Web APIs & Gateway (`services/api/`)**: Traefik reverse proxy and deployed FastAPI / AI demonstration applications.
 
-### 4. Operational Runbooks (`docs/`)
+### 5. Operational Runbooks (`docs/`)
 - **Onboarding (`docs/onboarding.md`)**: New member onboarding SOP.
 - **Offboarding (`docs/offboarding.md`)**: Data preservation and account archiving SOP.
 - **Troubleshooting (`docs/troubleshooting.md`)**: Diagnostic guides for GPU, NFS, proxy, and container issues.
@@ -76,8 +87,10 @@ brainlab-base/
 
 ## 🔒 Security & Safe Operating Protocols
 1. **No Hardcoded Secrets**: Never commit plain-text passwords, LDAP administrative bind passwords, SSL private keys (`/etc/letsencrypt/live/`), or `JUPYTERHUB_CRYPT_KEY` values to version control.
-2. **Proxy Awareness**: Ensure proxy environment variables (`http_proxy`, `https_proxy`) and apt proxy rules are set for all setup scripts and Dockerfiles.
-3. **Storage Mounts**: Persistent user data lives under `/mnt/HDD/home/{username}/work` and `/mnt/HDD/home/{username}/.ssh`.
+2. **Terraform Safety**: Always apply `lifecycle { prevent_destroy = true }` on Cloud DNS zones and GCP Secret Manager keys.
+3. **Stateless Control Plane**: The Management VM is 100% disposable ("Cattle, not Pets"). Permanent user research data lives strictly on TrueNAS NFS (`/mnt/HDD/home`).
+4. **Human vs Server NetBird Access**: Human researchers authenticate via Google OIDC without setup keys. Headless physical servers and cloud GPU VMs use Secret Manager enrollment keys.
+5. **NetBird Data Plane**: NetBird transfers (e.g. large 1TB datasets) are direct peer-to-peer (P2P) and must not be proxied through cloud relays.
 
 ---
 

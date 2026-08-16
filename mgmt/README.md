@@ -1,98 +1,132 @@
-# Core Management Plane: `ait-brainlab-mgmt` (`mgmt/`)
+# Core Management Plane (`ait-brainlab-mgmt`)
 
-## 1. Executive Summary & Purpose
+## 1. Executive Summary & Philosophy
 
-The `ait-brainlab-mgmt` Google Cloud project and this `mgmt/` directory form the permanent **Core Management Plane** for **AIT Brainlab** (50+ members).
+The **AIT Brainlab Core Management Plane** (`mgmt/`) is the permanent, decoupled, low-cost ($0.45 - $7.45/month) control plane for the laboratory.
 
-It is explicitly decoupled from research compute workloads and grant cycles. Designed to support lab members using their **existing `@ait.asia` and `@gmail.com` Google accounts** without expensive enterprise licenses, it delivers 3 critical core services for **~$0.45 to $7.45 / month total**:
+### Core Architectural Invariants:
+1. **Decoupled Billing & Compute**:
+   - `ait-brainlab-mgmt` is permanent and funded via institutional accounts.
+   - **Never** provision heavy GPU compute or transient research workloads inside `ait-brainlab-mgmt`.
+   - Ephemeral research compute belongs in dedicated `brainlab-res-*` projects funded by faculty/PhD grants.
+2. **Unified Control Plane VM**:
+   - Co-hosts **LLDAP** (Identity / POSIX directory) and **Self-Hosted NetBird** (VPN Control Plane & Signal) on a single lightweight VM (< 400 MB RAM total).
+   - Permanently eliminates NetBird device limits and tier upgrade fees ($5/user/month).
+   - Single unified backup target (`./data`) protects both identity and network state.
+3. **Stateless Infrastructure ("Cattle, Not Pets")**:
+   - The Management VM is 100% disposable. If destroyed, running `terraform apply` recreates the infrastructure and restores the directory from Git in seconds.
+   - Permanent user research datasets reside safely on physical **TrueNAS NFS storage (`cairo:/mnt/HDD/home`)**.
+4. **Terraform Safety Shield**:
+   - Critical Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) and Secret Manager keys (`netbird-onprem-setup-key`, `lldap-jwt-secret`) are shielded with `lifecycle { prevent_destroy = true }`.
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        CORE MANAGEMENT CONTROL PLANE (`mgmt/`)                         │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-                                            │
-         ┌──────────────────────────────────┼──────────────────────────────────┐
-         ▼                                  ▼                                  ▼
-┌──────────────────────────┐   ┌──────────────────────────┐   ┌──────────────────────────┐
-│  1. NETBIRD MESH VPN     │   │  2. IDENTITY & DIRECTORY │   │      3. CLOUD DNS        │
-│  (`mgmt/services/vpn/`)  │   │(`mgmt/services/identity`)│   │  (`mgmt/services/dns/`)  │
-├──────────────────────────┤   ├──────────────────────────┤   ├──────────────────────────┤
-│ - Zero-trust WireGuard   │   │ - Rust `lldap` Directory │   │ - `brain.cs.ait.ac.th`   │
-│ - Google OAuth2 SSO      │   │ - POSIX UIDs for NAS     │   │ - `dpi.ait.ac.th`        │
-│ - Free SaaS (100 peers)  │   │ - Cloud Run / Tiny VM    │   │ - 100% SLA uptime        │
-│ - Cost: $0.00/month      │   │ - Cost: ~$0.00 - $7.00/mo│   │ - Cost: ~$0.45/month     │
-└──────────────────────────┘   └──────────────────────────┘   └──────────────────────────┘
+---
+
+## 2. End-to-End System Architecture Diagram
+
+```mermaid
+flowchart TB
+    subgraph GITOPS ["GitOps and CI/CD Governance"]
+        Admin["Lab Admins"] -->|Pull Request| Repo["GitHub Repository<br/>brainlab-base"]
+        Repo -->|Automated Plan| GHA["GitHub Actions CI/CD"]
+        Admin -->|Review and Approve PR| GHA
+        GHA -->|Terraform Apply| GCS["GCS State Backend<br/>gs://ait-brainlab-mgmt-tfstate"]
+    end
+
+    subgraph GCP_MGMT ["GCP Project: ait-brainlab-mgmt (Control Plane)"]
+        GHA -->|Provisions Infrastructure| CloudDNS["Cloud DNS<br/>brain.cs.ait.ac.th<br/>dpi.ait.ac.th"]
+        GHA -->|Generates Root Keys| Secrets["Secret Manager<br/>netbird-onprem-setup-key<br/>lldap-jwt-secret"]
+        
+        GoogleAuth["Google OAuth2 / OIDC<br/>ait.asia and approved gmail"]
+
+        subgraph MGMT_VM ["Unified Management VM (e2-small / 400 MB RAM)"]
+            Traefik["Traefik Edge Proxy<br/>Auto Let's Encrypt SSL"]
+            LLDAP["LLDAP Service<br/>Passwordless POSIX Directory"]
+            NetBirdCtrl["Self-Hosted NetBird Control<br/>Management and Signal Server"]
+            
+            Traefik -->|auth.brain.cs.ait.ac.th| LLDAP
+            Traefik -->|vpn.brain.cs.ait.ac.th| NetBirdCtrl
+        end
+    end
+
+    subgraph ONPREM ["AIT Campus Physical Infrastructure (CSIM Network)"]
+        Cairo["TrueNAS NFS cairo<br/>/mnt/HDD/home NFS Export<br/>Standard LDAP Client"]
+        LA["GPU Compute Node la<br/>JupyterHub + DockerSpawner<br/>Local NVIDIA GPUs"]
+        Tokyo["Service Node tokyo<br/>MLflow Server :5000<br/>FastAPI Web Demos"]
+        Desktop["Lab Ubuntu Desktop<br/>SSSD PAM Desktop Login<br/>CSIM Printer Terminal"]
+    end
+
+    subgraph CLIENTS ["Lab Members and Students"]
+        StudentWeb["Web Browser<br/>JupyterHub / Demos"]
+        StudentLaptop["Student Laptops<br/>NetBird Client App"]
+    end
+
+    %% Web Access Flow
+    StudentWeb -->|1. Sign in with Google| GoogleAuth
+    GoogleAuth -->|2. Return Verified Email| LA
+    LA -->|3. Query POSIX UID and GID on port 3890| LLDAP
+    LA -->|4. Mount User Home Directory| Cairo
+
+    %% VPN Mesh Flow
+    StudentLaptop -->|Google SSO Login| NetBirdCtrl
+    StudentLaptop <-->|Direct P2P WireGuard Tunnel| LA
+    StudentLaptop <-->|Direct P2P WireGuard Tunnel| Tokyo
+    StudentLaptop <-->|Direct P2P WireGuard Tunnel| Cairo
+
+    %% Internal LDAP Queries over Encrypted Tunnel
+    Cairo -.->|Internal LDAP Query on port 3890| LLDAP
+    Desktop -.->|SSSD PAM Auth Query on port 3890| LLDAP
+    LA -.->|Container UID Spawner Query| LLDAP
+
+    %% Headless Server Key Provisioning
+    Secrets -.->|Auto-Enrollment Key on Boot| LA
+    Secrets -.->|Auto-Enrollment Key on Boot| Tokyo
+    Secrets -.->|Auto-Enrollment Key on Boot| Cairo
 ```
 
 ---
 
-## 2. Multi-Account Identity Architecture
+## 3. Multi-Account Root Governance
 
-```
-                       [ Lab Members: `@ait.asia` & `@gmail.com` ]
-                                            │
-                                            ▼
-                       ┌──────────────────────────────────────────┐
-                       │ Google OAuth2 ("Sign in with Google")    │
-                       └────────────────────┬─────────────────────┘
-                                            │
-         ┌──────────────────────────────────┼──────────────────────────────────┐
-         ▼                                  ▼                                  ▼
-┌──────────────────────────┐   ┌──────────────────────────┐   ┌──────────────────────────┐
-│ 1. NetBird Mesh VPN      │   │ 2. JupyterHub / Web Apps │   │ 3. Linux SSH & NAS Auth  │
-│ - NetBird Cloud (Free)   │   │ - Google OIDC Auth       │   │ - `lldap` User Directory │
-│ - Invite `@ait.asia` &   │   │ - Allowed Email List     │   │   (Serverless/Tiny VM)   │
-│   `@gmail.com` emails    │   │   (`@ait.asia`, `@gmail`)│   │ - Port `:389` for SSSD   │
-│ - Cost: $0.00/month      │   │ - Cost: $0.00/month      │   │ - Cost: ~$0.00 - $7/month│
-└──────────────────────────┘   └──────────────────────────┘   └──────────────────────────┘
-```
+| Identity / Account | Role | Purpose | Billing Responsibility |
+| :--- | :--- | :--- | :--- |
+| `brainlab@ait.asia` | **Project Owner** | Primary institutional account | Long-term institutional asset ownership |
+| `st121413@ait.asia` | **Project Owner** | Lead System Administrator | Day-to-day operations & Terraform deployments |
+| `akraradets@gmail.com` | **Project Owner & Billing Admin** | Permanent personal backup | Primary billing account attached to `ait-brainlab-mgmt` |
 
 ---
 
-## 3. Directory Layout
+## 4. Directory Layout (`mgmt/`)
 
 ```
 mgmt/
-├── README.md                          # Architecture, governance & overview (this file)
-├── checklist.md                       # Master Implementation & Migration Tracker (Phases 1–6)
-├── migration_plan.md                  # Zero-downtime on-prem to cloud migration SOP
+├── README.md                  # This architecture runbook
+├── checklist.md               # Master migration & implementation tracker
+├── migration_plan.md          # Zero-downtime transition SOP
 │
-├── terraform/                         # Dedicated IaC for ait-brainlab-mgmt
-│   ├── main.tf                        # GCP provider & required APIs
-│   ├── dns.tf                         # Cloud DNS: brain.cs.ait.ac.th & dpi.ait.ac.th
-│   ├── iam.tf                         # Project owner IAM bindings
-│   ├── variables.tf
-│   └── terraform.tfvars.example
+├── terraform/                 # Dedicated Terraform IaC suite
+│   ├── main.tf                # GCP APIs & Provider configuration
+│   ├── dns.tf                 # Cloud DNS zones (brain.cs.ait.ac.th, dpi.ait.ac.th)
+│   ├── iam.tf                 # Root owners & automation service account
+│   ├── secrets.tf             # Secret Manager (LLDAP & NetBird keys)
+│   ├── budget.tf              # Budget monitoring & alert channels
+│   ├── variables.tf           # Configurable inputs & IP addresses
+│   ├── outputs.tf             # NS delegation records
+│   └── README.md              # Terraform execution runbook
 │
-└── services/                          # Core Service Configurations
-    ├── dns/                           # Authoritative Cloud DNS & verification
-    ├── identity/                      # lldap Docker Compose, POSIX schema, SSSD template
-    └── vpn/                           # NetBird Managed Cloud & node onboarding
+└── services/                  # Core Management Services
+    ├── dns/                   # DNS verification & delegation scripts
+    ├── identity/              # lldap configuration, schema, SSSD templates
+    └── vpn/                   # NetBird node enrollment & routing scripts
 ```
 
 ---
 
-## 4. Root Governance & Authorized Accounts
+## 5. Operational Cost Breakdown
 
-The `ait-brainlab-mgmt` project is owned by **3 authorized accounts**:
-
-| Authorized Account | Account Type | IAM Role | Governance Purpose |
-| :--- | :--- | :--- | :--- |
-| **`brainlab@ait.asia`** | Shared Team Account | `roles/owner` | **Institutional Owner**: Primary non-expiring shared identity for lab continuity. |
-| **`st121413@ait.asia`** | University Account | `roles/owner` | **Lead Admin**: Akraradet Sinsamersuk's university identity for daily admin. |
-| **`akraradets@gmail.com`** | Personal Account | `roles/owner` / `Billing Admin` | **Billing Owner**: Personal account ensuring backup payment & billing safety. |
-
----
-
-## 5. Cost Breakdown & Budget Safeguards
-
-| Service | Technology | Hosting Model | Monthly Cost |
-| :--- | :--- | :--- | :--- |
-| **NetBird Mesh VPN** | NetBird Managed Cloud | SaaS (Free Tier up to 100 devices) | **$0.00 / month** |
-| **Google OIDC Auth** | Google Cloud APIs & Services | Serverless OAuth2 | **$0.00 / month** |
-| **`lldap` User Directory** | Rust Lightweight LDAP | GCP Cloud Run / Tiny VM | **~$0.00 - $7.00 / month** |
-| **Cloud DNS** | GCP Cloud DNS Managed Zones | GCP Native API | **~$0.45 / month** |
-| **TOTAL ESTIMATED COST** | | | **~$0.45 - $7.45 / month** |
-
-> [!IMPORTANT]
-> **Never host transient research compute inside `ait-brainlab-mgmt`**. Heavy GPU training workloads and student grant credits must always run in separate **`brainlab-res-*`** workload projects (see [`infra/cloud/`](../infra/cloud/)).
+| Component | Target Hosting | Expected Monthly Cost |
+| :--- | :--- | :--- |
+| **Cloud DNS** | GCP Cloud DNS (2 Managed Zones) | ~$0.45 / month |
+| **Unified Control Plane VM** | GCP `e2-small` VM (or on-prem container) | ~$0.00 (On-Prem) to $7.00/mo (GCP) |
+| **NetBird Mesh VPN** | Self-Hosted on Management VM | **$0.00 / month (Unlimited Devices)** |
+| **Secret Manager** | GCP Secret Manager (3 active secrets) | ~$0.00 / month (Free tier) |
+| **Total Management Plane Cost** | | **~$0.45 to $7.45 / month** |

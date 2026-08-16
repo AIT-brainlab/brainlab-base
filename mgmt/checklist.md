@@ -1,67 +1,72 @@
 # Master Implementation & Migration Task Checklist (`mgmt/`)
 
-Legend: 🔴 Not Started | 🟡 In Progress | 🟢 Completed | 🔵 Verified
+**Legend**: 🔴 Not Started | 🟡 In Progress | 🟢 Completed | 🔵 Verified
 
 ---
 
-## Phase 1: GCP Billing & Root Governance Setup
-| Task ID | Task Description | Target Identity | Status | Notes / Output |
-| :--- | :--- | :--- | :---: | :--- |
-| `1.1` | Upgrade expired GCP Billing Account to Standard Billing in GCP Console | Akraradet (`akraradets@gmail.com`) | 🔵 | Requires credit/debit card verification |
-| `1.2` | Confirm `roles/owner` is assigned to `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com` | Akraradet | 🔵 | Guarantees multi-account access safety |
-| `1.3` | Confirm `ait-brainlab-mgmt` is linked to permanent active billing account | Akraradet | 🔵 | Protects Cloud DNS from downtime |
+## 🎯 Architecture Review & Design Status: 🟢 COMPLETED
+- [x] **Decoupled Billing & Compute**: Permanent management plane (`ait-brainlab-mgmt`) strictly separate from GPU workloads (`brainlab-res-*`).
+- [x] **AuthN vs. AuthZ Decoupling**: Google OAuth2 handles 100% of user authentication & lifecycles; LLDAP acts as a passwordless authorization/POSIX directory.
+- [x] **Multi-Email Binding**: Single POSIX UID supports `@ait.asia`, `@ait.ac.th`, and personal alumni `@gmail.com` with zero data copying on TrueNAS.
+- [x] **Zero Internal TLS Overhead**: Internal LDAP runs over NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890`).
+- [x] **Unified Control Plane VM**: Co-hosts LLDAP + Self-Hosted NetBird on a single lightweight VM (< 400 MB RAM).
+- [x] **Terraform Production Suite**: Full IaC created in `mgmt/terraform/` with `prevent_destroy = true` shields for DNS & Secret Manager.
 
 ---
 
-## Phase 2: DNS Migration (On-Premise DNS $\rightarrow$ GCP Cloud DNS)
+## 📋 Execution Roadmap (Pick Up Here When You Return!)
+
+### Phase 1: GCP Management Plane Terraform Deployment
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `2.1` | Export active DNS records (A, CNAME, TXT) from on-premise DNS server | Phue Pwint Thwe | 🔵 | Audit existing zone files |
-| `2.2` | Replicate zone records in GCP Cloud DNS (`brain.cs.ait.ac.th` & `dpi.ait.ac.th`) | Phue Pwint Thwe | 🔵 | Managed zones in `ait-brainlab-mgmt` |
-| `2.3` | Submit GCP NS record updates to parent domain registrar (`cs.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Delegate NS authority to GCP |
-| `2.4` | Test public DNS resolution via `dig brain.cs.ait.ac.th +short` & `dig @8.8.8.8` | Phue Pwint Thwe | 🔴 | Verify dual resolution |
-| `2.5` | Decommission on-premise local DNS server after TTL expiration | Phue Pwint Thwe | 🔴 | Safe shutdown after 24-48 hrs |
+| `1.1` | Run `terraform init` and `terraform apply` in `mgmt/terraform/` | Akraradet | 🔴 **NEXT ACTION** | Provisions Cloud DNS, Secret Manager, IAM, and Alert channels |
+| `1.2` | Copy Google Name Servers from `terraform output brainlab_zone_name_servers` | Akraradet | 🔴 | Prepare 4 NS records |
+| `1.3` | Submit GCP NS record updates to parent domain registrar (`cs.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Delegate NS authority to GCP |
+| `1.4` | Configure GCS Remote Backend Bucket (`gs://ait-brainlab-mgmt-tfstate`) | Akraradet | 🔴 | Enable state locking and multi-admin collaboration |
 
 ---
 
-## Phase 3: NetBird Migration (Self-Hosted On-Prem $\rightarrow$ NetBird Cloud)
+### Phase 2: Terraform CI/CD & Governance Pipeline (GitHub Actions)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `3.1` | Create NetBird Cloud account at `app.netbird.io` via `brainlab@ait.asia` | Akraradet | 🔴 | Free Tier (up to 100 devices) |
-| `3.2` | Configure Google OAuth2 SSO integration in NetBird dashboard | Akraradet | 🔴 | Enables 1-click Google login |
-| `3.3` | Send NetBird invitations to lab members (`@ait.asia` & `@gmail.com`) | Akraradet | 🔴 | Invite members by email |
-| `3.4` | Re-key local compute nodes and NAS (`cairo`): `netbird down && netbird up --key <new-key>` | Phue Pwint Thwe | 🔴 | Re-connect nodes to NetBird Cloud |
-| `3.5` | Verify ping and WireGuard mesh connectivity across all nodes on `app.netbird.io` | Whole Team | 🔴 | Test ping across NetBird IPs |
-| `3.6` | Decommission on-premise NetBird server containers | Phue Pwint Thwe | 🔴 | Stop & remove old NetBird containers |
+| `2.1` | Setup GCP Workload Identity Federation for GitHub Actions | Akraradet | 🔴 | Keyless secure auth for CI/CD |
+| `2.2` | Create GitHub Actions workflow (`.github/workflows/terraform.yml`) | Akraradet | 🔴 | Auto-runs `terraform plan` on Pull Requests |
+| `2.3` | Enable Branch Protection on `main` branch (Require 1 Admin Approval) | Akraradet | 🔴 | Prevents unauthorized `terraform apply` |
+| `2.4` | Auto-apply Terraform changes upon merging approved PRs to `main` | Whole Team | 🔴 | Full GitOps audit trail |
 
 ---
 
-## Phase 4: LDAP Migration (On-Prem LDAP $\rightarrow$ Cloud `lldap`)
+### Phase 3: Unified Management VM Deployment (LLDAP + NetBird)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `4.1` | Export user accounts, UIDs, and GIDs from on-premise LDAP server | Phue Pwint Thwe | 🔴 | Dump posixAccount attributes |
-| `4.2` | Deploy `lldap` container (Cloud Run Serverless or `e2-micro` VM) | Phue Pwint Thwe | 🔴 | Base DN: `dc=brain,dc=cs,dc=ait,dc=ac,dc=th` |
-| `4.3` | Import user entries in `lldap` aligning UIDs/GIDs with NAS (`cairo`) permissions | Phue Pwint Thwe | 🔴 | Preserves `/mnt/HDD/home` file owners |
-| `4.4` | Update `/etc/sssd/sssd.conf` on compute nodes & NAS (`cairo`) pointing to `lldap` `:389` | Phue Pwint Thwe | 🔴 | Point to Cloud Run/VM `lldap` IP |
-| `4.5` | Test `getent passwd <user>` and verify NFS home directory read/write access | Phue Pwint Thwe | 🔴 | Test SSH & file access on `cairo` |
-| `4.6` | Decommission on-premise OpenLDAP server (`sudo systemctl stop slapd`) | Phue Pwint Thwe | 🔴 | Shut down old LDAP service |
+| `3.1` | Spin up lightweight Management VM (e2-small on GCP or on-prem VM) | Akraradet / Phue Pwint Thwe | 🔴 | < 400 MB RAM total |
+| `3.2` | Deploy unified Docker Compose stack (`traefik` + `lldap` + `netbird`) | Phue Pwint Thwe | 🔴 | Base DN: `dc=brain,dc=cs,dc=ait,dc=ac,dc=th` |
+| `3.3` | Verify automated Let's Encrypt SSL on `auth.brain.cs.ait.ac.th` & `vpn.brain.cs.ait.ac.th` | Phue Pwint Thwe | 🔴 | HTTPS operational |
 
 ---
 
-## Phase 5: Web Services & JupyterHub Google OIDC Integration
+### Phase 4: Identity & Directory Import
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `5.1` | Create OAuth2 Client ID & Secret in `GCP Console > APIs & Services` | Akraradet | 🔴 | Web application credential |
-| `5.2` | Configure JupyterHub `oauthenticator.google` with email whitelist | Akraradet | 🔴 | Allow `@ait.asia` + approved `@gmail.com` |
-| `5.3` | Test "Sign in with Google" flow for JupyterHub users | Whole Team | 🔴 | Verify 1-click login |
+| `4.1` | Export existing user accounts, UIDs, and GIDs from on-premise OpenLDAP | Phue Pwint Thwe | 🔴 | Dump posixAccount attributes |
+| `4.2` | Import user entries into `lldap` aligning UIDs/GIDs with TrueNAS (`cairo`) permissions | Phue Pwint Thwe | 🔴 | Preserves `/mnt/HDD/home` file owners |
+| `4.3` | Update `/etc/sssd/sssd.conf` on compute nodes & NAS (`cairo`) to point to `lldap:3890` | Phue Pwint Thwe | 🔴 | Connect over NetBird WireGuard mesh |
+| `4.4` | Test `getent passwd <user>` and verify NFS home directory read/write access | Phue Pwint Thwe | 🔴 | Test SSH & file access on `cairo` |
 
 ---
 
-## Phase 6: Google Cloud Research Grants & Credits Application
+### Phase 5: NetBird Mesh Enrollment
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `6.1` | Generate GCP cost estimate using GCP Pricing Calculator | Whole Team | 🔴 | Compute, storage, GPU budget |
-| `6.2` | Submit Google Cloud Research Credits application ($5k Faculty / $1k PhD) | Whole Team | 🔴 | Submit at `edu.google.com/programs/research-credits/` |
-| `6.3` | Submit TPU Research Cloud (TRC) application for free TPU access | Whole Team | 🔴 | Submit at `sites.research.google/trc/` |
-| `6.4` | Redeem approved promo code in GCP Billing & link to research project | Akraradet | 🔴 | Link to `brainlab-res-*` project |
-| `6.5` | Set budget alerts (50%, 80%, 90%, 100%) & Pub/Sub VM auto-shutdown | Akraradet | 🔴 | Safeguard against out-of-pocket charges |
+| `5.1` | Fetch setup key from GCP Secret Manager: `gcloud secrets versions access latest --secret=netbird-onprem-setup-key` | Phue Pwint Thwe | 🔴 | Automatic enrollment token |
+| `5.2` | Enroll on-prem servers (`la`, `tokyo`, `cairo`): `sudo netbird up --management-url https://vpn.brain.cs.ait.ac.th --key <KEY>` | Phue Pwint Thwe | 🔴 | Connect physical nodes |
+| `5.3` | Verify peer-to-peer ping across mesh network | Whole Team | 🔴 | Direct WireGuard P2P |
+
+---
+
+### Phase 6: JupyterHub Google OIDC Integration
+| Task ID | Task Description | Target Identity | Status | Notes / Output |
+| :--- | :--- | :--- | :---: | :--- |
+| `6.1` | Create OAuth2 Client ID & Secret in `GCP Console > APIs & Services` | Akraradet | 🔴 | Web application credential |
+| `6.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 | `@ait.asia`, `@ait.ac.th`, and approved `@gmail.com` |
+| `6.3` | Test "Sign in with Google" flow for JupyterHub users | Whole Team | 🔴 | 1-click login + correct NFS mounts |
