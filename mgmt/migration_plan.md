@@ -66,17 +66,19 @@ Migrate domain resolution for `brain.cs.ait.ac.th` and `dpi.ait.ac.th` to **Goog
 ### Objective
 Migrate user directory authentication from on-premise OpenLDAP to **`lldap`** on the Management VM, preserving existing Unix UIDs and GIDs so NFS home directory permissions on NAS (`cairo:/mnt/HDD/home`) remain 100% intact.
 
-### Step-by-Step Execution
-1. **Export UIDs/GIDs**:
-   ```bash
-   ldapsearch -x -b "dc=brain,dc=cs,dc=ait,dc=ac,dc=th" "(objectClass=posixAccount)" uid uidNumber gidNumber mail
-   ```
-2. **Deploy `lldap` Engine**: Run container using the Terraform VM module (`mgmt/terraform/vm/`) and seed users via `mgmt/terraform/identity/`.
-3. **Import Users**: Create entries matching exact numeric UIDs (e.g. `akraradet` UID on `cairo`).
-4. **Update SSSD**: Point `/etc/sssd/sssd.conf` on compute nodes to `lldap:3890` over the NetBird WireGuard mesh tunnel.
-5. **Verify Access**:
-   ```bash
-   getent passwd <username>
-   ls -la /mnt/HDD/home/<username>/work
-   ```
-6. **Decommission Legacy Slapd**: `sudo systemctl stop slapd && sudo systemctl disable slapd`.
+## 5. Phase 8: Production Cutover & Legacy Decommissioning (DNS Cutoff)
+
+Only after Phases 4, 5, 6, and 7 are 100% verified in parallel:
+
+### Step-by-Step Cutover Execution
+1. **Cutover DNS via Terraform**:
+   - Open `mgmt/terraform/dns/brainlab.tf` and update `authen` and `netbird` to the Cloud VM Static IP.
+   - Run `terraform apply` in `mgmt/terraform/dns/`.
+2. **Re-point Physical Compute & Storage Nodes**:
+   - Update `/etc/sssd/sssd.conf` on `la`, `tokyo`, and `cairo` to query `lldap:3890` over the NetBird mesh.
+   - Restart SSSD: `sudo systemctl restart sssd`.
+3. **Enroll Physical Servers in New NetBird Mesh**:
+   - Run `sudo netbird up --management-url https://netbird.brain.cs.ait.ac.th --key <KEY>`.
+4. **Decommission Legacy On-Prem Services**:
+   - Stop old OpenLDAP: `sudo systemctl stop slapd && sudo systemctl disable slapd`.
+   - Stop legacy NetBird containers on `192.41.170.39`.

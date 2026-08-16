@@ -1,0 +1,113 @@
+services:
+  # ==========================================================
+  # 🔒 Traefik v3: Edge Proxy & Automated Let's Encrypt SSL
+  # ==========================================================
+  traefik:
+    image: traefik:v3.7
+    container_name: traefik
+    restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.44
+      - TZ=Asia/Bangkok
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=brainlab-mgmt-net"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Auto HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Automated Let's Encrypt SSL
+      - "--certificatesresolvers.letsencrypt.acme.email=${acme_email}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/opt/brainlab/traefik/acme.json:/etc/traefik/acme.json"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+    networks:
+      - mgmt-network
+
+  # ==========================================================
+  # 👤 LLDAP: Lightweight Identity & POSIX Directory
+  # ==========================================================
+  lldap:
+    image: lldap/lldap:2026-08-10-debian
+    container_name: lldap
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Bangkok
+      - LLDAP_JWT_SECRET=$${LLDAP_JWT_SECRET}
+      - LLDAP_LDAP_USER_PASS=$${LLDAP_ADMIN_PASSWORD}
+      - LLDAP_LDAP_BASE_DN=dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+      - LLDAP_HTTP_URL=https://${lldap_staging_subdomain}.${domain}
+      - LLDAP_LDAP_PORT=3890
+      - LLDAP_HTTP_PORT=17170
+    ports:
+      - "3890:3890" # Internal POSIX LDAP query port for Linux SSSD & TrueNAS
+    volumes:
+      - "/opt/brainlab/lldap/data:/data"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+    labels:
+      - "traefik.enable=true"
+      # Accepts both staging (e.g. authen2) and production (e.g. authen)
+      - "traefik.http.routers.lldap.rule=Host(`${lldap_staging_subdomain}.${domain}`) || Host(`${lldap_subdomain}.${domain}`)"
+      - "traefik.http.routers.lldap.entrypoints=websecure"
+      - "traefik.http.routers.lldap.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lldap.loadbalancer.server.port=17170"
+    networks:
+      - mgmt-network
+
+  # ==========================================================
+  # 📡 NetBird: Self-Hosted WireGuard VPN Signal Service
+  # ==========================================================
+  netbird-signal:
+    image: netbirdio/signal:0.77.0
+    container_name: netbird-signal
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Bangkok
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+    ports:
+      - "33073:33073"
+      - "33073:33073/udp"
+    networks:
+      - mgmt-network
+
+  # ==========================================================
+  # 📡 NetBird: Self-Hosted WireGuard Management Control Plane
+  # ==========================================================
+  netbird-management:
+    image: netbirdio/management:0.77.0
+    container_name: netbird-management
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Bangkok
+    command: ["--config", "/etc/netbird/management.json", "--log-file", "console"]
+    volumes:
+      - "/opt/brainlab/netbird/management.json:/etc/netbird/management.json"
+      - "/opt/brainlab/netbird/data:/var/lib/netbird"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+    labels:
+      - "traefik.enable=true"
+      # Accepts both staging (e.g. netbird2) and production (e.g. netbird)
+      - "traefik.http.routers.netbird.rule=Host(`${netbird_staging_subdomain}.${domain}`) || Host(`${netbird_subdomain}.${domain}`)"
+      - "traefik.http.routers.netbird.entrypoints=websecure"
+      - "traefik.http.routers.netbird.tls.certresolver=letsencrypt"
+      - "traefik.http.services.netbird.loadbalancer.server.port=80"
+    networks:
+      - mgmt-network
+
+networks:
+  mgmt-network:
+    name: brainlab-mgmt-net

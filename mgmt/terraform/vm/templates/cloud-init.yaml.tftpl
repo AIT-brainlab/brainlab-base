@@ -1,0 +1,73 @@
+#cloud-config
+# ==========================================================
+# 🚀 Brainlab Management VM Cloud-Init & Automation
+# ==========================================================
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose-v2
+  - unattended-upgrades
+  - curl
+  - jq
+  - ufw
+
+write_files:
+  # 1. Environment Secrets File
+  - path: /opt/brainlab/.env
+    permissions: '0600'
+    owner: root:root
+    content: |
+      LLDAP_JWT_SECRET="${lldap_jwt_secret}"
+      LLDAP_ADMIN_PASSWORD="${lldap_admin_password}"
+      NETBIRD_SETUP_KEY="${netbird_setup_key}"
+
+  # 2. Docker Compose Manifest
+  - path: /opt/brainlab/docker-compose.yml
+    permissions: '0644'
+    owner: root:root
+    content: |
+${indent(6, docker_compose_content)}
+
+  # 3. Systemd Auto-Recovery Service
+  - path: /etc/systemd/system/brainlab-mgmt.service
+    permissions: '0644'
+    owner: root:root
+    content: |
+      [Unit]
+      Description=AIT Brainlab Management Control Plane (Docker Compose)
+      Requires=docker.service
+      After=docker.service network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      WorkingDirectory=/opt/brainlab
+      ExecStart=/usr/bin/docker compose up -d --remove-orphans
+      ExecStop=/usr/bin/docker compose down
+      TimeoutStartSec=300
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # 1. Prepare Traefik ACME & Data directories
+  - mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data
+  - touch /opt/brainlab/traefik/acme.json
+  - chmod 600 /opt/brainlab/traefik/acme.json
+
+  # 2. Enable & Start Docker
+  - systemctl enable docker
+  - systemctl start docker
+
+  # 3. Enable Unattended Security Upgrades (Auto-Patching at 3AM)
+  - systemctl enable unattended-upgrades
+  - systemctl start unattended-upgrades
+
+  # 4. Start Brainlab Management Stack
+  - systemctl daemon-reload
+  - systemctl enable brainlab-mgmt.service
+  - systemctl start brainlab-mgmt.service

@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# ==========================================================
+# 🚀 Brainlab Management VM Automation & Startup Script
+# ==========================================================
+set -euo pipefail
+
+echo "=========================================================="
+echo "🚀 [1/5] Updating OS Packages & Installing Docker CE..."
+echo "=========================================================="
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get install -y docker.io docker-compose-v2 unattended-upgrades curl jq
+
+echo "=========================================================="
+echo "⚡ [2/5] Enabling System Services & Setting Asia/Bangkok Timezone..."
+echo "=========================================================="
+timedatectl set-timezone Asia/Bangkok
+ln -sf /usr/share/zoneinfo/Asia/Bangkok /etc/localtime
+echo "Asia/Bangkok" > /etc/timezone
+systemctl restart systemd-journald
+systemctl enable docker
+systemctl start docker
+systemctl enable unattended-upgrades
+systemctl start unattended-upgrades
+
+echo "=========================================================="
+echo "📁 [3/5] Preparing Traefik ACME & Data Directories..."
+echo "=========================================================="
+mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data
+touch /opt/brainlab/traefik/acme.json
+chmod 600 /opt/brainlab/traefik/acme.json
+
+# Generate minimal NetBird Management Configuration
+cat << 'EOF' > /opt/brainlab/netbird/management.json
+{
+  "DataDir": "/var/lib/netbird",
+  "HttpConfig": {
+    "AuthAudience": "",
+    "AuthAuthority": "",
+    "AuthIssuer": "",
+    "AuthKeysLocation": ""
+  },
+  "IdpManagerConfig": null,
+  "SingleAccountModeDomain": "",
+  "Datadir": "/var/lib/netbird",
+  "Signal": {
+    "URI": "netbird-signal:33073",
+    "Proto": "tcp"
+  }
+}
+EOF
+
+echo "=========================================================="
+echo "🔐 [4/5] Writing Environment Secrets & Compose Manifest..."
+echo "=========================================================="
+cat << 'EOF' > /opt/brainlab/.env
+LLDAP_JWT_SECRET="${lldap_jwt_secret}"
+LLDAP_ADMIN_PASSWORD="${lldap_admin_password}"
+NETBIRD_SETUP_KEY="${netbird_setup_key}"
+EOF
+chmod 600 /opt/brainlab/.env
+
+cat << 'EOF' > /opt/brainlab/docker-compose.yml
+${docker_compose_content}
+EOF
+
+# Create Systemd Auto-Recovery Unit
+cat << 'EOF' > /etc/systemd/system/brainlab-mgmt.service
+[Unit]
+Description=AIT Brainlab Management Control Plane (Docker Compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/brainlab
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable brainlab-mgmt.service
+
+echo "=========================================================="
+echo "🐳 [5/5] Launching Traefik, LLDAP, and NetBird Containers..."
+echo "=========================================================="
+cd /opt/brainlab
+docker compose up -d --remove-orphans
+
+echo "=========================================================="
+echo "🎉 ALL BRAINLAB MANAGEMENT SERVICES ARE OPERATIONAL!"
+echo "=========================================================="

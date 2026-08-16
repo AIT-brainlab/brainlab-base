@@ -31,7 +31,7 @@ The central knowledge base, equipment inventory, service documentation, and infr
 
 ### 1. 🛡️ [Core Management Plane (`mgmt/`)](mgmt/README.md)
 The decoupled, permanent control plane running under GCP project **`ait-brainlab-mgmt`** (~$0.45 to $7.45/month):
-- [**Master Task Checklist**](mgmt/checklist.md): 7-phase roadmap (Phases 1–3 Completed: IAM, DNS, Secrets).
+- [**Master Task Checklist**](mgmt/checklist.md): 8-phase roadmap (Phases 1–4 Verified: IAM, DNS, Secrets, VM Engine).
 - [**Migration Plan**](mgmt/migration_plan.md): Step-by-step zero-downtime transition SOP.
 - [**Modular Terraform IaC**](mgmt/terraform/): 6 independent modules (`iam/`, `dns/`, `secrets/`, `vm/`, `identity/`, `vpn/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
 

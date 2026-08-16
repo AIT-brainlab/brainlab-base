@@ -11,30 +11,50 @@ It handles **3 essential jobs**:
 
 ---
 
-## 🏗️ High-Level Architecture
+## 🏗️ Master Control Plane & Network Architecture
 
 ```mermaid
 flowchart TD
-    User["👥 Lab Members<br/>(Sign in with Google)"]
+    %% External Ingress
+    Internet["🌐 Public Internet Users & Scanners"]
+    Admins["👨‍💻 Project Admins<br/>(Google IAM Authenticated)"]
+    OnPrem["🏢 Physical Lab Nodes (la, tokyo, cairo)<br/>(CSIM Server Room & NAS)"]
 
-    subgraph MGMT ["🛡️ ait-brainlab-mgmt (100% Stateless Control Tower)"]
-        DNS["🌐 Cloud DNS<br/>brain.cs.ait.ac.th"]
-        LLDAP["👤 LLDAP Directory<br/>Maps Google Email ➔ Linux UID/GID"]
-        VPN["📡 NetBird Mesh VPN<br/>Encrypted WireGuard Mesh"]
+    subgraph GCP_FIREWALL ["🛡️ Google Cloud VPC Firewall (Datacenter Edge)"]
+        FW_Web["ALLOW: Port 80 (HTTP) & Port 443 (HTTPS)"]
+        FW_NB["ALLOW: Port 33073 (NetBird Signal UDP/TCP)"]
+        FW_IAP["ALLOW: Port 22 (SSH strictly from Google IAP 35.235.240.0/20)"]
+        FW_Block["🚫 BLOCKED FROM PUBLIC:<br/>Port 3890 (LDAP) & Port 22 (Direct SSH)"]
     end
 
-    subgraph LAB ["🏢 Physical Lab Compute & Storage (CSIM)"]
-        Compute["⚡ GPU Compute Nodes (la, tokyo)<br/>JupyterHub, MLflow & Workloads"]
-        Storage["💾 TrueNAS Storage (cairo)<br/>Shared NFS /mnt/HDD/home"]
+    Internet -->|"HTTP / HTTPS"| FW_Web
+    Internet -->|"WireGuard Signal"| FW_NB
+    Internet -.->|"Direct SSH Scan / LDAP Scan"| FW_Block
+    Admins -->|"gcloud compute ssh --tunnel-through-iap"| FW_IAP
+
+    subgraph VM ["🖥️ Management VM Engine (brainlab-mgmt-vm)"]
+        Traefik["🔒 Traefik v3 Proxy<br/>(:80, :443)<br/>• Auto Let's Encrypt SSL<br/>• Routes authen2 & netbird2"]
+        NBSignal["📡 NetBird Signal<br/>(:33073 UDP/TCP)<br/>• Connection Broker"]
+        
+        subgraph PRIVATE_DOCKER ["📦 Private Docker Network (brainlab-mgmt-net)"]
+            LLDAP["👤 LLDAP Engine<br/>• HTTP :17170 (Web Portal)<br/>• LDAP :3890 (User Queries)"]
+            NBMgmt["📡 NetBird Management<br/>• API :33071 (Control Plane)"]
+        end
+
+        Traefik -->|"Proxy authen2.brain..."| LLDAP
+        Traefik -->|"Proxy netbird2.brain..."| NBMgmt
     end
 
-    User -->|1. Resolve domain| DNS
-    User -->|2. Authorize identity| LLDAP
-    User -->|3. Connect securely| VPN
-    
-    VPN <-->|Direct P2P WireGuard| Compute
-    LLDAP -.->|Assign POSIX file ownership| Storage
-    Compute <-->|Mount user work directories| Storage
+    FW_Web --> Traefik
+    FW_NB --> NBSignal
+    FW_IAP -->|"Encrypted IAP SSH Tunnel"| VM
+
+    subgraph WIREGUARD_MESH ["🔒 NetBird Encrypted WireGuard Mesh Tunnel"]
+        MeshFlow["Direct P2P Encrypted Mesh (100.64.0.x)"]
+    end
+
+    OnPrem <-->|"WireGuard Mesh Tunnel"| MeshFlow
+    MeshFlow <-->|"Zero-Trust POSIX LDAP Queries (Port 3890)"| LLDAP
 ```
 
 ---
@@ -68,7 +88,9 @@ Every single element of the management plane is either **declared in Git** or **
 
 ## 📁 Repository Layout
 
-* [`checklist.md`](checklist.md): Master 7-phase implementation checklist with live verification statuses.
+* [`checklist.md`](checklist.md): Master 8-phase implementation checklist with live verification statuses.
+* [`migration_plan.md`](migration_plan.md): Zero-downtime on-prem to cloud migration and cutover SOP.
 * [`terraform/`](terraform/): Modular Terraform IaC (`iam/`, `dns/`, `secrets/`, `vm/`, `identity/`, `vpn/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
-* [`services/identity/`](services/identity/): LLDAP directory configuration, POSIX schema, and SSSD templates.
-* [`services/vpn/`](services/vpn/): NetBird WireGuard mesh architecture and server enrollment runbooks.
+* [`terraform/vm/`](terraform/vm/): Management VM, Traefik v3.7, LLDAP, NetBird v0.77.0, and monitoring scripts.
+* [`terraform/identity/`](terraform/identity/): Identity-as-Code directory & multi-email bindings.
+* [`terraform/vpn/`](terraform/vpn/): NetBird-as-Code zero-trust ACLs & server setup keys.

@@ -67,8 +67,7 @@ brainlab-base/
 │   ├── README.md                  # Control plane architecture & governance
 │   ├── checklist.md               # Master migration & implementation checklist
 │   ├── migration_plan.md          # Zero-downtime on-prem to cloud migration SOP
-│   ├── terraform/                 # Modular Terraform IaC (iam, dns, secrets, vm, identity, vpn)
-│   └── services/                  # Core services (dns, identity/lldap, vpn/netbird)
+│   └── terraform/                 # Modular Terraform IaC (iam, dns, secrets, vm, identity, vpn)
 │
 ├── infra/                         # 🛠️ Infrastructure Admin Domain
 │   ├── onprem/                    # Physical nodes, OS install, GPU, TrueNAS NFS
@@ -95,10 +94,13 @@ brainlab-base/
 
 ## 🔒 Security & Safe Operating Protocols
 1. **No Hardcoded Secrets**: Never commit plain-text passwords, LDAP administrative bind passwords, SSL private keys (`/etc/letsencrypt/live/`), or `JUPYTERHUB_CRYPT_KEY` values to version control.
-2. **Terraform Safety**: Always apply `lifecycle { prevent_destroy = true }` on Cloud DNS zones and GCP Secret Manager keys.
+2. **Terraform Safety**: Always apply `lifecycle { prevent_destroy = true }` on Cloud DNS zones, GCP Secret Manager keys, and permanent Static Public IPs (`google_compute_address.mgmt_ip`).
 3. **Stateless Control Plane**: The Management VM is 100% disposable ("Cattle, not Pets"). Permanent user research data lives strictly on TrueNAS NFS (`/mnt/HDD/home`).
-4. **Human vs Server NetBird Access**: Human researchers authenticate via Google OIDC without setup keys. Headless physical servers and cloud GPU VMs use Secret Manager enrollment keys.
-5. **NetBird Data Plane**: NetBird transfers (e.g. large 1TB datasets) are direct peer-to-peer (P2P) and must not be proxied through cloud relays.
+4. **Deterministic Version Pinning**: Pin all core infrastructure containers to explicit tags (`traefik:v3.7`, `lldap/lldap:2026-08-10-debian`, `netbird:0.77.0`).
+5. **Standardized Timezone**: Enforce `Asia/Bangkok` (ICT / UTC+7) across the VM OS, journald, and Docker Compose `TZ` environment variables.
+6. **Active Bootstrap Verification**: Use `terraform_data` with `local-exec` log streaming (`wait_for_bootstrap.sh`) to ensure `terraform apply` only completes after all containers are healthy.
+7. **Human vs Server NetBird Access**: Human researchers authenticate via Google OIDC without setup keys. Headless physical servers and cloud GPU VMs use Secret Manager enrollment keys.
+8. **NetBird Data Plane**: NetBird transfers (e.g. large 1TB datasets) are direct peer-to-peer (P2P) and must not be proxied through cloud relays.
 
 ---
 
