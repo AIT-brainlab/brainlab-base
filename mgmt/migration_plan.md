@@ -71,7 +71,7 @@ Migrate user directory authentication from on-premise OpenLDAP to **`lldap`** on
    ```bash
    ldapsearch -x -b "dc=brain,dc=cs,dc=ait,dc=ac,dc=th" "(objectClass=posixAccount)" uid uidNumber gidNumber mail
    ```
-2. **Deploy `lldap`**: Run container using `mgmt/services/identity/docker-compose.yml` on the Management VM.
+2. **Deploy `lldap` Engine**: Run container using the Terraform VM module (`mgmt/terraform/vm/`) and seed users via `mgmt/terraform/identity/`.
 3. **Import Users**: Create entries matching exact numeric UIDs (e.g. `akraradet` UID on `cairo`).
 4. **Update SSSD**: Point `/etc/sssd/sssd.conf` on compute nodes to `lldap:3890` over the NetBird WireGuard mesh tunnel.
 5. **Verify Access**:

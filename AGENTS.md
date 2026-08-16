@@ -8,13 +8,16 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 ## 🏗 System Architecture & Key Domains
 
 ### 1. Core Management Plane (`mgmt/`) — `ait-brainlab-mgmt`
-- **Purpose**: Permanent, decoupled, low-cost ($0.45-$7.45/mo) management control plane.
-- **Unified Control Plane VM**: Co-hosts **LLDAP** (Identity/POSIX) and **Self-Hosted NetBird** (VPN Control Plane & Signal) on a single lightweight VM (< 400 MB RAM total) with automated Traefik Let's Encrypt SSL. Permanently eliminates device limits.
-- **Modular Terraform Multi-State Layout**: `mgmt/terraform/` is strictly split into 3 independent modules:
-  1. `iam/` (Sequence 1): Project Owners & Service Accounts (`brainlab-mgmt-terraform`).
-  2. `dns/` (Sequence 2): Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) & live records.
-  3. `secrets/` (Sequence 3): Secret Manager keys (`lldap-jwt`, `lldap-admin-password`, `netbird-setup-key`).
-- **GCS Remote State Backend**: All modules use `backend "gcs"` targeting `gs://ait-brainlab-mgmt-tfstate` with unique prefixes (`iam`, `dns`, `secrets`).
+- **Purpose**: Permanent, decoupled, low-cost ($0.45-$7.45/mo), 100% Stateless GitOps management control plane.
+- **Unified Control Plane VM**: Co-hosts **LLDAP** (Identity/POSIX) and **Self-Hosted NetBird** (VPN Control Plane & Signal) on a single lightweight `e2-micro` VM (< 300 MB RAM total) with automated Traefik Let's Encrypt SSL. Permanently eliminates device limits.
+- **Modular Terraform Multi-State Layout**: `mgmt/terraform/` is strictly split into 6 independent modules:
+  1. `iam/` (Sequence 1): Project Owners & Service Accounts (`brainlab-mgmt-terraform`). [🔵 Verified]
+  2. `dns/` (Sequence 2): Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) & live records. [🔵 Verified]
+  3. `secrets/` (Sequence 3): Secret Manager keys (`lldap-jwt`, `lldap-admin-password`, `netbird-setup-key`). [🔵 Verified]
+  4. `vm/` (Sequence 4): Disposable Compute VM (`e2-micro`), Static IP, Firewall, and Docker Compose stack.
+  5. `identity/` (Sequence 5): Identity-as-Code — LLDAP Users, POSIX UIDs, Groups, and Multi-Email Bindings.
+  6. `vpn/` (Sequence 6): NetBird-as-Code — Device Groups, Server Setup Keys, and Zero-Trust ACL Policies.
+- **GCS Remote State Backend**: All modules use `backend "gcs"` targeting `gs://ait-brainlab-mgmt-tfstate` with unique prefixes (`iam`, `dns`, `secrets`, `vm`, `identity`, `vpn`).
 - **One-Time Foundation Boundary**: GCP Project, Billing, and State Bucket are one-time prerequisites; all subsequent deployments and CI/CD assume these exist.
 - **Zero-Leakage Health Check Scripts**:
   - `mgmt/terraform/dns/check_delegation.sh`: Automated DNS delegation & public resolution validator.
@@ -23,7 +26,7 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 - **Implementation Tracker**: Master task checklist (Phases 1–7) in [`mgmt/checklist.md`](mgmt/checklist.md).
 - **Invariant**: **Never** provision heavy GPU compute or transient research workloads inside `ait-brainlab-mgmt`.
 
-### 2. Identity & Access Governance (`mgmt/services/identity/`)
+### 2. Identity & Access Governance (`services/identity/` or `mgmt/terraform/identity/`)
 - **AuthN (Google OAuth2)**: Handles 100% of identity verification, passwords, and 2FA. Supports `@ait.asia`, `@ait.ac.th`, and approved alumni `@gmail.com`. Graduation/deactivation by AIT automatically revokes access.
 - **AuthZ (LLDAP Passwordless Directory)**: LLDAP acts strictly as an authorization and POSIX mapping directory (mapping email $\rightarrow$ UID/GID/home path). LLDAP stores **NO user passwords** for web services.
 - **2-Tier Zero-Compute Gatekeeping**: Unprovisioned users fail at the LLDAP lookup stage (< 2ms) without spawning Docker containers or consuming GPU/RAM.
@@ -64,7 +67,7 @@ brainlab-base/
 │   ├── README.md                  # Control plane architecture & governance
 │   ├── checklist.md               # Master migration & implementation checklist
 │   ├── migration_plan.md          # Zero-downtime on-prem to cloud migration SOP
-│   ├── terraform/                 # Modular Terraform IaC (iam, dns, secrets)
+│   ├── terraform/                 # Modular Terraform IaC (iam, dns, secrets, vm, identity, vpn)
 │   └── services/                  # Core services (dns, identity/lldap, vpn/netbird)
 │
 ├── infra/                         # 🛠️ Infrastructure Admin Domain

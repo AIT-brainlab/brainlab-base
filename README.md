@@ -33,8 +33,7 @@ The central knowledge base, equipment inventory, service documentation, and infr
 The decoupled, permanent control plane running under GCP project **`ait-brainlab-mgmt`** (~$0.45 to $7.45/month):
 - [**Master Task Checklist**](mgmt/checklist.md): 7-phase roadmap (Phases 1–3 Completed: IAM, DNS, Secrets).
 - [**Migration Plan**](mgmt/migration_plan.md): Step-by-step zero-downtime transition SOP.
-- [**Modular Terraform IaC**](mgmt/terraform/): 3 independent modules (`iam/`, `dns/`, `secrets/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
-- [**Core Services**](mgmt/services/): Configurations for Cloud DNS, `lldap` POSIX directory, and NetBird WireGuard mesh.
+- [**Modular Terraform IaC**](mgmt/terraform/): 6 independent modules (`iam/`, `dns/`, `secrets/`, `vm/`, `identity/`, `vpn/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
 
 ### 2. 🛠️ [Infrastructure Domain (`infra/`)](infra/README.md)
 - [**`infra/onprem/`**](infra/onprem/README.md): Ubuntu 22.04 installation, NVIDIA GPU drivers, TrueNAS NFS mounting (`/mnt/HDD/home`), and Docker engine.

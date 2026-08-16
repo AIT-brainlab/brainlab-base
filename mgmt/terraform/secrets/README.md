@@ -114,6 +114,6 @@ terraform plan
 
 ---
 
-## ➡️ Next Step: Unified Management VM Deployment
-All 3 Terraform infrastructure sequences are complete! You are now ready to proceed to **Phase 4: Launching the Unified Control Plane VM** (LLDAP + Self-Hosted NetBird):
-👉 [**Continue to `mgmt/services/identity/README.md`**](../../services/identity/README.md)
+## ➡️ Next Step: Sequence 4 (Management VM Engine)
+All 3 foundational Terraform infrastructure sequences are complete! You are now ready to proceed to **Sequence 4: Launching the Management VM Engine** (Traefik + LLDAP + NetBird):
+👉 [**Continue to `mgmt/terraform/vm/README.md`**](../vm/README.md)

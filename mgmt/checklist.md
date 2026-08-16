@@ -9,8 +9,8 @@
 - [x] **AuthN vs. AuthZ Decoupling**: Google OAuth2 handles 100% of user authentication & lifecycles; LLDAP acts as a passwordless authorization/POSIX directory.
 - [x] **Multi-Email Binding**: Single POSIX UID supports `@ait.asia`, `@ait.ac.th`, and personal alumni `@gmail.com` with zero data copying on TrueNAS.
 - [x] **Zero Internal TLS Overhead**: Internal LDAP runs over NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890`).
-- [x] **Unified Control Plane VM**: Co-hosts LLDAP + Self-Hosted NetBird on a single lightweight VM (< 400 MB RAM).
-- [x] **Modular Terraform Architecture**: All 3 modules (`iam/`, `dns/`, `secrets/`) deployed and synchronized in GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
+- [x] **100% Stateless GitOps Control Plane**: All users, UIDs, VPN ACLs, and routing rules declared in Git; zero state stored on the VM.
+- [x] **Modular Terraform Architecture**: 6 independent modules (`iam`, `dns`, `secrets`, `vm`, `identity`, `vpn`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
 
 ---
 
@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart LR
-    Step1["👥 Phase 1: IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 Phase 2: DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 Phase 3: Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ Phase 4: Control VM<br/>(LLDAP + NetBird)<br/>🔴 CURRENT STEP"]
+    Step1["👥 1. IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 2. DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 3. Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ 4. VM Engine<br/>(terraform/vm/)<br/>🔴 CURRENT STEP"] --> Step5["👤 5. Identity-as-Code<br/>(terraform/identity/)"] --> Step6["📡 6. NetBird-as-Code<br/>(terraform/vpn/)"]
 ```
 
 ---
@@ -50,30 +50,31 @@ flowchart LR
 
 ---
 
-### 🖥️ Phase 4: Unified Management VM Deployment (LLDAP + NetBird)
+### 🖥️ Phase 4: Disposable Management VM Engine (`mgmt/terraform/vm`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `4.1` | Spin up lightweight Management VM (e2-small on GCP or on-prem container) | Akraradet / Phue Pwint Thwe | 🔴 **CURRENT STEP** | < 400 MB RAM total |
-| `4.2` | Deploy unified Docker Compose stack (`traefik` + `lldap` + `netbird`) | Phue Pwint Thwe | 🔴 | Base DN: `dc=brain,dc=cs,dc=ait,dc=ac,dc=th` |
-| `4.3` | Verify automated Let's Encrypt SSL on `auth.brain.cs.ait.ac.th` & `vpn.brain.cs.ait.ac.th` | Phue Pwint Thwe | 🔴 | HTTPS operational |
+| `4.1` | Provision Static IP & Firewall rules (HTTP/HTTPS/WireGuard/LDAP) via Terraform | Akraradet | 🔴 **CURRENT STEP** | Permanent Anycast IP |
+| `4.2` | Launch `e2-micro` VM with Docker Compose (Traefik + LLDAP + NetBird) | Akraradet | 🔴 | < 300 MB RAM total |
+| `4.3` | Verify automated Let's Encrypt SSL on `authen.brain.cs.ait.ac.th` & `netbird.brain.cs.ait.ac.th` | Akraradet | 🔴 | HTTPS operational |
 
 ---
 
-### 👤 Phase 5: Identity & Directory Import
+### 👤 Phase 5: Identity-as-Code Directory (`mgmt/terraform/identity`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
 | `5.1` | Export existing user accounts, UIDs, and GIDs from on-premise OpenLDAP | Phue Pwint Thwe | 🔴 | Dump posixAccount attributes |
-| `5.2` | Import user entries into `lldap` aligning UIDs/GIDs with TrueNAS (`cairo`) permissions | Phue Pwint Thwe | 🔴 | Preserves `/mnt/HDD/home` file owners |
-| `5.3` | Update `/etc/sssd/sssd.conf` on compute nodes & NAS (`cairo`) to point to `lldap:3890` | Phue Pwint Thwe | 🔴 | Connect over NetBird WireGuard mesh |
-| `5.4` | Test `getent passwd <user>` and verify NFS home directory read/write access | Phue Pwint Thwe | 🔴 | Test SSH & file access on `cairo` |
+| `5.2` | Declare users, numeric UIDs, and email bindings in `users.tf` | Akraradet / Phue Pwint Thwe | 🔴 | Single source of truth in Git |
+| `5.3` | Apply `bpg/lldap` Terraform module to seed LLDAP directory | Akraradet | 🔴 | Automated 3-second re-hydration |
+| `5.4` | Update `/etc/sssd/sssd.conf` on compute nodes & NAS (`cairo`) to point to `lldap:3890` | Phue Pwint Thwe | 🔴 | Connect over NetBird WireGuard mesh |
+| `5.5` | Test `getent passwd <user>` and verify NFS home directory read/write access | Phue Pwint Thwe | 🔴 | Test SSH & file access on `cairo` |
 
 ---
 
-### 📡 Phase 6: NetBird Mesh Enrollment
+### 📡 Phase 6: NetBird-as-Code Mesh Network (`mgmt/terraform/vpn`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `6.1` | Fetch setup key from GCP Secret Manager: `gcloud secrets versions access latest --secret=netbird-setup-key` | Phue Pwint Thwe | 🔴 | Automatic enrollment token |
-| `6.2` | Enroll on-prem servers (`la`, `tokyo`, `cairo`): `sudo netbird up --management-url https://vpn.brain.cs.ait.ac.th --key <KEY>` | Phue Pwint Thwe | 🔴 | Connect physical nodes |
+| `6.1` | Declare device groups (`servers`, `students`, `admins`) and Zero-Trust ACLs in `network.tf` | Akraradet | 🔴 | Versioned in Git |
+| `6.2` | Enroll on-prem servers (`la`, `tokyo`, `cairo`) using Secret Manager key | Phue Pwint Thwe | 🔴 | Connect physical nodes |
 | `6.3` | Verify peer-to-peer ping across mesh network | Whole Team | 🔴 | Direct WireGuard P2P |
 
 ---

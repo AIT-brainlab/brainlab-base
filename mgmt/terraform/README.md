@@ -1,6 +1,6 @@
 # Modular Terraform Infrastructure: `ait-brainlab-mgmt`
 
-To eliminate complexity, minimize risk, and allow safe multi-admin collaboration, the management plane infrastructure is divided into **3 independent, bite-sized modules** backed by a central **Google Cloud Storage (GCS) Remote State Backend**.
+To eliminate complexity, minimize risk, and achieve **100% Stateless GitOps**, the management plane infrastructure is divided into **6 independent, bite-sized modules** backed by a central **Google Cloud Storage (GCS) Remote State Backend** (`gs://ait-brainlab-mgmt-tfstate`).
 
 ---
 
@@ -22,21 +22,37 @@ The following steps are performed **manually once** when setting up the GCP proj
 
 ---
 
-## 🧭 Recommended Deployment Sequence
-
-Following enterprise cloud best practices, **IAM Governance is established first** before provisioning networking or secrets:
+## 🧭 The 6-Stage Modular Deployment Sequence
 
 ```mermaid
 flowchart LR
-    Step1["👥 1. IAM<br/>(iam/)"] --> Step2["🌐 2. DNS<br/>(dns/)"] --> Step3["🔐 3. Secrets<br/>(secrets/)"]
+    Seq1["👥 1. IAM<br/>🔵 Live"] --> Seq2["🌐 2. DNS<br/>🔵 Live"] --> Seq3["🔐 3. Secrets<br/>🔵 Live"] --> Seq4["🖥️ 4. VM Engine<br/>(e2-micro)"] --> Seq5["👤 5. Identity<br/>(LLDAP Users/UIDs)"] --> Seq6["📡 6. VPN<br/>(NetBird ACLs)"]
 ```
 
-| Sequence | Module | Purpose | State Prefix | Guide |
-| :---: | :--- | :--- | :---: | :--- |
-| **1** | [**`iam/`**](iam/README.md) | **Governance First**: Locks down Project Owners (`brainlab`, `st121413`, `akraradets`) and provisions the automation service account (`roles/dns.admin`). | `iam` | [`iam/README.md`](iam/README.md) |
-| **2** | [**`dns/`**](dns/README.md) | **Network & Routing**: Authoritative Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) and live service records. | `dns` | [`dns/README.md`](dns/README.md) |
-| **3** | [**`secrets/`**](secrets/README.md) | **Credentials & Keys**: Secret Manager storage for `lldap-jwt`, `lldap-admin-password`, and `netbird-setup-key`. | `secrets` | [`secrets/README.md`](secrets/README.md) |
+| Sequence | Module | Purpose | GCS Prefix | Status | Guide |
+| :---: | :--- | :--- | :---: | :---: | :--- |
+| **1** | [**`iam/`**](iam/README.md) | **Governance First**: Root Project Owners (`brainlab`, `st121413`, `akraradets`) & `brainlab-mgmt-terraform` service account. | `iam` | 🔵 **VERIFIED** | [`iam/README.md`](iam/README.md) |
+| **2** | [**`dns/`**](dns/README.md) | **Network & Routing**: Authoritative Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) & all 14 service records. | `dns` | 🔵 **VERIFIED** | [`dns/README.md`](dns/README.md) |
+| **3** | [**`secrets/`**](secrets/README.md) | **Credentials & Keys**: Secret Manager storage for `lldap-jwt`, `lldap-admin-password`, and `netbird-setup-key`. | `secrets` | 🔵 **VERIFIED** | [`secrets/README.md`](secrets/README.md) |
+| **4** | [**`vm/`**](vm/README.md) | **Disposable Compute Engine**: `e2-micro` VM with Static IP running Traefik, LLDAP, and NetBird via Docker Compose. | `vm` | 🔴 **NEXT** | [`vm/README.md`](vm/README.md) |
+| **5** | [**`identity/`**](identity/README.md) | **Identity-as-Code**: Declarative LLDAP users, Unix numeric UIDs/GIDs, and Multi-Email Bindings. | `identity` | 🔴 Queued | [`identity/README.md`](identity/README.md) |
+| **6** | [**`vpn/`**](vpn/README.md) | **NetBird-as-Code**: Declarative device groups, server setup keys, and Zero-Trust ACL policies. | `vpn` | 🔴 Queued | [`vpn/README.md`](vpn/README.md) |
 
 ---
 
-> 📖 **Note**: Detailed step-by-step deployment runbooks, import scripts, and verification commands are located inside each service folder's dedicated `README.md`.
+## 🛡️ Why This Architecture is 100% Stateless & Self-Healing
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│               AIT BRAINLAB 100% STATELESS GITOPS ARCHITECTURE                          │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. 👤 Identity & UIDs       ──► Stored in Git (`identity/*.tf`). No passwords in LLDAP.│
+│ 2. 📡 VPN Groups & ACLs     ──► Stored in Git (`vpn/*.tf`). Rebuilds in 5 seconds.     │
+│ 3. 🌐 Domain Resolution     ──► Stored in Git (`dns/*.tf`) & Google Anycast DNS.       │
+│ 4. 👥 Access Governance     ──► Stored in Git (`iam/*.tf`) & GCP IAM.                  │
+│ 5. 🔐 Secrets & Tokens      ──► Stored in Secret Manager (`secrets/*.tf`).             │
+│ 6. 🔒 SSL Certificates      ──► Self-healing: Traefik auto-renews Let's Encrypt SSL.   │
+│ 7. 🖥️ VM Compute Engine     ──► 100% Disposable Cattle (`e2-micro`). Zero state stored. │
+│ 8. 💾 Research Data         ──► Preserved on physical TrueNAS NFS (`/mnt/HDD/home`).   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
