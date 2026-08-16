@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  lldap:
+    image: lldap/lldap:stable
+    container_name: lldap
+    restart: unless-stopped
+    ports:
+      - "3890:3890"  # LDAP port (or 389)
+      - "17170:17170" # Web Admin UI
+    environment:
+      - LLDAP_JWT_SECRET=${LLDAP_JWT_SECRET:-CHANGE_ME_SECRET_JWT_KEY}
+      - LLDAP_LDAP_USER_PASS=${LLDAP_ADMIN_PASS:-CHANGE_ME_ADMIN_PASSWORD}
+      - LLDAP_LDAP_BASE_DN=dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+      - LLDAP_HTTP_URL=https://auth.brain.cs.ait.ac.th
+      - TZ=Asia/Bangkok
+    volumes:
+      - lldap_data:/data
+
+volumes:
+  lldap_data:

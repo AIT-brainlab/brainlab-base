@@ -1,0 +1,37 @@
+# Standardized SSSD Configuration for AIT Brainlab Ubuntu Nodes & NAS (cairo)
+# Place at: /etc/sssd/sssd.conf
+# Permissions: sudo chmod 600 /etc/sssd/sssd.conf
+
+[sssd]
+config_file_version = 2
+services = nss, pam
+domains = default
+
+[nss]
+filter_groups = root
+filter_users = root
+
+[pam]
+
+[domain/default]
+id_provider = ldap
+auth_provider = ldap
+chpass_provider = ldap
+
+# Point to lldap Cloud Run endpoint, VM IP, or NetBird internal IP
+ldap_uri = ldap://auth.brain.cs.ait.ac.th:3890
+ldap_search_base = dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+ldap_id_use_start_tls = false
+
+# Posix Schema Mapping
+ldap_user_object_class = posixAccount
+ldap_user_name = uid
+ldap_user_uid_number = uidNumber
+ldap_user_gid_number = gidNumber
+ldap_user_home_directory = homeDirectory
+ldap_user_shell = loginShell
+
+# Cache & Offline
+cache_credentials = true
+entry_cache_timeout = 600
+ldap_network_timeout = 3

@@ -1,0 +1,14 @@
+[Unit]
+Description=JupyterHub
+Wants=network-online.target
+After=syslog.target network.target network-online.target
+
+[Service]
+User=root
+Environment="PATH=/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/projects/jupyter/"
+# Generate key via: openssl rand -hex 32
+Environment=JUPYTERHUB_CRYPT_KEY=
+ExecStart=/usr/local/bin/jupyterhub -f /root/projects/jupyter/jupyterhub_config.py
+
+[Install]
+WantedBy=multi-user.target
