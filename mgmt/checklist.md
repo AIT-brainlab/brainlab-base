@@ -10,7 +10,7 @@
 - [x] **Multi-Email Binding**: Single POSIX UID supports `@ait.asia`, `@ait.ac.th`, and personal alumni `@gmail.com` with zero data copying on TrueNAS.
 - [x] **Zero Internal TLS Overhead**: Internal LDAP runs over NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890`).
 - [x] **Unified Control Plane VM**: Co-hosts LLDAP + Self-Hosted NetBird on a single lightweight VM (< 400 MB RAM).
-- [x] **Modular Terraform Architecture**: Refactored into 3 independent modules (`iam/`, `dns/`, `secrets/`) with `prevent_destroy = true` shields.
+- [x] **Modular Terraform Architecture**: Refactored into 3 independent modules (`iam/`, `dns/`, `secrets/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
 
 ---
 
@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart LR
-    Step1["👥 Phase 1: IAM<br/>(terraform/iam/)"] --> Step2["🌐 Phase 2: DNS<br/>(terraform/dns/)"] --> Step3["🔐 Phase 3: Secrets<br/>(terraform/secrets/)"] --> Step4["🖥️ Phase 4: Control VM<br/>(LLDAP + NetBird)"]
+    Step1["👥 Phase 1: IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 Phase 2: DNS<br/>(terraform/dns/)<br/>🔴 CURRENT STEP"] --> Step3["🔐 Phase 3: Secrets<br/>(terraform/secrets/)"] --> Step4["🖥️ Phase 4: Control VM<br/>(LLDAP + NetBird)"]
 ```
 
 ---
@@ -26,17 +26,17 @@ flowchart LR
 ### 👥 Phase 1: IAM & Project Governance (`mgmt/terraform/iam`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `1.1` | Run `terraform init` in `mgmt/terraform/iam/` | Akraradet | 🔴 **CURRENT STEP** | Initializes IAM provider |
-| `1.2` | Run `terraform plan` and `terraform apply` | Akraradet | 🔴 | Binds project owners (`brainlab`, `st121413`, `akraradets`) |
-| `1.3` | Provision `brainlab-mgmt-automation` service account with `roles/dns.admin` | Akraradet | 🔴 | Enables CI/CD capability |
+| `1.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/iam/` | Akraradet | 🔵 | State locked in `gs://ait-brainlab-mgmt-tfstate/iam` |
+| `1.2` | Apply `roles/owner` bindings for root project owners | Akraradet | 🔵 | `brainlab@ait.asia`, `st121413@ait.asia`, `akraradets@gmail.com` |
+| `1.3` | Provision `brainlab-mgmt-terraform` service account with `roles/dns.admin` | Akraradet | 🔵 | Automation SA ready for CI/CD |
 
 ---
 
 ### 🌐 Phase 2: Cloud DNS Deployment (`mgmt/terraform/dns`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `2.1` | Run `terraform init` in `mgmt/terraform/dns/` | Akraradet | 🔴 | Initializes DNS provider |
-| `2.2` | Run `bash import_live_records.sh` to adopt live GCP zones & records | Akraradet | 🔴 | Adopts `ait-brainlab` & `dpi-center` |
+| `2.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/dns/` | Akraradet | 🔴 **CURRENT STEP** | Initializes DNS module with GCS state |
+| `2.2` | Run `bash import_live_records.sh` to adopt live GCP zones & 14 records | Akraradet | 🔴 | Adopts `ait-brainlab` & `dpi-center` |
 | `2.3` | Run `terraform plan` and `terraform apply` | Akraradet | 🔴 | Confirms state with 0 to destroy |
 | `2.4` | Submit GCP NS record outputs to parent registrar (`cs.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Complete delegation |
 
