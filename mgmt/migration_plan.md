@@ -72,13 +72,20 @@ Only after Phases 4, 5, 6, and 7 are 100% verified in parallel:
 
 ### Step-by-Step Cutover Execution
 1. **Cutover DNS via Terraform**:
-   - Open `mgmt/terraform/dns/brainlab.tf` and update `authen` and `netbird` to the Cloud VM Static IP.
+   - Open `mgmt/terraform/dns/brainlab.tf` and update `authen` and `netbird` to the Cloud VM Static IP (`34.143.234.182`).
    - Run `terraform apply` in `mgmt/terraform/dns/`.
-2. **Re-point Physical Compute & Storage Nodes**:
+2. **Enable Production Domain SSL in Traefik**:
+   - Update `mgmt/terraform/vm/templates/docker-compose.yml.tftpl` router rules to accept production hostnames:
+     ```yaml
+     - "traefik.http.routers.lldap.rule=Host(`authen.brain.cs.ait.ac.th`) || Host(`authen2.brain.cs.ait.ac.th`)"
+     - "traefik.http.routers.netbird.rule=Host(`netbird.brain.cs.ait.ac.th`) || Host(`netbird2.brain.cs.ait.ac.th`)"
+     ```
+   - Run `terraform apply` in `mgmt/terraform/vm/`. Traefik automatically acquires Let's Encrypt production certificates in **< 10 seconds**!
+3. **Re-point Physical Compute & Storage Nodes**:
    - Update `/etc/sssd/sssd.conf` on `la`, `tokyo`, and `cairo` to query `lldap:3890` over the NetBird mesh.
    - Restart SSSD: `sudo systemctl restart sssd`.
-3. **Enroll Physical Servers in New NetBird Mesh**:
+4. **Enroll Physical Servers in New NetBird Mesh**:
    - Run `sudo netbird up --management-url https://netbird.brain.cs.ait.ac.th --key <KEY>`.
-4. **Decommission Legacy On-Prem Services**:
+5. **Decommission Legacy On-Prem Services**:
    - Stop old OpenLDAP: `sudo systemctl stop slapd && sudo systemctl disable slapd`.
    - Stop legacy NetBird containers on `192.41.170.39`.

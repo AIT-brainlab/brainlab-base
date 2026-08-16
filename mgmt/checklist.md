@@ -90,6 +90,7 @@ flowchart LR
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
 | `8.1` | **Update DNS A Records in Terraform**: Update `authen` and `netbird` in `mgmt/terraform/dns/brainlab.tf` to Cloud VM Static IP | Akraradet | 🔴 | Apply `terraform apply` in `dns/` |
-| `8.2` | **Re-point SSSD on Physical Nodes**: Update `/etc/sssd/sssd.conf` on compute nodes (`la`, `tokyo`) and NAS (`cairo`) to point to new LLDAP | Phue Pwint Thwe | 🔴 | Connect over NetBird WireGuard mesh |
-| `8.3` | **Enroll Production On-Prem Servers**: Run `sudo netbird up` on `la`, `tokyo`, `cairo` with the new setup key | Phue Pwint Thwe | 🔴 | Switch all physical nodes to new mesh |
-| `8.4` | **Decommission Legacy On-Prem Services**: Stop and disable old OpenLDAP (`slapd`) and legacy NetBird containers on `192.41.170.39` | Phue Pwint Thwe | 🔴 | Safe shutdown with zero rollback risk |
+| `8.2` | **Enable Production Domain SSL in Traefik**: Add `authen` and `netbird` to `docker-compose.yml.tftpl` router rules so Let's Encrypt acquires production SSL | Akraradet | 🔴 | Automated production SSL issuance in <10s |
+| `8.3` | **Re-point SSSD on Physical Nodes**: Update `/etc/sssd/sssd.conf` on compute nodes (`la`, `tokyo`) and NAS (`cairo`) to point to new LLDAP | Phue Pwint Thwe | 🔴 | Connect over NetBird WireGuard mesh |
+| `8.4` | **Enroll Production On-Prem Servers**: Run `sudo netbird up` on `la`, `tokyo`, `cairo` with the new setup key | Phue Pwint Thwe | 🔴 | Switch all physical nodes to new mesh |
+| `8.5` | **Decommission Legacy On-Prem Services**: Stop and disable old OpenLDAP (`slapd`) and legacy NetBird containers on `192.41.170.39` | Phue Pwint Thwe | 🔴 | Safe shutdown with zero rollback risk |

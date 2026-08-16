@@ -57,8 +57,7 @@ services:
       - "/etc/timezone:/etc/timezone:ro"
     labels:
       - "traefik.enable=true"
-      # Accepts both staging (e.g. authen2) and production (e.g. authen)
-      - "traefik.http.routers.lldap.rule=Host(`${lldap_staging_subdomain}.${domain}`) || Host(`${lldap_subdomain}.${domain}`)"
+      - "traefik.http.routers.lldap.rule=Host(`${lldap_staging_subdomain}.${domain}`)"
       - "traefik.http.routers.lldap.entrypoints=websecure"
       - "traefik.http.routers.lldap.tls.certresolver=letsencrypt"
       - "traefik.http.services.lldap.loadbalancer.server.port=17170"
@@ -100,8 +99,7 @@ services:
       - "/etc/timezone:/etc/timezone:ro"
     labels:
       - "traefik.enable=true"
-      # Accepts both staging (e.g. netbird2) and production (e.g. netbird)
-      - "traefik.http.routers.netbird.rule=Host(`${netbird_staging_subdomain}.${domain}`) || Host(`${netbird_subdomain}.${domain}`)"
+      - "traefik.http.routers.netbird.rule=Host(`${netbird_staging_subdomain}.${domain}`)"
       - "traefik.http.routers.netbird.entrypoints=websecure"
       - "traefik.http.routers.netbird.tls.certresolver=letsencrypt"
       - "traefik.http.services.netbird.loadbalancer.server.port=80"
