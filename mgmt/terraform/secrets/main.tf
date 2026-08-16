@@ -1,4 +1,33 @@
-# Secret Manager Secrets for Identity Management & NetBird
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+
+  backend "gcs" {
+    bucket = "ait-brainlab-mgmt-tfstate"
+    prefix = "secrets"
+  }
+}
+
+provider "google" {
+  project = var.project_id
+  region  = var.region
+}
+
+# Required GCP APIs for Secret Manager
+resource "google_project_service" "secretmanager_api" {
+  project            = var.project_id
+  service            = "secretmanager.googleapis.com"
+  disable_on_destroy = false
+}
 
 # Random Secret Generators
 resource "random_password" "lldap_jwt_secret" {
@@ -23,7 +52,7 @@ resource "google_secret_manager_secret" "jwt_secret" {
     prevent_destroy = true
   }
 
-  depends_on = [google_project_service.mgmt_services]
+  depends_on = [google_project_service.secretmanager_api]
 }
 
 resource "google_secret_manager_secret_version" "jwt_secret_version" {
@@ -43,7 +72,7 @@ resource "google_secret_manager_secret" "admin_password" {
     prevent_destroy = true
   }
 
-  depends_on = [google_project_service.mgmt_services]
+  depends_on = [google_project_service.secretmanager_api]
 }
 
 resource "google_secret_manager_secret_version" "admin_password_version" {
@@ -63,7 +92,7 @@ resource "google_secret_manager_secret" "netbird_key_secret" {
     prevent_destroy = true
   }
 
-  depends_on = [google_project_service.mgmt_services]
+  depends_on = [google_project_service.secretmanager_api]
 }
 
 resource "google_secret_manager_secret_version" "netbird_key_version" {
