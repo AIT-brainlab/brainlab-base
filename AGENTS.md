@@ -11,11 +11,14 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 - **Purpose**: Permanent, decoupled, low-cost ($0.45-$7.45/mo) management control plane.
 - **Unified Control Plane VM**: Co-hosts **LLDAP** (Identity/POSIX) and **Self-Hosted NetBird** (VPN Control Plane & Signal) on a single lightweight VM (< 400 MB RAM total) with automated Traefik Let's Encrypt SSL. Permanently eliminates device limits.
 - **Modular Terraform Multi-State Layout**: `mgmt/terraform/` is strictly split into 3 independent modules:
-  1. `iam/` (Sequence 1): Project Owners & Service Accounts.
+  1. `iam/` (Sequence 1): Project Owners & Service Accounts (`brainlab-mgmt-terraform`).
   2. `dns/` (Sequence 2): Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) & live records.
-  3. `secrets/` (Sequence 3): Secret Manager keys & tokens.
+  3. `secrets/` (Sequence 3): Secret Manager keys (`lldap-jwt`, `lldap-admin-password`, `netbird-setup-key`).
 - **GCS Remote State Backend**: All modules use `backend "gcs"` targeting `gs://ait-brainlab-mgmt-tfstate` with unique prefixes (`iam`, `dns`, `secrets`).
 - **One-Time Foundation Boundary**: GCP Project, Billing, and State Bucket are one-time prerequisites; all subsequent deployments and CI/CD assume these exist.
+- **Zero-Leakage Health Check Scripts**:
+  - `mgmt/terraform/dns/check_delegation.sh`: Automated DNS delegation & public resolution validator.
+  - `mgmt/terraform/secrets/check_secrets.sh`: Automated Secret Manager validator (zero terminal leakage).
 - **Root Governance**: Owned by `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com`.
 - **Implementation Tracker**: Master task checklist (Phases 1–7) in [`mgmt/checklist.md`](mgmt/checklist.md).
 - **Invariant**: **Never** provision heavy GPU compute or transient research workloads inside `ait-brainlab-mgmt`.
@@ -44,7 +47,7 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 ### 5. Operational Runbooks (`docs/`)
 - **Onboarding (`docs/onboarding.md`)**: New member onboarding SOP.
 - **Offboarding (`docs/offboarding.md`)**: Data preservation and account archiving SOP.
-- **Troubleshooting (`docs/troubleshooting.md`)**: Diagnostic guides for GPU, NFS, proxy, and container issues.
+- **Troubleshooting (`docs/troubleshooting.md`)**: Incident troubleshooting guide.
 - **Roles Matrix (`docs/roles_and_responsibilities.md`)**: Division of tasks between Infrastructure Admin and Service Admin.
 
 ---
