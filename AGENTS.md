@@ -68,7 +68,7 @@ brainlab-base/
 │   ├── troubleshooting.md         # Incident troubleshooting guide
 │   └── roles_and_responsibilities.md # Infra Admin vs Service Admin matrix
 │
-├── examples/                      # Example research notebooks (e.g., MLflow)
+├── archive/                       # 📦 Archived legacy assets (old api, dockerfiles, images)
 └── .obsidian/                     # Obsidian vault settings & plugins
 ```
 

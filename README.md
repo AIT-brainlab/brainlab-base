@@ -53,6 +53,9 @@ The decoupled, permanent control plane running under GCP project **`ait-brainlab
 - [**SysAdmin Troubleshooting**](docs/troubleshooting.md): Incident runbook for CUDA, NFS, Proxy, and container failures.
 - [**Roles & Handover**](docs/roles_and_responsibilities.md): Matrix of responsibilities for Infrastructure Admins and Service Admins.
 
+### 5. 📦 [Archived Assets (`archive/`)](archive/README.md)
+Historical configurations, legacy Docker images, screenshots, and older notebooks preserved for reference.
+
 ---
 
 ## 🔒 Security & Safe Operating Protocols
