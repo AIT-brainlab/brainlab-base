@@ -5,23 +5,30 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 
 ---
 
-## 🏗 System Architecture & Key Services
+## 🏗 System Architecture & Key Domains
 
-### 1. Infrastructure Admin Domain (`infra/`)
+### 1. Core Management Plane (`mgmt/`) — `ait-brainlab-mgmt`
+- **Purpose**: Permanent, decoupled, low-cost ($0.45-$7.45/mo) management control plane.
+- **Core Services**:
+  - **Cloud DNS**: Authoritative DNS zones for `brain.cs.ait.ac.th` and `dpi.ait.ac.th`.
+  - **Identity & Directory (`lldap`)**: POSIX UID/GID mapping for TrueNAS NFS permissions and Linux SSSD.
+  - **NetBird Mesh VPN**: Zero-trust WireGuard mesh with Google OAuth2 SSO.
+- **Root Governance**: Owned by `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com`.
+- **Implementation Tracker**: Master task checklist (Phases 1–6) in [`mgmt/checklist.md`](mgmt/checklist.md).
+
+### 2. Infrastructure Admin Domain (`infra/`)
 - **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `tokyo.cs.ait.ac.th`, `cairo`).
 - **NVIDIA CUDA & Runtime**: NVIDIA driver management and Container Toolkit (`runtime: nvidia`).
 - **TrueNAS Storage**: Central NFS home directory storage mounted at `/mnt/HDD/home`.
 - **Institutional Proxy**: CSIM forward proxy required for outbound traffic (`http://192.41.170.23:3128`).
-- **Cloud Infrastructure (`infra/cloud/`)**: GCP Management Plane (`ait-brainlab-mgmt`) and Terraform IaC for Cloud DNS (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) and research workloads (`brainlab-res-*`).
-- **Network & VPN (`infra/network/`)**: NetBird Mesh VPN connecting physical servers, cloud nodes, and remote members.
+- **Research Cloud Workloads (`infra/cloud/`)**: Spot GPU templates, GCS buckets, and research grants ($5k Faculty / $1k PhD).
 
-### 2. Service Admin Domain (`services/`)
+### 3. Service Admin Domain (`services/`)
 - **JupyterHub (`services/jupyterhub/`)**: Multi-user hub using `DockerSpawner` mapping user UIDs/GIDs and allocating GPUs with environments (`default`, `nlp`, `cv`).
-- **Identity & Access (`services/identity/`)**: `lldap` user directory, Google OAuth2 SSO, and Linux SSSD client configurations.
 - **MLflow Platform (`services/mlflow/`)**: Experiment tracking server on `tokyo.cs.ait.ac.th:5000` with TrueNAS artifact storage.
 - **Web APIs & Gateway (`services/api/`)**: Traefik reverse proxy and deployed FastAPI / AI demonstration applications.
 
-### 3. Operational Runbooks (`docs/`)
+### 4. Operational Runbooks (`docs/`)
 - **Onboarding (`docs/onboarding.md`)**: New member onboarding SOP.
 - **Offboarding (`docs/offboarding.md`)**: Data preservation and account archiving SOP.
 - **Troubleshooting (`docs/troubleshooting.md`)**: Diagnostic guides for GPU, NFS, proxy, and container issues.
@@ -37,22 +44,29 @@ brainlab-base/
 ├── AGENTS.md                      # AI Assistant context and rules (this file)
 ├── GEMINI.md                      # Link to AGENTS.md
 │
-├── docs/                          # Operational SOPs & Handover Runbooks
+├── mgmt/                          # 🛡️ Core Management Plane (ait-brainlab-mgmt)
+│   ├── README.md                  # Control plane architecture & governance
+│   ├── checklist.md               # Master migration & implementation checklist
+│   ├── migration_plan.md          # Zero-downtime on-prem to cloud migration SOP
+│   ├── terraform/                 # Dedicated Terraform IaC for Cloud DNS & IAM
+│   └── services/                  # Core services (dns, identity/lldap, vpn/netbird)
+│
+├── infra/                         # 🛠️ Infrastructure Admin Domain
+│   ├── onprem/                    # Physical nodes, OS install, GPU, TrueNAS NFS
+│   ├── cloud/                     # Research workload templates (Spot GPUs, GCS, credits)
+│   └── network/                   # Network routing, CSIM proxy, DNS topology
+│
+├── services/                      # 🚀 Service Admin Domain
+│   ├── jupyterhub/                # Spawner config, Dockerfiles (default, nlp, cv)
+│   ├── identity/                  # SSO, Google OAuth, SSSD templates
+│   ├── mlflow/                    # MLflow experiment tracking server setup
+│   └── api/                       # Traefik reverse proxy & deployed apps
+│
+├── docs/                          # 📋 Operational SOPs & Handover Runbooks
 │   ├── onboarding.md              # Member onboarding checklist
 │   ├── offboarding.md             # Account archiving SOP
 │   ├── troubleshooting.md         # Incident troubleshooting guide
 │   └── roles_and_responsibilities.md # Infra Admin vs Service Admin matrix
-│
-├── infra/                         # 🛠️ Infrastructure Admin Domain
-│   ├── onprem/                    # Physical nodes, OS install, GPU, TrueNAS NFS
-│   ├── cloud/                     # GCP Terraform, Cloud DNS, research grants
-│   └── network/                   # NetBird VPN, CSIM proxy, DNS topology
-│
-├── services/                      # 🚀 Service Admin Domain
-│   ├── jupyterhub/                # Spawner config, Dockerfiles (default, nlp, cv)
-│   ├── identity/                  # lldap, Google OAuth SSO, SSSD templates
-│   ├── mlflow/                    # MLflow experiment tracking server setup
-│   └── api/                       # Traefik reverse proxy & deployed apps
 │
 ├── examples/                      # Example research notebooks (e.g., MLflow)
 └── .obsidian/                     # Obsidian vault settings & plugins
