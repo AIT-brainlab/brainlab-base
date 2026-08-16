@@ -1,14 +1,24 @@
-# AIT Brainlab Services
+# AIT Brainlab Base (`brainlab-base`)
 
-This Repository store knowledge, step, guide, and reference of AIT Brainlab services implementation.
+The central knowledge base, equipment inventory, service documentation, and project directory for **AIT Brainlab**.
 
-We provide the following services.
+---
 
-1. `JuypterHub` based on `dockerspawner` with `openLDAP` and `TrueNAS` integration.
-2. `MLflow`
-3. Terminal to CSIM Printer.
+## 📌 Core Sections
 
-All the information can be found in the [wiki](https://github.com/AIT-brainlab/docker-jupyterhub/wiki)
+1. **Knowledge Base & Guides**
+   - Account onboarding & credential management
+   - System configuration & standard operating procedures (SOPs)
+   - Infrastructure setup (OS, GPU drivers, LDAP, TrueNAS, proxies)
 
+2. **Lab Services**
+   - `JupyterHub` (Dockerspawner + OpenLDAP + TrueNAS)
+   - `MLflow` tracking server
+   - CSIM printer terminal access
 
-lkjhgfd sdfkljskldfsdf
+3. **Inventory & Asset Management**
+   - Lab hardware, workstations, servers, and GPUs
+   - Equipment checkout & return tracking
+
+4. **Project Directory**
+   - Research project catalog, active datasets, and repositories
