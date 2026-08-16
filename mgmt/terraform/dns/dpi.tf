@@ -6,6 +6,11 @@ resource "google_dns_managed_zone" "dpi_zone" {
   description = "DPI center domain"
   visibility  = "public"
 
+  # Explicitly matches your live GCP setting (DNSSEC disabled)
+  dnssec_config {
+    state = "off"
+  }
+
   lifecycle {
     prevent_destroy = true
   }

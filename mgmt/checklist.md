@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart LR
-    Step1["👥 Phase 1: IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 Phase 2: DNS<br/>(terraform/dns/)<br/>🔴 CURRENT STEP"] --> Step3["🔐 Phase 3: Secrets<br/>(terraform/secrets/)"] --> Step4["🖥️ Phase 4: Control VM<br/>(LLDAP + NetBird)"]
+    Step1["👥 Phase 1: IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 Phase 2: DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 Phase 3: Secrets<br/>(terraform/secrets/)<br/>🔴 CURRENT STEP"] --> Step4["🖥️ Phase 4: Control VM<br/>(LLDAP + NetBird)"]
 ```
 
 ---
@@ -35,17 +35,17 @@ flowchart LR
 ### 🌐 Phase 2: Cloud DNS Deployment (`mgmt/terraform/dns`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `2.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/dns/` | Akraradet | 🔴 **CURRENT STEP** | Initializes DNS module with GCS state |
-| `2.2` | Run `bash import_live_records.sh` to adopt live GCP zones & 14 records | Akraradet | 🔴 | Adopts `ait-brainlab` & `dpi-center` |
-| `2.3` | Run `terraform plan` and `terraform apply` | Akraradet | 🔴 | Confirms state with 0 to destroy |
-| `2.4` | Submit GCP NS record outputs to parent registrar (`cs.ait.ac.th`) | Phue Pwint Thwe | 🔴 | Complete delegation |
+| `2.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/dns/` | Akraradet | 🔵 | State locked in `gs://ait-brainlab-mgmt-tfstate/dns` |
+| `2.2` | Adopt live GCP zones (`ait-brainlab`, `dpi-center`) and all 14 service records | Akraradet | 🔵 | 100% matched with zero drift |
+| `2.3` | Apply Cloud DNS configuration with `lifecycle.prevent_destroy = true` | Akraradet | 🔵 | Nameservers permanently protected |
+| `2.4` | Automated delegation health check via `bash check_delegation.sh` | Phue Pwint Thwe | 🔵 | `brain.cs.ait.ac.th` & `dpi.ait.ac.th` verified live! |
 
 ---
 
 ### 🔐 Phase 3: Secret Manager Deployment (`mgmt/terraform/secrets`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `3.1` | Run `terraform init` and `terraform apply` in `mgmt/terraform/secrets/` | Akraradet | 🔴 | Generates LLDAP JWT, Admin Password, and NetBird key |
+| `3.1` | Run `terraform init` and `terraform apply` in `mgmt/terraform/secrets/` | Akraradet | 🔴 **CURRENT STEP** | Generates LLDAP JWT, Admin Password, and NetBird key |
 | `3.2` | Verify secret versions in GCP Console / Secret Manager | Akraradet | 🔴 | Protected by `prevent_destroy = true` |
 
 ---
