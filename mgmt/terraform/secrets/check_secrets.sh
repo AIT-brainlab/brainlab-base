@@ -17,7 +17,7 @@ echo -e "${BLUE}🔐 Verifying Secret Manager Objects in ${PROJECT_ID}...${NC}"
 echo -e "🛡️  ${YELLOW}(Secret values are intentionally hidden for security)${NC}"
 echo "=========================================================="
 
-SECRETS=("lldap-jwt" "lldap-admin-password" "netbird-setup-key")
+SECRETS=("lldap-jwt" "lldap-admin-password")
 FAILED=0
 
 for SECRET in "${SECRETS[@]}"; do

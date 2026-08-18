@@ -88,8 +88,7 @@ gcloud secrets versions access latest --secret="lldap-admin-password" --project=
 # 2. Fetch LLDAP JWT Secret Key
 gcloud secrets versions access latest --secret="lldap-jwt" --project="ait-brainlab-mgmt"
 
-# 3. Fetch NetBird Setup Key
-gcloud secrets versions access latest --secret="netbird-setup-key" --project="ait-brainlab-mgmt"
+# Note: 'netbird-setup-key' is generated and managed atomically in Sequence 6 (vpn/)
 ```
 
 ---
@@ -107,7 +106,6 @@ PROJECT_ID="ait-brainlab-mgmt"
 
 terraform import google_secret_manager_secret.jwt_secret "projects/$PROJECT_ID/secrets/lldap-jwt"
 terraform import google_secret_manager_secret.admin_password "projects/$PROJECT_ID/secrets/lldap-admin-password"
-terraform import google_secret_manager_secret.netbird_key_secret "projects/$PROJECT_ID/secrets/netbird-setup-key"
 
 terraform plan
 ```

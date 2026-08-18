@@ -79,23 +79,3 @@ resource "google_secret_manager_secret_version" "admin_password_version" {
   secret      = google_secret_manager_secret.admin_password.id
   secret_data = random_password.lldap_admin_password.result
 }
-
-# Secret 3: NetBird Server Setup Key (Protected against destroy)
-resource "google_secret_manager_secret" "netbird_key_secret" {
-  secret_id = "netbird-setup-key"
-
-  replication {
-    auto {}
-  }
-
-  lifecycle {
-    prevent_destroy = true
-  }
-
-  depends_on = [google_project_service.secretmanager_api]
-}
-
-resource "google_secret_manager_secret_version" "netbird_key_version" {
-  secret      = google_secret_manager_secret.netbird_key_secret.id
-  secret_data = "INITIAL_SETUP_KEY_PLACEHOLDER"
-}

@@ -40,12 +40,6 @@ data "google_secret_manager_secret_version" "admin_password" {
   version = "latest"
 }
 
-data "google_secret_manager_secret_version" "netbird_key" {
-  project = var.project_id
-  secret  = "netbird-setup-key"
-  version = "latest"
-}
-
 # ----------------------------------------------------------
 # 🌐 Reserved Static External Public IP
 # ----------------------------------------------------------
@@ -156,7 +150,6 @@ locals {
     docker_compose_content = local.docker_compose_rendered
     lldap_jwt_secret       = data.google_secret_manager_secret_version.jwt.secret_data
     lldap_admin_password   = data.google_secret_manager_secret_version.admin_password.secret_data
-    netbird_setup_key      = data.google_secret_manager_secret_version.netbird_key.secret_data
   })
 }
 
@@ -185,6 +178,10 @@ resource "google_compute_instance" "mgmt_vm" {
 
   # Native GCE Automated Startup Script
   metadata_startup_script = local.startup_script_rendered
+
+  lifecycle {
+    ignore_changes = [metadata_startup_script]
+  }
 
   # Ensure API & Network are completely ready before provisioning
   depends_on = [
