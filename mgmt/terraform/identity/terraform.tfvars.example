@@ -1,0 +1,7 @@
+project_id     = "ait-brainlab-mgmt"
+region         = "asia-southeast1"
+domain         = "brain.cs.ait.ac.th"
+lldap_http_url = "https://authen2.brain.cs.ait.ac.th"
+lldap_ldap_url = "ldap://authen2.brain.cs.ait.ac.th:3890"
+lldap_admin_user = "admin"
+base_dn        = "dc=brain,dc=cs,dc=ait,dc=ac,dc=th"

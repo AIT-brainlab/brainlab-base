@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart LR
-    Step1["👥 1. IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 2. DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 3. Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ 4. VM Engine<br/>(terraform/vm/)<br/>🔴 CURRENT STEP"] --> Step5["👤 5. Identity-as-Code<br/>(terraform/identity/)"] --> Step6["📡 6. NetBird-as-Code<br/>(terraform/vpn/)"] --> Step7["🚀 7. OIDC Integration"] --> Step8["✂️ 8. Cutover & Decommission<br/>(Update DNS in Terraform)"]
+    Step1["👥 1. IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 2. DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 3. Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ 4. VM Engine<br/>(terraform/vm/)<br/>🟢 COMPLETED"] --> Step5["👤 5. Identity-as-Code<br/>(terraform/identity/)<br/>🟢 COMPLETED"] --> Step6["📡 6. NetBird-as-Code<br/>(terraform/vpn/)<br/>🔴 CURRENT STEP"] --> Step7["🚀 7. OIDC & Services<br/>(JupyterHub & Web Print)"] --> Step8["✂️ 8. Cutover & Decommission<br/>(Update DNS in Terraform)"]
 ```
 
 ---
@@ -62,27 +62,29 @@ flowchart LR
 ### 👤 Phase 5: Identity-as-Code Directory (`mgmt/terraform/identity`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `5.1` | Export existing user accounts, UIDs, and GIDs from on-premise OpenLDAP | Phue Pwint Thwe | 🔴 **CURRENT STEP** | Dump posixAccount attributes |
-| `5.2` | Declare users, numeric UIDs, and email bindings in `users.tf` | Akraradet / Phue Pwint Thwe | 🔴 | Single source of truth in Git |
-| `5.3` | Apply `bpg/lldap` Terraform module to seed LLDAP directory | Akraradet | 🔴 | Automated 3-second re-hydration |
+| `5.1` | Define simplified lab groups (`admin`, `member`, `student`, `alumni`) with forced GIDs | Akraradet | 🔵 | 4 clean groups provisioned |
+| `5.2` | Declare users, forced POSIX UIDs, home paths, and multi-email bindings in `users.tf` | Akraradet | 🔵 | `brainlab`, `akraradet`, `phue`, `st121413` |
+| `5.3` | Apply `tasansga/lldap` Terraform module to seed LLDAP directory | Akraradet | 🔵 | 100% Stateless GitOps verified live! |
 
 ---
 
 ### 📡 Phase 6: NetBird-as-Code Mesh Network (`mgmt/terraform/vpn`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `6.1` | Declare device groups (`servers`, `students`, `admins`) and Zero-Trust ACLs in `network.tf` | Akraradet | 🔴 | Versioned in Git |
+| `6.1` | Declare device groups (`servers`, `students`, `admins`) and Zero-Trust ACLs in `network.tf` | Akraradet | 🔴 **CURRENT STEP** | Versioned in Git |
 | `6.2` | Enroll test nodes into the new mesh network using Secret Manager key | Phue Pwint Thwe | 🔴 | Connect test machines to `netbird2` |
 | `6.3` | Verify peer-to-peer ping across new mesh network | Whole Team | 🔴 | Direct WireGuard P2P |
 
 ---
 
-### 🚀 Phase 7: JupyterHub Google OIDC Integration
+### 🚀 Phase 7: Google OIDC & Lab Web Services (JupyterHub & Web Print)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `7.1` | Create OAuth2 Client ID & Secret in `GCP Console > APIs & Services` | Akraradet | 🔴 | Web application credential |
-| `7.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 | Test login with `@ait.asia` & `@gmail.com` |
-| `7.3` | Verify end-to-end user home directory read/write on `/mnt/HDD/home` | Whole Team | 🔴 | Zero permission conflicts |
+| `7.1` | Create OAuth2 Client ID & Secret in `GCP Console > APIs & Services` | Akraradet | 🔴 | Web application credential for `@ait.asia` & `@gmail.com` |
+| `7.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 | Test 1-click Google login on `hub.brain.cs.ait.ac.th` |
+| `7.3` | Verify end-to-end user home directory read/write on `/mnt/HDD/home` | Whole Team | 🔴 | Zero permission conflicts on TrueNAS NFS |
+| `7.4` | **Deploy Web Print Service (`docker-cups`)**: Launch web print portal at `print.brain.cs.ait.ac.th` with Google OAuth2 SSO | Akraradet | 🔴 | Drag-and-drop PDF upload from any browser |
+| `7.5` | **Bridge Web Print to CSIM Printer**: Route print jobs over NetBird mesh to on-prem CSIM printer with CSIM quota auth | Akraradet | 🔴 | Print remotely from home/laptops to lab printer |
 
 ---
 

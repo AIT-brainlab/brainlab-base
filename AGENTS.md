@@ -45,6 +45,7 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 - **JupyterHub (`services/jupyterhub/`)**: Multi-user hub using `DockerSpawner` mapping user UIDs/GIDs and allocating GPUs with environments (`default`, `nlp`, `cv`).
 - **Identity & Access (`services/identity/`)**: `lldap` user directory, Google OAuth2 SSO, and Linux SSSD client configurations.
 - **MLflow Platform (`services/mlflow/`)**: Experiment tracking server on `tokyo.cs.ait.ac.th:5000` with TrueNAS artifact storage.
+- **Web Printing Service (`services/printing/` or `print.brain.cs.ait.ac.th`)**: Remote web print portal (`docker-cups`) bridging cloud uploads to on-prem CSIM printer over NetBird WireGuard mesh.
 - **Web APIs & Gateway (`services/api/`)**: Traefik reverse proxy and deployed FastAPI / AI demonstration applications.
 
 ### 5. Operational Runbooks (`docs/`)

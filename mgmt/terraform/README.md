@@ -26,7 +26,7 @@ The following steps are performed **manually once** when setting up the GCP proj
 
 ```mermaid
 flowchart LR
-    Seq1["👥 1. IAM<br/>🔵 Live"] --> Seq2["🌐 2. DNS<br/>🔵 Live"] --> Seq3["🔐 3. Secrets<br/>🔵 Live"] --> Seq4["🖥️ 4. VM Engine<br/>🔵 Live"] --> Seq5["👤 5. Identity<br/>(LLDAP Users/UIDs)"] --> Seq6["📡 6. VPN<br/>(NetBird ACLs)"]
+    Seq1["👥 1. IAM<br/>🔵 Live"] --> Seq2["🌐 2. DNS<br/>🔵 Live"] --> Seq3["🔐 3. Secrets<br/>🔵 Live"] --> Seq4["🖥️ 4. VM Engine<br/>🔵 Live"] --> Seq5["👤 5. Identity<br/>🔵 Live"] --> Seq6["📡 6. VPN<br/>(NetBird ACLs)"]
 ```
 
 | Sequence | Module | Purpose | GCS Prefix | Status | Guide |
@@ -35,8 +35,8 @@ flowchart LR
 | **2** | [**`dns/`**](dns/README.md) | **Network & Routing**: Authoritative Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) & all 14 service records. | `dns` | 🔵 **VERIFIED** | [`dns/README.md`](dns/README.md) |
 | **3** | [**`secrets/`**](secrets/README.md) | **Credentials & Keys**: Secret Manager storage for `lldap-jwt`, `lldap-admin-password`, and `netbird-setup-key`. | `secrets` | 🔵 **VERIFIED** | [`secrets/README.md`](secrets/README.md) |
 | **4** | [**`vm/`**](vm/README.md) | **Disposable Compute Engine**: `e2-micro` VM with Static IP running Traefik, LLDAP, and NetBird via Docker Compose. | `vm` | 🔵 **VERIFIED** | [`vm/README.md`](vm/README.md) |
-| **5** | [**`identity/`**](identity/README.md) | **Identity-as-Code**: Declarative LLDAP users, Unix numeric UIDs/GIDs, and Multi-Email Bindings. | `identity` | 🔴 **NEXT** | [`identity/README.md`](identity/README.md) |
-| **6** | [**`vpn/`**](vpn/README.md) | **NetBird-as-Code**: Declarative device groups, server setup keys, and Zero-Trust ACL policies. | `vpn` | 🔴 Queued | [`vpn/README.md`](vpn/README.md) |
+| **5** | [**`identity/`**](identity/README.md) | **Identity-as-Code**: Declarative LLDAP users, Unix numeric UIDs/GIDs, and Multi-Email Bindings. | `identity` | 🔵 **VERIFIED** | [`identity/README.md`](identity/README.md) |
+| **6** | [**`vpn/`**](vpn/README.md) | **NetBird-as-Code**: Declarative device groups, server setup keys, and Zero-Trust ACL policies. | `vpn` | 🔴 **NEXT** | [`vpn/README.md`](vpn/README.md) |
 
 ---
 

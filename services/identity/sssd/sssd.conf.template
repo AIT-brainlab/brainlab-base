@@ -1,0 +1,55 @@
+# Standardized SSSD Configuration for AIT Brainlab Ubuntu Nodes, Desktops & NAS (cairo)
+# Place at: /etc/sssd/sssd.conf
+# Permissions: sudo chown root:root /etc/sssd/sssd.conf && sudo chmod 600 /etc/sssd/sssd.conf
+
+[sssd]
+services = nss, pam, sudo
+domains = brainlab.ldap
+config_file_version = 2
+
+[nss]
+filter_groups = root
+filter_users = root
+reconnection_retries = 3
+
+[pam]
+reconnection_retries = 3
+
+[domain/brainlab.ldap]
+id_provider = ldap
+auth_provider = ldap
+chpass_provider = ldap
+sudo_provider = ldap
+
+# Connect over private NetBird WireGuard mesh tunnel
+ldap_uri = ldap://34.143.234.182:3890
+ldap_search_base = dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+ldap_user_search_base = ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+ldap_group_search_base = ou=groups,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+
+# Service Bind Account (Read-Only Service Account)
+ldap_default_bind_dn = uid=admin,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+ldap_default_authtok = <LLDAP_ADMIN_PASSWORD>
+
+# Zero Internal TLS Overhead (Traffic is already encrypted by NetBird WireGuard)
+ldap_id_use_start_tls = false
+ldap_tls_reqcert = never
+
+# POSIX Attribute Schema Mapping
+ldap_user_object_class = posixAccount
+ldap_user_name = uid
+ldap_user_uid_number = uidNumber
+ldap_user_gid_number = gidNumber
+ldap_user_home_directory = homeDirectory
+ldap_user_shell = loginShell
+
+# Group & Sudo Mapping (Members of group 'admin' receive automatic sudo)
+ldap_group_object_class = groupOfUniqueNames
+ldap_group_name = cn
+ldap_group_member = uniqueMember
+
+# 🛡️ Offline Resilience Settings
+cache_credentials = true
+account_cache_expiration = 14
+entry_cache_timeout = 600
+enumerate = false
