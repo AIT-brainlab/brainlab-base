@@ -65,6 +65,32 @@ services:
       - mgmt-network
 
   # ==========================================================
+  # 📡 NetBird: Web Dashboard UI
+  # ==========================================================
+  netbird-dashboard:
+    image: netbirdio/dashboard:latest
+    container_name: netbird-dashboard
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Bangkok
+      - NETBIRD_MGMT_API_ENDPOINT=https://${netbird_staging_subdomain}.${domain}
+      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${netbird_staging_subdomain}.${domain}
+      - AUTH_AUTHORITY=https://${netbird_staging_subdomain}.${domain}/oauth2
+      - AUTH_CLIENT_ID=netbird-dashboard
+      - AUTH_AUDIENCE=netbird-dashboard
+      - AUTH_SUPPORTED_SCOPES=openid profile email
+      - USE_AUTH0=false
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netbird-dashboard.rule=Host(`${netbird_staging_subdomain}.${domain}`)"
+      - "traefik.http.routers.netbird-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.netbird-dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.netbird-dashboard.priority=1"
+      - "traefik.http.services.netbird-dashboard.loadbalancer.server.port=80"
+    networks:
+      - mgmt-network
+
+  # ==========================================================
   # 📡 NetBird: Self-Hosted WireGuard VPN Signal Service
   # ==========================================================
   netbird-signal:
@@ -81,6 +107,7 @@ services:
       - "traefik.http.routers.netbird-signal.rule=Host(`${netbird_staging_subdomain}.${domain}`) && PathPrefix(`/signalexchange.SignalExchange/`)"
       - "traefik.http.routers.netbird-signal.entrypoints=websecure"
       - "traefik.http.routers.netbird-signal.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.netbird-signal.priority=100"
       - "traefik.http.routers.netbird-signal.service=netbird-signal"
       - "traefik.http.services.netbird-signal.loadbalancer.server.port=33073"
       - "traefik.http.services.netbird-signal.loadbalancer.server.scheme=h2c"
@@ -105,11 +132,12 @@ services:
       - "/etc/timezone:/etc/timezone:ro"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.netbird.rule=Host(`${netbird_staging_subdomain}.${domain}`)"
-      - "traefik.http.routers.netbird.entrypoints=websecure"
-      - "traefik.http.routers.netbird.tls.certresolver=letsencrypt"
-      - "traefik.http.services.netbird.loadbalancer.server.port=80"
-      - "traefik.http.services.netbird.loadbalancer.server.scheme=h2c"
+      - "traefik.http.routers.netbird-mgmt.rule=Host(`${netbird_staging_subdomain}.${domain}`) && (PathPrefix(`/api`) || PathPrefix(`/management.`) || PathPrefix(`/.well-known`) || PathPrefix(`/oauth2`) || PathPrefix(`/dex`))"
+      - "traefik.http.routers.netbird-mgmt.entrypoints=websecure"
+      - "traefik.http.routers.netbird-mgmt.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.netbird-mgmt.priority=10"
+      - "traefik.http.services.netbird-mgmt.loadbalancer.server.port=80"
+      - "traefik.http.services.netbird-mgmt.loadbalancer.server.scheme=h2c"
     networks:
       - mgmt-network
 

@@ -38,9 +38,9 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
 {
   "DataDir": "/var/lib/netbird",
   "HttpConfig": {
-    "AuthAudience": "",
-    "AuthAuthority": "",
-    "AuthIssuer": "",
+    "AuthAudience": "netbird-dashboard",
+    "AuthAuthority": "https://${netbird_staging_subdomain}.${domain}/oauth2",
+    "AuthIssuer": "https://${netbird_staging_subdomain}.${domain}/oauth2",
     "AuthKeysLocation": ""
   },
   "IdpManagerConfig": null,
@@ -52,7 +52,7 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
   },
   "EmbeddedIdP": {
     "Enabled": true,
-    "Issuer": "https://${netbird_staging_subdomain}.${domain}",
+    "Issuer": "https://${netbird_staging_subdomain}.${domain}/oauth2",
     "DataDir": "/var/lib/netbird/idp"
   }
 }
