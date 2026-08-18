@@ -62,3 +62,17 @@ resource "google_project_iam_member" "sa_dns_admin" {
   role    = "roles/dns.admin"
   member  = "serviceAccount:${google_service_account.mgmt_terraform_sa.email}"
 }
+
+# Grant Secret Manager Admin to Terraform Service Account
+resource "google_project_iam_member" "sa_secrets_admin" {
+  project = var.project_id
+  role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${google_service_account.mgmt_terraform_sa.email}"
+}
+
+# Grant Storage Object Admin to Terraform Service Account for GCS Database Backups
+resource "google_project_iam_member" "sa_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${google_service_account.mgmt_terraform_sa.email}"
+}

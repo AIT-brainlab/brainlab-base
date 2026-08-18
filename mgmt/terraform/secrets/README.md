@@ -15,8 +15,10 @@ The state is permanently synchronized in Google Cloud Storage (`gs://ait-brainla
 | :--- | :--- | :--- | :---: |
 | **`lldap-jwt`** | 32-character random string | Cryptographic signing key for LLDAP user sessions | Sequence 3 (`secrets/`) |
 | **`lldap-admin-password`** | 24-character high-entropy password | Initial password for the LLDAP web admin portal | Sequence 3 (`secrets/`) |
+| **`google-oauth-client-id`** | Generated from GCP Console | Google OAuth2 Web Application Client ID | Sequence 3 (`secrets/`) |
+| **`google-oauth-client-secret`** | Generated from GCP Console | Google OAuth2 Web Application Client Secret | Sequence 3 (`secrets/`) |
+| **`netbird-mgmt-token`** | Generated from NetBird Web UI | Personal Access Token (PAT) for Terraform automation | Sequence 3 (Envelope) / UI (Day 0) |
 | **`netbird-setup-key`** | Generated from NetBird API | Reusable enrollment token for physical servers & GPU VMs | Sequence 6 (`vpn/`) |
-| **`netbird-mgmt-token`** | Generated from NetBird API | Personal Access Token (PAT) for Terraform automation | Sequence 4/6 (`vm/`/`vpn/`) |
 
 ---
 
@@ -107,6 +109,8 @@ PROJECT_ID="ait-brainlab-mgmt"
 
 terraform import google_secret_manager_secret.jwt_secret "projects/$PROJECT_ID/secrets/lldap-jwt"
 terraform import google_secret_manager_secret.admin_password "projects/$PROJECT_ID/secrets/lldap-admin-password"
+terraform import google_secret_manager_secret.google_oauth_client_id "projects/$PROJECT_ID/secrets/google-oauth-client-id"
+terraform import google_secret_manager_secret.google_oauth_client_secret "projects/$PROJECT_ID/secrets/google-oauth-client-secret"
 
 terraform plan
 ```

@@ -75,10 +75,15 @@ services:
       - TZ=Asia/Bangkok
       - NETBIRD_MGMT_API_ENDPOINT=https://${netbird_staging_subdomain}.${domain}
       - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${netbird_staging_subdomain}.${domain}
-      - AUTH_AUTHORITY=https://${netbird_staging_subdomain}.${domain}/oauth2
-      - AUTH_CLIENT_ID=netbird-dashboard
-      - AUTH_AUDIENCE=netbird-dashboard
+      - AUTH_AUTHORITY=https://accounts.google.com
+      - AUTH_CLIENT_ID=$${GOOGLE_OAUTH_CLIENT_ID}
+      - AUTH_CLIENT_SECRET=$${GOOGLE_OAUTH_CLIENT_SECRET}
+      - AUTH_AUDIENCE=$${GOOGLE_OAUTH_CLIENT_ID}
       - AUTH_SUPPORTED_SCOPES=openid profile email
+      - AUTH_REDIRECT_URI=/auth
+      - AUTH_SILENT_REDIRECT_URI=/silent-auth
+      - NETBIRD_TOKEN_SOURCE=idToken
+      - NETBIRD_CSP=https://oauth2.googleapis.com https://www.googleapis.com https://accounts.google.com
       - USE_AUTH0=false
     labels:
       - "traefik.enable=true"

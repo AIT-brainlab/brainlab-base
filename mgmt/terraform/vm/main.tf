@@ -40,6 +40,18 @@ data "google_secret_manager_secret_version" "admin_password" {
   version = "latest"
 }
 
+data "google_secret_manager_secret_version" "google_oauth_client_id" {
+  project = var.project_id
+  secret  = "google-oauth-client-id"
+  version = "latest"
+}
+
+data "google_secret_manager_secret_version" "google_oauth_client_secret" {
+  project = var.project_id
+  secret  = "google-oauth-client-secret"
+  version = "latest"
+}
+
 # ----------------------------------------------------------
 # 🌐 Reserved Static External Public IP
 # ----------------------------------------------------------
@@ -147,20 +159,24 @@ locals {
   })
 
   startup_script_rendered = templatefile("${path.module}/templates/startup-script.sh.tftpl", {
-    docker_compose_content    = local.docker_compose_rendered
-    lldap_jwt_secret          = data.google_secret_manager_secret_version.jwt.secret_data
-    lldap_admin_password      = data.google_secret_manager_secret_version.admin_password.secret_data
-    domain                    = var.domain
-    netbird_staging_subdomain = var.netbird_staging_subdomain
-    project_id                = var.project_id
+    docker_compose_content     = local.docker_compose_rendered
+    lldap_jwt_secret           = data.google_secret_manager_secret_version.jwt.secret_data
+    lldap_admin_password       = data.google_secret_manager_secret_version.admin_password.secret_data
+    google_oauth_client_id     = data.google_secret_manager_secret_version.google_oauth_client_id.secret_data
+    google_oauth_client_secret = data.google_secret_manager_secret_version.google_oauth_client_secret.secret_data
+    domain                     = var.domain
+    netbird_staging_subdomain  = var.netbird_staging_subdomain
+    project_id                 = var.project_id
+    state_bucket               = var.state_bucket
   })
 }
 
 resource "google_compute_instance" "mgmt_vm" {
-  name         = "brainlab-mgmt-vm"
-  machine_type = var.machine_type
-  zone         = var.zone
-  description  = "AIT Brainlab 100% Stateless Management Plane (Traefik, LLDAP, NetBird)"
+  name                      = "brainlab-mgmt-vm"
+  machine_type              = var.machine_type
+  zone                      = var.zone
+  description               = "AIT Brainlab 100% Stateless Management Plane (Traefik, LLDAP, NetBird)"
+  allow_stopping_for_update = true
 
   tags = ["brainlab-mgmt-node"]
 
@@ -179,12 +195,14 @@ resource "google_compute_instance" "mgmt_vm" {
     }
   }
 
+  # Service Account Attachment for Autonomous GCP Secret Manager Access
+  service_account {
+    email  = "brainlab-mgmt-terraform@${var.project_id}.iam.gserviceaccount.com"
+    scopes = ["cloud-platform"]
+  }
+
   # Native GCE Automated Startup Script
   metadata_startup_script = local.startup_script_rendered
-
-  lifecycle {
-    ignore_changes = [metadata_startup_script]
-  }
 
   # Ensure API & Network are completely ready before provisioning
   depends_on = [

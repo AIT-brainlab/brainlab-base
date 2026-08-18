@@ -9,7 +9,7 @@ echo "🚀 [1/5] Updating OS Packages & Installing Docker CE..."
 echo "=========================================================="
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
-apt-get install -y docker.io docker-compose-v2 unattended-upgrades curl jq
+apt-get install -y --no-install-recommends docker.io docker-compose-v2 sqlite3 curl jq
 
 echo "=========================================================="
 echo "⚡ [2/5] Enabling System Services & Setting Asia/Bangkok Timezone..."
@@ -20,50 +20,64 @@ echo "Asia/Bangkok" > /etc/timezone
 systemctl restart systemd-journald
 systemctl enable docker
 systemctl start docker
-systemctl enable unattended-upgrades
-systemctl start unattended-upgrades
 
 echo "=========================================================="
-echo "📁 [3/5] Preparing Traefik ACME & Data Directories..."
+echo "📁 [3/5] Restoring SQLite State from GCS & Preparing Dirs..."
 echo "=========================================================="
-mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data /opt/brainlab/netbird/idp
+mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data /opt/brainlab/scripts
 touch /opt/brainlab/traefik/acme.json
 chmod 600 /opt/brainlab/traefik/acme.json
+
+# Restore LLDAP Database from GCS if exists
+if gcloud storage cp "gs://${state_bucket}/backups/lldap/users.db" /opt/brainlab/lldap/data/users.db 2>/dev/null; then
+    echo "✅ Restored LLDAP users.db from GCS"
+    chmod 600 /opt/brainlab/lldap/data/users.db
+else
+    echo "ℹ️ No previous LLDAP database found in GCS. Starting clean."
+fi
+
+# Restore NetBird Database from GCS if exists
+if gcloud storage cp "gs://${state_bucket}/backups/netbird/store.db" /opt/brainlab/netbird/data/store.db 2>/dev/null; then
+    echo "✅ Restored NetBird store.db from GCS"
+    chmod 600 /opt/brainlab/netbird/data/store.db
+else
+    echo "ℹ️ No previous NetBird database found in GCS. Starting clean."
+fi
 
 # Add local loopback entry for self-referential SSL traffic (bypasses GCP Hairpin NAT)
 echo "127.0.0.1 ${netbird_staging_subdomain}.${domain} authen2.${domain}" >> /etc/hosts
 
-# Generate NetBird Management Configuration with Embedded IdP enabled
+# Generate NetBird Management Configuration with Google OAuth2 enabled
 cat << 'EOF' > /opt/brainlab/netbird/management.json
 {
   "DataDir": "/var/lib/netbird",
   "HttpConfig": {
-    "AuthAudience": "netbird-dashboard",
-    "AuthAuthority": "https://${netbird_staging_subdomain}.${domain}/oauth2",
-    "AuthIssuer": "https://${netbird_staging_subdomain}.${domain}/oauth2",
-    "AuthKeysLocation": ""
+    "AuthAudience": "${google_oauth_client_id}",
+    "AuthAuthority": "https://accounts.google.com",
+    "AuthIssuer": "https://accounts.google.com",
+    "AuthKeysLocation": "https://www.googleapis.com/oauth2/v3/certs"
   },
   "IdpManagerConfig": null,
-  "SingleAccountModeDomain": "",
+  "SingleAccountModeDomain": "ait.asia",
   "Datadir": "/var/lib/netbird",
   "Signal": {
     "URI": "${netbird_staging_subdomain}.${domain}:443",
     "Proto": "https"
   },
   "EmbeddedIdP": {
-    "Enabled": true,
-    "Issuer": "https://${netbird_staging_subdomain}.${domain}/oauth2",
-    "DataDir": "/var/lib/netbird/idp"
+    "Enabled": false
   }
 }
 EOF
 
 echo "=========================================================="
-echo "🔐 [4/5] Writing Environment Secrets & Compose Manifest..."
+echo "🔐 [4/5] Writing Environment Secrets & Backup Automation..."
 echo "=========================================================="
 cat << 'EOF' > /opt/brainlab/.env
 LLDAP_JWT_SECRET="${lldap_jwt_secret}"
 LLDAP_ADMIN_PASSWORD="${lldap_admin_password}"
+GOOGLE_OAUTH_CLIENT_ID="${google_oauth_client_id}"
+GOOGLE_OAUTH_CLIENT_SECRET="${google_oauth_client_secret}"
 EOF
 chmod 600 /opt/brainlab/.env
 
@@ -71,7 +85,31 @@ cat << 'EOF' > /opt/brainlab/docker-compose.yml
 ${docker_compose_content}
 EOF
 
-# Create Systemd Auto-Recovery Unit
+# Create Automated SQLite GCS Backup Script
+cat << 'EOF' > /opt/brainlab/scripts/backup_to_gcs.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Atomic snapshot of LLDAP users.db
+if [ -f /opt/brainlab/lldap/data/users.db ]; then
+    sqlite3 /opt/brainlab/lldap/data/users.db ".backup /tmp/lldap_users.db"
+    gcloud storage cp /tmp/lldap_users.db "gs://${state_bucket}/backups/lldap/users.db" --quiet
+    rm -f /tmp/lldap_users.db
+fi
+
+# Atomic snapshot of NetBird store.db
+if [ -f /opt/brainlab/netbird/data/store.db ]; then
+    sqlite3 /opt/brainlab/netbird/data/store.db ".backup /tmp/netbird_store.db"
+    gcloud storage cp /tmp/netbird_store.db "gs://${state_bucket}/backups/netbird/store.db" --quiet
+    rm -f /tmp/netbird_store.db
+fi
+EOF
+chmod +x /opt/brainlab/scripts/backup_to_gcs.sh
+
+# Install Cron for 6-hourly automated snapshot
+(crontab -l 2>/dev/null | grep -v 'backup_to_gcs.sh' || true; echo "0 */6 * * * /opt/brainlab/scripts/backup_to_gcs.sh >/dev/null 2>&1") | crontab -
+
+# Create Systemd Auto-Recovery Unit with Backup on Shutdown
 cat << 'EOF' > /etc/systemd/system/brainlab-mgmt.service
 [Unit]
 Description=AIT Brainlab Management Control Plane (Docker Compose)
@@ -85,6 +123,7 @@ RemainAfterExit=yes
 WorkingDirectory=/opt/brainlab
 ExecStart=/usr/bin/docker compose up -d --remove-orphans
 ExecStop=/usr/bin/docker compose down
+ExecStopPost=/opt/brainlab/scripts/backup_to_gcs.sh
 TimeoutStartSec=300
 
 [Install]
@@ -98,37 +137,8 @@ echo "=========================================================="
 echo "🐳 [5/5] Launching Traefik, LLDAP, and NetBird Containers..."
 echo "=========================================================="
 cd /opt/brainlab
+docker compose pull --quiet
 docker compose up -d --remove-orphans
-
-echo "=========================================================="
-echo "🔑 Initializing NetBird Master Account & PAT in Secret Manager..."
-echo "=========================================================="
-for i in $(seq 1 30); do
-  HTTP_CODE=$(curl -s -o /dev/null -w "%%{http_code}" http://127.0.0.1:80/api/users || echo "000")
-  if [ "$HTTP_CODE" -eq 401 ] || [ "$HTTP_CODE" -eq 200 ]; then
-    break
-  fi
-  sleep 2
-done
-
-if ! gcloud secrets describe netbird-mgmt-token --project="${project_id}" >/dev/null 2>&1; then
-  SETUP_RESP=$(curl -s -X POST http://127.0.0.1:80/api/setup \
-    -H 'Content-Type: application/json' \
-    -d "{\"name\": \"Brainlab Master\", \"email\": \"brainlab@ait.asia\", \"password\": \"${lldap_admin_password}\", \"create_pat\": true}")
-
-  PAT=$(echo "$SETUP_RESP" | grep -o '"personal_access_token":"[^"]*' | cut -d'"' -f4 || true)
-
-  if [ -n "$PAT" ]; then
-    echo -n "$PAT" | gcloud secrets create netbird-mgmt-token \
-      --data-file=- \
-      --project="${project_id}"
-    echo "✅ netbird-mgmt-token successfully stored in GCP Secret Manager!"
-  else
-    echo "⚠️ Warning: Could not retrieve PAT from NetBird /api/setup"
-  fi
-else
-  echo "ℹ️ netbird-mgmt-token already exists in Secret Manager."
-fi
 
 echo "=========================================================="
 echo "🎉 ALL BRAINLAB MANAGEMENT SERVICES ARE OPERATIONAL!"

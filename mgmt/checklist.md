@@ -28,7 +28,7 @@ flowchart LR
 | :--- | :--- | :--- | :---: | :--- |
 | `1.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/iam/` | Akraradet | 🔵 | State locked in `gs://ait-brainlab-mgmt-tfstate/iam` |
 | `1.2` | Apply `roles/owner` bindings for root project owners | Akraradet | 🔵 | `brainlab@ait.asia`, `st121413@ait.asia`, `akraradets@gmail.com` |
-| `1.3` | Provision `brainlab-mgmt-terraform` service account with `roles/dns.admin` | Akraradet | 🔵 | Automation SA ready for CI/CD |
+| `1.3` | Provision `brainlab-mgmt-terraform` service account with `roles/dns.admin` & `roles/secretmanager.admin` | Akraradet | 🔵 | Automation SA ready for autonomous VM Secret Manager management |
 
 ---
 
@@ -72,16 +72,16 @@ flowchart LR
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
 | `6.1` | Declare device groups (`servers`, `sysadmin-devices`), Zero-Trust ACLs, and setup keys in `mgmt/terraform/vpn/` | Akraradet | 🔵 | Clean minimalist model (2 groups, 2 rules) |
-| `6.2` | Automated peer enrollment of Management VM (Peer #1) with upgrade-aware lifecycle triggers | Akraradet | 🔵 | Live on `100.66.104.104` with `wt0` interface up! |
-| `6.3` | Verify LDAP (`ldap://100.66.104.104:3890`) lookup across new mesh network | Whole Team | 🔵 | Direct WireGuard query verified (5 users returned, <2ms) |
+| `6.2` | Automated peer enrollment of Management VM (Peer #1) with upgrade-aware lifecycle triggers | Akraradet | 🔵 | Live on `100.122.211.186` with `wt0` interface up! |
+| `6.3` | Continuous GCS Database Snapshot & Persistence (`store.db` + `users.db`) | Akraradet | 🔵 | Atomic SQLite snapshots in GCS (`gs://.../backups/`) |
 
 ---
 
 ### 🚀 Phase 7: Google OIDC & Lab Web Services (JupyterHub & Web Print)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `7.1` | Create OAuth2 Client ID & Secret in `GCP Console > APIs & Services` | Akraradet | 🔴 | Web application credential for `@ait.asia` & `@gmail.com` |
-| `7.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 | Test 1-click Google login on `hub.brain.cs.ait.ac.th` |
+| `7.1` | Create OAuth2 Client ID & Secret in `GCP Console > APIs & Services` (SOP: [`oauth_setup.md`](oauth_setup.md)) | Akraradet | 🔵 **Verified** | Verified live with NetBird & GCP Secret Manager |
+| `7.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 **CURRENT STEP** | Test 1-click Google login on `hub.brain.cs.ait.ac.th` |
 | `7.3` | Verify end-to-end user home directory read/write on `/mnt/HDD/home` | Whole Team | 🔴 | Zero permission conflicts on TrueNAS NFS |
 | `7.4` | **Deploy Web Print Service (`docker-cups`)**: Launch web print portal at `print.brain.cs.ait.ac.th` with Google OAuth2 SSO | Akraradet | 🔴 | Drag-and-drop PDF upload from any browser |
 | `7.5` | **Bridge Web Print to CSIM Printer**: Route print jobs over NetBird mesh to on-prem CSIM printer with CSIM quota auth | Akraradet | 🔴 | Print remotely from home/laptops to lab printer |

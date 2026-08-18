@@ -54,6 +54,11 @@ terraform apply
 
 ## ➕ How to Manage Lab Members
 
+> [!TIP]
+> **Complete Member Lifecycle Runbooks**:
+> - 📋 **Onboarding Runbook**: Follow the complete step-by-step SOP in [`docs/onboarding.md`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/docs/onboarding.md) (covers LLDAP identity, TrueNAS NFS directory creation, and NetBird approval).
+> - 📦 **Offboarding Runbook**: Follow [`docs/offboarding.md`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/docs/offboarding.md) for data archiving and account retirement.
+
 ### Adding a New Student or Researcher
 Open [`users.tf`](users.tf) and add a new entry to the `local.users` map:
 

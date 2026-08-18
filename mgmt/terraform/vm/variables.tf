@@ -57,3 +57,9 @@ variable "acme_email" {
   type        = string
   default     = "brainlab@ait.asia"
 }
+
+variable "state_bucket" {
+  description = "GCS bucket name for state and database backups"
+  type        = string
+  default     = "ait-brainlab-mgmt-tfstate"
+}

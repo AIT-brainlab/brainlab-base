@@ -19,6 +19,7 @@ The following steps are performed **manually once** when setting up the GCP proj
 
    gcloud storage buckets update gs://ait-brainlab-mgmt-tfstate --versioning
    ```
+4. **Google OAuth 2.0 Web Client ID**: Created in GCP Console (APIs & Services > Credentials) with authorized origins & redirect URIs for NetBird, JupyterHub, and Web Print. Complete SOP documented in [`services/identity/oauth/README.md`](../../services/identity/oauth/README.md).
 
 ---
 

@@ -79,3 +79,60 @@ resource "google_secret_manager_secret_version" "admin_password_version" {
   secret      = google_secret_manager_secret.admin_password.id
   secret_data = random_password.lldap_admin_password.result
 }
+
+# Secret 3: Google OAuth Client ID (Protected against destroy)
+resource "google_secret_manager_secret" "google_oauth_client_id" {
+  secret_id = "google-oauth-client-id"
+
+  replication {
+    auto {}
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on = [google_project_service.secretmanager_api]
+}
+
+resource "google_secret_manager_secret_version" "google_oauth_client_id_version" {
+  count       = var.google_oauth_client_id != "" ? 1 : 0
+  secret      = google_secret_manager_secret.google_oauth_client_id.id
+  secret_data = var.google_oauth_client_id
+}
+
+# Secret 4: Google OAuth Client Secret (Protected against destroy)
+resource "google_secret_manager_secret" "google_oauth_client_secret" {
+  secret_id = "google-oauth-client-secret"
+
+  replication {
+    auto {}
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on = [google_project_service.secretmanager_api]
+}
+
+resource "google_secret_manager_secret_version" "google_oauth_client_secret_version" {
+  count       = var.google_oauth_client_secret != "" ? 1 : 0
+  secret      = google_secret_manager_secret.google_oauth_client_secret.id
+  secret_data = var.google_oauth_client_secret
+}
+
+# Secret 5: NetBird Management API Personal Access Token (PAT for Terraform)
+resource "google_secret_manager_secret" "netbird_mgmt_token" {
+  secret_id = "netbird-mgmt-token"
+
+  replication {
+    auto {}
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on = [google_project_service.secretmanager_api]
+}

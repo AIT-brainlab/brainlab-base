@@ -112,7 +112,16 @@ flowchart LR
 
 ---
 
-## 🔄 4. Node Enrollment Lifecycle
+## 🔄 4. Identity & Enrollment Governance Matrix
+
+To maintain clean GitOps boundaries without brittle email invite dependencies, user management is decoupled between **Identity/POSIX (GitOps)** and **VPN Entry (Google SSO + Admin Approval)**:
+
+| Layer | Responsibility | Managed Where | Mechanism |
+| :--- | :--- | :--- | :--- |
+| **👤 Compute & Storage Identity** | POSIX UID/GID, Home paths, Clusters | **GitOps / Terraform** ([`identity/users.tf`](../identity/users.tf)) | LLDAP Directory-as-Code |
+| **🔑 VPN User Authentication** | Human sign-in & 2FA | **Google OAuth2 SSO** | Single Account Mode (`@ait.asia`) |
+| **✋ VPN User Approval** | Gatekeeping new network members | **NetBird Web Dashboard** | Admin clicks "Approve" under **Users** |
+| **🛡️ VPN Network Firewalls & Groups** | Device isolation, ACL rules, Setup keys | **GitOps / Terraform** ([`vpn/*.tf`](./)) | NetBird-as-Code (`acls.tf`, `groups.tf`) |
 
 ```mermaid
 sequenceDiagram
@@ -126,11 +135,11 @@ sequenceDiagram
     end
 
     rect rgb(255, 250, 240)
-    Note over SysAdmin,GoogleAuth: Flow B: SysAdmin Personal Laptop
-    SysAdmin->>NetBirdApp: 1. Opens NetBird Client on Mac / Windows / Linux
-    NetBirdApp->>GoogleAuth: 2. 1-Click "Sign in with Google" (@ait.asia)
-    GoogleAuth-->>NetBirdApp: 3. Identity & 2FA Verified!
-    NetBirdApp-->>SysAdmin: 4. Auto-assigned to 'sysadmin-devices' with instant SSH access to servers!
+    Note over SysAdmin,GoogleAuth: Flow B: Human Lab Member / SysAdmin Laptop
+    SysAdmin->>NetBirdApp: 1. 1-Click "Sign in with Google" (@ait.asia)
+    NetBirdApp->>NetBirdMgmt: 2. Account created in 'Pending Approval' state
+    Admin->>NetBirdMgmt: 3. Admin verifies member against LLDAP and clicks 'Approve'
+    NetBirdMgmt-->>NetBirdApp: 4. Peer connected! ACLs in Terraform enforce zero-trust access.
     end
 ```
 
@@ -155,6 +164,18 @@ mgmt/terraform/vpn/
 
 ## 🚀 6. Step-by-Step Operator Runbook
 
+### Step 0: Ensure Management PAT is in Secret Manager (Day-0 / Rotation Only)
+If this is the initial Day-0 deployment or a PAT rotation:
+1. Open the NetBird Dashboard at [`https://netbird2.brain.cs.ait.ac.th`](https://netbird2.brain.cs.ait.ac.th) and sign in with Google SSO (`brainlab@ait.asia` or `st121413@ait.asia`).
+2. Go to **Settings** $\rightarrow$ **Access Tokens** $\rightarrow$ **Create Token** (name: `terraform-mgmt`).
+3. Save the token into GCP Secret Manager:
+   ```bash
+   echo -n "nbp_YOUR_TOKEN_HERE" | gcloud secrets versions add netbird-mgmt-token --data-file=- --project=ait-brainlab-mgmt
+   ```
+*(Note: Thanks to automated GCS state persistence of `store.db`, subsequent VM rebuilds do not require repeating Step 0).*
+
+---
+
 ### Step 1: Apply Terraform Module (Auto-Enrolls Peer #1)
 ```bash
 cd mgmt/terraform/vpn
@@ -163,7 +184,7 @@ terraform plan
 terraform apply
 ```
 > [!TIP]
-> **Automated Peer #1**: `terraform apply` automatically provisions the `netbird-client` container on the Management VM, links it to `netbird-setup-key`, and verifies that the `wt0` interface comes up live (`100.66.104.104`)!
+> **Automated Peer #1**: `terraform apply` automatically provisions the `netbird-client` container on the Management VM, links it to `netbird-setup-key`, and verifies that the `wt0` interface comes up live (`100.122.211.186`)!
 
 ---
 
@@ -183,11 +204,16 @@ netbird status
 
 ---
 
-### Step 3: Connect SysAdmin Laptops
-1. Download the NetBird app from [netbird.io/install](https://netbird.io/install).
-2. Open Settings $\rightarrow$ Set Management URL to `https://netbird2.brain.cs.ait.ac.th`.
-3. Click **Connect** and log in with your Google Account (`@ait.asia`).
-4. *Your laptop is automatically placed in `sysadmin-devices` with full access to all servers.*
+### Step 3: Onboarding Lab Members & SysAdmins
+
+> [!TIP]
+> **Detailed Member Onboarding SOP**: See [`docs/onboarding.md`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/docs/onboarding.md) for the complete workflow.
+
+1. Member downloads the NetBird app from [netbird.io/install](https://netbird.io/install).
+2. Sets Management URL to `https://netbird.brain.cs.ait.ac.th` (or `https://netbird2.brain.cs.ait.ac.th`).
+3. Clicks **Connect** and logs in with Google (`@ait.asia`).
+4. Admin opens the NetBird Web Dashboard $\rightarrow$ **Users** $\rightarrow$ verifies against [`identity/users.tf`](../identity/users.tf) $\rightarrow$ clicks **Approve**.
+5. *(SysAdmins Only)*: Admin assigns the user/device to **`sysadmin-devices`** to grant SSH access to physical GPU servers.
 
 ---
 
@@ -196,7 +222,7 @@ From any server (e.g. `tokyo`), test LDAP lookup over the private mesh:
 
 ```bash
 # Query LLDAP on Cloud VM over NetBird IP (Port 3890)
-ldapsearch -x -H ldap://100.66.104.104:3890 -b "dc=brain,dc=cs,dc=ait,dc=ac,dc=th" "(uid=st121413)"
+ldapsearch -x -H ldap://100.122.211.186:3890 -b "dc=brain,dc=cs,dc=ait,dc=ac,dc=th" "(uid=st121413)"
 ```
 
 ---
