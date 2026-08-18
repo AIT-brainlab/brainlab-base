@@ -1,9 +1,9 @@
 # Sequence 3: Secret Manager Infrastructure (`mgmt/terraform/secrets`)
 
 ## 📌 Overview & Purpose
-This is **Sequence 3 of 3** in the management plane infrastructure.
+This is **Sequence 3 of 6** in the management plane infrastructure.
 
-This module provisions **GCP Secret Manager** and generates cryptographically secure, high-entropy tokens and passwords required by **LLDAP** and **NetBird**. 
+This module provisions **GCP Secret Manager** and generates cryptographically secure, high-entropy tokens and passwords required to bootstrap **LLDAP** and the Management VM. 
 
 The state is permanently synchronized in Google Cloud Storage (`gs://ait-brainlab-mgmt-tfstate/secrets/default.tfstate`).
 
@@ -11,11 +11,12 @@ The state is permanently synchronized in Google Cloud Storage (`gs://ait-brainla
 
 ## 🔐 Seeded Secrets & Purpose
 
-| Secret ID | Generation Method | Purpose |
-| :--- | :--- | :--- |
-| **`lldap-jwt`** | 32-character random string | Cryptographic signing key for LLDAP user sessions |
-| **`lldap-admin-password`** | 24-character high-entropy password | Initial password for the LLDAP web admin portal |
-| **`netbird-setup-key`** | Secure placeholder / setup key | Reusable enrollment token for physical servers & GPU VMs |
+| Secret ID | Generation Method | Purpose | Managed In |
+| :--- | :--- | :--- | :---: |
+| **`lldap-jwt`** | 32-character random string | Cryptographic signing key for LLDAP user sessions | Sequence 3 (`secrets/`) |
+| **`lldap-admin-password`** | 24-character high-entropy password | Initial password for the LLDAP web admin portal | Sequence 3 (`secrets/`) |
+| **`netbird-setup-key`** | Generated from NetBird API | Reusable enrollment token for physical servers & GPU VMs | Sequence 6 (`vpn/`) |
+| **`netbird-mgmt-token`** | Generated from NetBird API | Personal Access Token (PAT) for Terraform automation | Sequence 4/6 (`vm/`/`vpn/`) |
 
 ---
 

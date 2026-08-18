@@ -54,7 +54,7 @@ ${indent(6, docker_compose_content)}
 
 runcmd:
   # 1. Prepare Traefik ACME & Data directories
-  - mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data
+  - mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data /opt/brainlab/netbird/idp
   - touch /opt/brainlab/traefik/acme.json
   - chmod 600 /opt/brainlab/traefik/acme.json
 

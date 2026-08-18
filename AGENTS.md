@@ -22,8 +22,8 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 - **Zero-Leakage Health Check Scripts**:
   - `mgmt/terraform/dns/check_delegation.sh`: Automated DNS delegation & public resolution validator.
   - `mgmt/terraform/secrets/check_secrets.sh`: Automated Secret Manager validator (zero terminal leakage).
-- **Root Governance**: Owned by `brainlab@ait.asia`, `st121413@ait.asia`, and `akraradets@gmail.com`.
-- **Implementation Tracker**: Master task checklist (Phases 1–7) in [`mgmt/checklist.md`](mgmt/checklist.md).
+- **Traefik gRPC & Signal Routing**: All gRPC backends (`netbird-management`, `netbird-signal`) strictly require `traefik.http.services.<service>.loadbalancer.server.scheme=h2c`. Signal service is unified on port 443 HTTPS via Traefik router rule `Host(...) && PathPrefix('/signalexchange.SignalExchange/')` with `Proto: "https"` and `URI: "<subdomain>.<domain>:443"`.
+- **GCP Hairpin NAT Loopback**: The Management VM includes `127.0.0.1 <netbird_subdomain>.<domain>` in `/etc/hosts` to allow local host containers to communicate with Traefik TLS endpoints without external NAT hairpin blockage.
 - **Invariant**: **Never** provision heavy GPU compute or transient research workloads inside `ait-brainlab-mgmt`.
 
 ### 2. Identity & Access Governance (`services/identity/` or `mgmt/terraform/identity/`)
@@ -102,6 +102,13 @@ brainlab-base/
 6. **Active Bootstrap Verification**: Use `terraform_data` with `local-exec` log streaming (`wait_for_bootstrap.sh`) to ensure `terraform apply` only completes after all containers are healthy.
 7. **Human vs Server NetBird Access**: Human researchers authenticate via Google OIDC without setup keys. Headless physical servers and cloud GPU VMs use Secret Manager enrollment keys.
 8. **NetBird Data Plane**: NetBird transfers (e.g. large 1TB datasets) are direct peer-to-peer (P2P) and must not be proxied through cloud relays.
+9. **Strict Sequential Deployment Order**: Terraform modules in `mgmt/terraform/` MUST strictly follow the 6-stage linear deployment sequence: `iam` (1) → `dns` (2) → `secrets` (3) → `vm` (4) → `identity` (5) → `vpn` (6). Sequence 6 (`vpn/`) is strictly the final capstone module and must NEVER be deployed on a project where Secrets, VM Engine, and Identity are not yet live and healthy.
+10. **Atomic Secret Lifecycle & Cohesion**: Sequence 3 (`secrets/`) manages strictly prerequisite VM bootstrap secrets (`lldap-jwt`, `lldap-admin-password`). Sequence 6 (`vpn/`) generates `netbird-setup-key` dynamically from the NetBird engine and stores it directly into GCP Secret Manager in a single atomic step without dummy placeholders.
+11. **Single Master Debug Console (Zero UI Drift)**: In NetBird GitOps, ONLY the master lab account (`brainlab@ait.asia`) is granted `role = "admin"` for the Web Dashboard for emergency signal inspection. All personal SysAdmin accounts (`st121413`, `akraradets`, `phue`) use `role = "user"` with `auto_groups = [sysadmin-devices]`, giving personal devices full WireGuard mesh reachability while preventing accidental Web UI configuration drift.
+12. **Explicit Device Group Naming**: Avoid ambiguous group names. Name physical operator hardware groups explicitly (e.g. `sysadmin-devices`) to prevent confusion between NetBird Web user roles (`role = "admin"`) and network firewall device groups.
+13. **Automated Peer Enrollment & Upgrade-Aware Lifecycle**: When enrolling local peers or deploying host containers via `terraform_data` with `local-exec` (e.g. `mgmt/terraform/vpn/peer.tf`), the resource MUST explicitly bind its container image version variable (e.g. `var.netbird_client_version`) to `triggers_replace`. This guarantees that image upgrades in Terraform automatically trigger image pull, container recreation, and network interface health verification (`wt0`) without manual SSH or container drift.
+14. **Zero Plain-Text Credentials on Local Disk**: Terraform providers connecting to control plane management APIs MUST read administrative credentials dynamically from GCP Secret Manager via `data.google_secret_manager_secret_version` rather than storing plain-text tokens in `.tfvars` files.
+15. **Unified Edge TLS Termination for Signal & Web**: Control plane signaling and management MUST terminate TLS at Traefik on port 443 with `scheme=h2c`, eliminating exposed custom plaintext gRPC ports (`:33073`) to ensure seamless institutional proxy and firewall traversal.
 
 ---
 

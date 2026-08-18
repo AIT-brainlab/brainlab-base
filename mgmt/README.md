@@ -22,35 +22,33 @@ flowchart TD
 
     subgraph GCP_FIREWALL ["🛡️ Google Cloud VPC Firewall (Datacenter Edge)"]
         FW_Web["ALLOW: Port 80 (HTTP) & Port 443 (HTTPS)"]
-        FW_NB["ALLOW: Port 33073 (NetBird Signal UDP/TCP)"]
         FW_IAP["ALLOW: Port 22 (SSH strictly from Google IAP 35.235.240.0/20)"]
         FW_Block["🚫 BLOCKED FROM PUBLIC:<br/>Port 3890 (LDAP) & Port 22 (Direct SSH)"]
     end
 
-    Internet -->|"HTTP / HTTPS"| FW_Web
-    Internet -->|"WireGuard Signal"| FW_NB
+    Internet -->|"HTTP / HTTPS (Port 443)"| FW_Web
     Internet -.->|"Direct SSH Scan / LDAP Scan"| FW_Block
     Admins -->|"gcloud compute ssh --tunnel-through-iap"| FW_IAP
 
     subgraph VM ["🖥️ Management VM Engine (brainlab-mgmt-vm)"]
-        Traefik["🔒 Traefik v3 Proxy<br/>(:80, :443)<br/>• Auto Let's Encrypt SSL<br/>• Routes authen2 & netbird2"]
-        NBSignal["📡 NetBird Signal<br/>(:33073 UDP/TCP)<br/>• Connection Broker"]
+        Traefik["🔒 Traefik v3 Proxy<br/>(:80, :443)<br/>• Auto Let's Encrypt SSL<br/>• h2c gRPC multiplexing for Signal & Mgmt"]
         
         subgraph PRIVATE_DOCKER ["📦 Private Docker Network (brainlab-mgmt-net)"]
             LLDAP["👤 LLDAP Engine<br/>• HTTP :17170 (Web Portal)<br/>• LDAP :3890 (User Queries)"]
-            NBMgmt["📡 NetBird Management<br/>• API :33071 (Control Plane)"]
+            NBMgmt["📡 NetBird Management<br/>• API :80 (Control Plane)"]
+            NBSignal["📡 NetBird Signal<br/>• gRPC :33073 (Connection Broker)"]
         end
 
         Traefik -->|"Proxy authen2.brain..."| LLDAP
-        Traefik -->|"Proxy netbird2.brain..."| NBMgmt
+        Traefik -->|"Proxy netbird2.brain... (h2c)"| NBMgmt
+        Traefik -->|"PathPrefix(/signalexchange...) (h2c)"| NBSignal
     end
 
     FW_Web --> Traefik
-    FW_NB --> NBSignal
     FW_IAP -->|"Encrypted IAP SSH Tunnel"| VM
 
     subgraph WIREGUARD_MESH ["🔒 NetBird Encrypted WireGuard Mesh Tunnel"]
-        MeshFlow["Direct P2P Encrypted Mesh (100.64.0.x)"]
+        MeshFlow["Direct P2P Encrypted Mesh (100.64.0.0/16)"]
     end
 
     OnPrem <-->|"WireGuard Mesh Tunnel"| MeshFlow

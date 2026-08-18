@@ -147,9 +147,12 @@ locals {
   })
 
   startup_script_rendered = templatefile("${path.module}/templates/startup-script.sh.tftpl", {
-    docker_compose_content = local.docker_compose_rendered
-    lldap_jwt_secret       = data.google_secret_manager_secret_version.jwt.secret_data
-    lldap_admin_password   = data.google_secret_manager_secret_version.admin_password.secret_data
+    docker_compose_content    = local.docker_compose_rendered
+    lldap_jwt_secret          = data.google_secret_manager_secret_version.jwt.secret_data
+    lldap_admin_password      = data.google_secret_manager_secret_version.admin_password.secret_data
+    domain                    = var.domain
+    netbird_staging_subdomain = var.netbird_staging_subdomain
+    project_id                = var.project_id
   })
 }
 

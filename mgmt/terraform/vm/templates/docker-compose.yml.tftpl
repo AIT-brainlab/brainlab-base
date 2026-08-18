@@ -76,9 +76,14 @@ services:
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "/etc/timezone:/etc/timezone:ro"
-    ports:
-      - "33073:33073"
-      - "33073:33073/udp"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netbird-signal.rule=Host(`${netbird_staging_subdomain}.${domain}`) && PathPrefix(`/signalexchange.SignalExchange/`)"
+      - "traefik.http.routers.netbird-signal.entrypoints=websecure"
+      - "traefik.http.routers.netbird-signal.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.netbird-signal.service=netbird-signal"
+      - "traefik.http.services.netbird-signal.loadbalancer.server.port=33073"
+      - "traefik.http.services.netbird-signal.loadbalancer.server.scheme=h2c"
     networks:
       - mgmt-network
 
@@ -91,6 +96,7 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Asia/Bangkok
+      - NB_SETUP_PAT_ENABLED=true
     command: ["--config", "/etc/netbird/management.json", "--log-file", "console"]
     volumes:
       - "/opt/brainlab/netbird/management.json:/etc/netbird/management.json"
@@ -103,6 +109,7 @@ services:
       - "traefik.http.routers.netbird.entrypoints=websecure"
       - "traefik.http.routers.netbird.tls.certresolver=letsencrypt"
       - "traefik.http.services.netbird.loadbalancer.server.port=80"
+      - "traefik.http.services.netbird.loadbalancer.server.scheme=h2c"
     networks:
       - mgmt-network
 

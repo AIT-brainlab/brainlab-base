@@ -26,11 +26,14 @@ systemctl start unattended-upgrades
 echo "=========================================================="
 echo "📁 [3/5] Preparing Traefik ACME & Data Directories..."
 echo "=========================================================="
-mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data
+mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/data /opt/brainlab/netbird/idp
 touch /opt/brainlab/traefik/acme.json
 chmod 600 /opt/brainlab/traefik/acme.json
 
-# Generate minimal NetBird Management Configuration
+# Add local loopback entry for self-referential SSL traffic (bypasses GCP Hairpin NAT)
+echo "127.0.0.1 ${netbird_staging_subdomain}.${domain} authen2.${domain}" >> /etc/hosts
+
+# Generate NetBird Management Configuration with Embedded IdP enabled
 cat << 'EOF' > /opt/brainlab/netbird/management.json
 {
   "DataDir": "/var/lib/netbird",
@@ -44,8 +47,13 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
   "SingleAccountModeDomain": "",
   "Datadir": "/var/lib/netbird",
   "Signal": {
-    "URI": "netbird-signal:33073",
-    "Proto": "tcp"
+    "URI": "${netbird_staging_subdomain}.${domain}:443",
+    "Proto": "https"
+  },
+  "EmbeddedIdP": {
+    "Enabled": true,
+    "Issuer": "https://${netbird_staging_subdomain}.${domain}",
+    "DataDir": "/var/lib/netbird/idp"
   }
 }
 EOF
@@ -91,6 +99,36 @@ echo "🐳 [5/5] Launching Traefik, LLDAP, and NetBird Containers..."
 echo "=========================================================="
 cd /opt/brainlab
 docker compose up -d --remove-orphans
+
+echo "=========================================================="
+echo "🔑 Initializing NetBird Master Account & PAT in Secret Manager..."
+echo "=========================================================="
+for i in $(seq 1 30); do
+  HTTP_CODE=$(curl -s -o /dev/null -w "%%{http_code}" http://127.0.0.1:80/api/users || echo "000")
+  if [ "$HTTP_CODE" -eq 401 ] || [ "$HTTP_CODE" -eq 200 ]; then
+    break
+  fi
+  sleep 2
+done
+
+if ! gcloud secrets describe netbird-mgmt-token --project="${project_id}" >/dev/null 2>&1; then
+  SETUP_RESP=$(curl -s -X POST http://127.0.0.1:80/api/setup \
+    -H 'Content-Type: application/json' \
+    -d "{\"name\": \"Brainlab Master\", \"email\": \"brainlab@ait.asia\", \"password\": \"${lldap_admin_password}\", \"create_pat\": true}")
+
+  PAT=$(echo "$SETUP_RESP" | grep -o '"personal_access_token":"[^"]*' | cut -d'"' -f4 || true)
+
+  if [ -n "$PAT" ]; then
+    echo -n "$PAT" | gcloud secrets create netbird-mgmt-token \
+      --data-file=- \
+      --project="${project_id}"
+    echo "✅ netbird-mgmt-token successfully stored in GCP Secret Manager!"
+  else
+    echo "⚠️ Warning: Could not retrieve PAT from NetBird /api/setup"
+  fi
+else
+  echo "ℹ️ netbird-mgmt-token already exists in Secret Manager."
+fi
 
 echo "=========================================================="
 echo "🎉 ALL BRAINLAB MANAGEMENT SERVICES ARE OPERATIONAL!"

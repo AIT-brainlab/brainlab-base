@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart LR
-    Step1["👥 1. IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 2. DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 3. Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ 4. VM Engine<br/>(terraform/vm/)<br/>🟢 COMPLETED"] --> Step5["👤 5. Identity-as-Code<br/>(terraform/identity/)<br/>🟢 COMPLETED"] --> Step6["📡 6. NetBird-as-Code<br/>(terraform/vpn/)<br/>🔴 CURRENT STEP"] --> Step7["🚀 7. OIDC & Services<br/>(JupyterHub & Web Print)"] --> Step8["✂️ 8. Cutover & Decommission<br/>(Update DNS in Terraform)"]
+    Step1["👥 1. IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 2. DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 3. Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ 4. VM Engine<br/>(terraform/vm/)<br/>🟢 COMPLETED"] --> Step5["👤 5. Identity-as-Code<br/>(terraform/identity/)<br/>🟢 COMPLETED"] --> Step6["📡 6. NetBird-as-Code<br/>(terraform/vpn/)<br/>🟢 COMPLETED"] --> Step7["🚀 7. OIDC & Services<br/>(JupyterHub & Web Print)<br/>🔴 CURRENT STEP"] --> Step8["✂️ 8. Cutover & Decommission<br/>(Update DNS in Terraform)"]
 ```
 
 ---
@@ -71,9 +71,9 @@ flowchart LR
 ### 📡 Phase 6: NetBird-as-Code Mesh Network (`mgmt/terraform/vpn`)
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `6.1` | Declare device groups (`servers`, `students`, `admins`) and Zero-Trust ACLs in `network.tf` | Akraradet | 🔴 **CURRENT STEP** | Versioned in Git |
-| `6.2` | Enroll test nodes into the new mesh network using Secret Manager key | Phue Pwint Thwe | 🔴 | Connect test machines to `netbird2` |
-| `6.3` | Verify peer-to-peer ping across new mesh network | Whole Team | 🔴 | Direct WireGuard P2P |
+| `6.1` | Declare device groups (`servers`, `sysadmin-devices`), Zero-Trust ACLs, and setup keys in `mgmt/terraform/vpn/` | Akraradet | 🔵 | Clean minimalist model (2 groups, 2 rules) |
+| `6.2` | Automated peer enrollment of Management VM (Peer #1) with upgrade-aware lifecycle triggers | Akraradet | 🔵 | Live on `100.66.104.104` with `wt0` interface up! |
+| `6.3` | Verify LDAP (`ldap://100.66.104.104:3890`) lookup across new mesh network | Whole Team | 🔵 | Direct WireGuard query verified (5 users returned, <2ms) |
 
 ---
 
