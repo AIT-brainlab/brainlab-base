@@ -32,28 +32,31 @@ Collect the following details from the incoming researcher, student, or sysadmin
 
 ---
 
-### Step 2: Declare User in Identity-as-Code (`identity/users.tf`)
+### Step 2: Declare User in Identity-as-Code (`mgmt/identity/members.yaml`)
 
-1. Open [`mgmt/terraform/identity/users.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/mgmt/terraform/identity/users.tf).
-2. Add the member's profile to the `users` map:
-   ```hcl
-   "johndoe" = {
-     email      = "st123456@ait.asia"
-     first_name = "John"
-     last_name  = "Doe"
-     uid        = 123456                     # Numeric AIT Student ID (UID)
-     gid        = 10001                      # 10001 for member/student, 10000 for admin
-     home       = "/mnt/HDD/home/johndoe"
-     shell      = "/bin/bash"
-     groups     = ["member", "student"]      # Add "admin" if SysAdmin
-   }
+1. Open [`mgmt/identity/members.yaml`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/mgmt/identity/members.yaml).
+2. Add the member's profile to the `members` list:
+   ```yaml
+   - username: johndoe
+     display_name: "John Doe"
+     primary_email: st123456@ait.asia
+     secondary_emails:
+       - johndoe@gmail.com             # Optional: personal email for alumni continuation
+     uid: 123456                         # Numeric AIT Student ID (UID)
+     gid: 2000                          # Primary GID
+     home_directory: /mnt/pool-1/home/johndoe
+     login_shell: /bin/bash
+     groups: [brainlab]
    ```
-3. Apply the changes to the live LLDAP directory:
+3. Preview and apply changes to the live LLDAP directory:
    ```bash
-   cd mgmt/terraform/identity
-   terraform apply
+   # Preview diff
+   ./mgmt/identity/sync_users.py
+
+   # Apply to LLDAP
+   ./mgmt/identity/sync_users.py --apply
    ```
-   *(LLDAP creates the POSIX user, registers the custom attributes `uidNumber`, `gidNumber`, `homeDirectory`, and binds the group memberships in < 2 seconds).*
+   *(LLDAP creates the POSIX user, sets `uidnumber`, `gidnumber`, `homedirectory`, `loginshell`, and binds the group memberships in milliseconds).*
 
 ---
 

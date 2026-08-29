@@ -123,7 +123,7 @@ flowchart TD
 
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `4.1` | Log in to NetBird Web Dashboard (`https://netbird2.brain.cs.ait.ac.th`) via Google SSO | Akraradet | 🔴 | Single Account Mode: `@ait.asia` |
+| `4.1` | Log in to NetBird Web Dashboard (`https://netbird2.brain.cs.ait.ac.th`) and configure groups & policies (Runbook: [`netbird_setup.md`](netbird_setup.md)) | Akraradet | 🔴 | Single Account Mode: `brainlab@ait.asia` |
 | `4.2` | Create Ansible Playbook (`mgmt/ansible/enroll_peer.yml`) for peer enrollment | Akraradet | 🔴 | Generates ephemeral single-use setup keys |
 | `4.3` | Enroll physical GPU nodes (`la`, `tokyo`, `cairo`) and VM peer on-demand | Akraradet | 🔴 | Zero keys stored in Secret Manager |
 | `4.4` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔴 | 100% persistent across VM reboots |
