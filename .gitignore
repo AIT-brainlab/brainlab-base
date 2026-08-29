@@ -45,13 +45,16 @@ data/
 *.ldif
 *.lidf
 
-# --- Logs & Cache ---
-/api/*/cache/*
-/api/*/logs/*
+# --- Logs, Cache & Virtual Environments ---
+.venv/
+env/
+venv/
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+/api/*/cache/*
+/api/*/logs/*
 
 # --- IDE & Editors ---
 .DS_Store

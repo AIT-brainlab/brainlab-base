@@ -1,0 +1,14 @@
+[project]
+name = "brainlab-base"
+version = "0.1.0"
+description = "AIT Brainlab Base Knowledge Base, Infrastructure Runbooks & Management Plane"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ansible-core>=2.21.3",
+    "cryptography>=50.0.1",
+    "google-cloud-secret-manager>=2.30.0",
+    "jinja2>=3.1.6",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+]
