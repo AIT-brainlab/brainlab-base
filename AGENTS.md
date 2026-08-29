@@ -10,27 +10,26 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 ### 1. Core Management Plane (`mgmt/`) — `ait-brainlab-mgmt`
 - **Purpose**: Permanent, decoupled, low-cost ($0.45-$7.45/mo), 100% Stateless GitOps management control plane.
 - **Unified Control Plane VM**: Co-hosts **LLDAP** (Identity/POSIX) and **Self-Hosted NetBird** (VPN Control Plane & Signal) on a single lightweight `e2-micro` VM (< 300 MB RAM total) with automated Traefik Let's Encrypt SSL. Permanently eliminates device limits.
-- **Modular Terraform Multi-State Layout**: `mgmt/terraform/` is strictly split into 6 independent modules:
-  1. `iam/` (Sequence 1): Project Owners & Service Accounts (`brainlab-mgmt-terraform`). [🔵 Verified]
-  2. `dns/` (Sequence 2): Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`) & live records. [🔵 Verified]
-  3. `secrets/` (Sequence 3): Secret Manager keys (`lldap-jwt`, `lldap-admin-password`, `netbird-setup-key`). [🔵 Verified]
-  4. `vm/` (Sequence 4): Disposable Compute VM (`e2-micro`), Static IP, Firewall, and Docker Compose stack.
-  5. `identity/` (Sequence 5): Identity-as-Code — LLDAP Users, POSIX UIDs, Groups, and Multi-Email Bindings.
-  6. `vpn/` (Sequence 6): NetBird-as-Code — Device Groups, Server Setup Keys, and Zero-Trust ACL Policies.
-- **GCS Remote State Backend**: All modules use `backend "gcs"` targeting `gs://ait-brainlab-mgmt-tfstate` with unique prefixes (`iam`, `dns`, `secrets`, `vm`, `identity`, `vpn`).
+- **Decoupled 3-Layer Architecture**:
+  1. **Foundation (`mgmt/terraform/foundation/`)**: Root IAM governance, authoritative Cloud DNS zones (`brain.cs.ait.ac.th`, `dpi.ait.ac.th`), and Secret Manager prerequisite keys (`lldap-jwt`, `lldap-admin-password`, Google OAuth credentials). [🔵 Live]
+  2. **VM Engine (`mgmt/terraform/vm/`)**: Disposable Compute VM (`e2-micro`), dynamic ephemeral public IP with auto-binding Cloud DNS records (`ldap`, `netbird2`), VPC firewall, and clean 5-service Docker Compose stack (Traefik, LLDAP, NetBird Dashboard, Signal, Management). [🔵 Live]
+  3. **Identity GitOps (`mgmt/identity/`)**: Declarative Identity-as-Code — `members.yaml` declaring members, numeric UIDs/GIDs, Multi-Email Bindings, and automated GraphQL synchronization (`sync_users.py`). Zero third-party Terraform providers. [🔵 Live]
+  4. **Mesh Operations (`mgmt/ansible/`)**: Day 1 host and peer enrollment using ephemeral, single-use setup keys. [🟡 Staged]
+- **GCS Remote State Backend**: Terraform modules use `backend "gcs"` targeting `gs://ait-brainlab-mgmt-tfstate` with prefixes `foundation` and `vm`.
 - **One-Time Foundation Boundary**: GCP Project, Billing, and State Bucket are one-time prerequisites; all subsequent deployments and CI/CD assume these exist.
-- **Zero-Leakage Health Check Scripts**:
-  - `mgmt/terraform/dns/check_delegation.sh`: Automated DNS delegation & public resolution validator.
-  - `mgmt/terraform/secrets/check_secrets.sh`: Automated Secret Manager validator (zero terminal leakage).
 - **Traefik gRPC & Signal Routing**: All gRPC backends (`netbird-management`, `netbird-signal`) strictly require `traefik.http.services.<service>.loadbalancer.server.scheme=h2c`. Signal service is unified on port 443 HTTPS via Traefik router rule `Host(...) && PathPrefix('/signalexchange.SignalExchange/')` with `Proto: "https"` and `URI: "<subdomain>.<domain>:443"`.
 - **GCP Hairpin NAT Loopback**: The Management VM includes `127.0.0.1 <netbird_subdomain>.<domain>` in `/etc/hosts` to allow local host containers to communicate with Traefik TLS endpoints without external NAT hairpin blockage.
 - **Invariant**: **Never** provision heavy GPU compute or transient research workloads inside `ait-brainlab-mgmt`.
 
-### 2. Identity & Access Governance (`services/identity/` or `mgmt/terraform/identity/`)
+### 2. Identity & Access Governance (`mgmt/identity/`)
 - **AuthN (Google OAuth2)**: Handles 100% of identity verification, passwords, and 2FA. Supports `@ait.asia`, `@ait.ac.th`, and approved alumni `@gmail.com`. Graduation/deactivation by AIT automatically revokes access.
-- **AuthZ (LLDAP Passwordless Directory)**: LLDAP acts strictly as an authorization and POSIX mapping directory (mapping email $\rightarrow$ UID/GID/home path). LLDAP stores **NO user passwords** for web services.
-- **2-Tier Zero-Compute Gatekeeping**: Unprovisioned users fail at the LLDAP lookup stage (< 2ms) without spawning Docker containers or consuming GPU/RAM.
-- **Multi-Email Binding**: A single POSIX user record (`username`, numeric `UID`, `GID`, home path `/mnt/HDD/home/<username>/work`) can bind multiple authorized emails (e.g. `stXXXXXX@ait.asia` + `user@gmail.com`) for seamless alumni/graduate continuation without data copying or `chown`.
+- **AuthZ (LLDAP Passwordless Directory)**: LLDAP acts strictly as an authorization and POSIX mapping directory (mapping email $\rightarrow$ UID/GID/home path). LLDAP stores **NO user passwords** for human members (`NULL` password hash in database).
+- **Group Governance Model**:
+  - **`admin`**: Strictly reserved for the master lab service account (`bci` / `brainlab@ait.asia`).
+  - **`brainlab`**: All active lab researchers, students, faculty, and graduated alumni belong to `brainlab`.
+  - **Zero Alumni Group**: Eliminated in favor of Multi-Email Binding (binding personal `@gmail.com` directly to the member's persistent numeric UID).
+- **Read-Only Query Service Account (`ldapservice`)**: Downstream services (Linux SSSD on `la`, `tokyo`, `cairo`, TrueNAS, and JupyterHub) authenticate queries using a dedicated `ldapservice` account in group `lldap_strict_readonly`. Password lives in GCP Secret Manager (`lldap-readonly-password`). Created in post-deployment GitOps, **never in Terraform**.
+- **Multi-Email Binding**: A single POSIX user record (`username`, numeric `UID`, `GID`, home path `/mnt/pool-1/home/<username>`) can bind multiple authorized emails (e.g. `stXXXXXX@ait.asia` + `user@gmail.com`) for seamless alumni/graduate continuation without data copying or `chown`.
 - **Zero Internal TLS Overhead**: All internal LDAP communication across TrueNAS, Linux SSSD, and Ubuntu Desktops runs through the NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890` with `ldap_id_use_start_tls = false`). No self-signed certificates or Python `ldap3` package hacks.
 
 ### 3. Infrastructure Admin Domain (`infra/`)
@@ -102,8 +101,8 @@ brainlab-base/
 6. **Active Bootstrap Verification**: Use `terraform_data` with `local-exec` log streaming (`wait_for_bootstrap.sh`) to ensure `terraform apply` only completes after all containers are healthy.
 7. **Human vs Server NetBird Access**: Human researchers authenticate via Google OIDC without setup keys. Headless physical servers and cloud GPU VMs use Secret Manager enrollment keys.
 8. **NetBird Data Plane**: NetBird transfers (e.g. large 1TB datasets) are direct peer-to-peer (P2P) and must not be proxied through cloud relays.
-9. **Strict Sequential Deployment Order**: Terraform modules in `mgmt/terraform/` MUST strictly follow the 6-stage linear deployment sequence: `iam` (1) → `dns` (2) → `secrets` (3) → `vm` (4) → `identity` (5) → `vpn` (6). Sequence 6 (`vpn/`) is strictly the final capstone module and must NEVER be deployed on a project where Secrets, VM Engine, and Identity are not yet live and healthy.
-10. **Atomic Secret Lifecycle & Cohesion**: Sequence 3 (`secrets/`) manages strictly prerequisite VM bootstrap secrets (`lldap-jwt`, `lldap-admin-password`). Sequence 6 (`vpn/`) generates `netbird-setup-key` dynamically from the NetBird engine and stores it directly into GCP Secret Manager in a single atomic step without dummy placeholders.
+9. **Decoupled 3-Layer Lifecycle**: Terraform manages strictly Day 0 infrastructure (`foundation/` for IAM/DNS/Secrets, and `vm/` for compute & Traefik/LLDAP/NetBird control plane). Identity is managed via GitOps (`mgmt/identity/members.yaml`), and VPN mesh peer enrollment is handled via Day 1 Ansible (`mgmt/ansible/`).
+10. **Dynamic Single-Use Setup Keys**: Server enrollment setup keys are generated dynamically as single-use, ephemeral tokens for Ansible automation. Never store static NetBird setup keys in GCP Secret Manager or Terraform state.
 11. **Single Master Debug Console (Zero UI Drift)**: In NetBird GitOps, ONLY the master lab account (`brainlab@ait.asia`) is granted `role = "admin"` for the Web Dashboard for emergency signal inspection. All personal SysAdmin accounts (`st121413`, `akraradets`, `phue`) use `role = "user"` with `auto_groups = [sysadmin-devices]`, giving personal devices full WireGuard mesh reachability while preventing accidental Web UI configuration drift.
 12. **Explicit Device Group Naming**: Avoid ambiguous group names. Name physical operator hardware groups explicitly (e.g. `sysadmin-devices`) to prevent confusion between NetBird Web user roles (`role = "admin"`) and network firewall device groups.
 13. **Automated Peer Enrollment & Upgrade-Aware Lifecycle**: When enrolling local peers or deploying host containers via `terraform_data` with `local-exec` (e.g. `mgmt/terraform/vpn/peer.tf`), the resource MUST explicitly bind its container image version variable (e.g. `var.netbird_client_version`) to `triggers_replace`. This guarantees that image upgrades in Terraform automatically trigger image pull, container recreation, and network interface health verification (`wt0`) without manual SSH or container drift.
@@ -112,7 +111,12 @@ brainlab-base/
 16. **Automated GCS State Persistence for Control Plane Databases**: The Management VM automatically syncs SQLite databases (`store.db`, `users.db`) to `gs://<state_bucket>/backups/` every 6 hours and on system shutdown. On boot, the VM restores these databases before launching containers, ensuring instant disaster recovery and preserving NetBird PAT tokens and LLDAP POSIX attributes across VM destructions without manual intervention.
 17. **Fast, Non-Throttling VM Bootstrap**: Startup scripts on burstable control plane VMs (`e2-micro`) MUST NOT run full OS upgrades (`apt upgrade -y`). They must install only required runtime packages (`docker.io`, `docker-compose-v2`, `sqlite3`, `curl`, `jq`) with `--no-install-recommends` to keep VM initialization strictly under 90 seconds.
 18. **Zero Synthetic Token Injections**: Never write custom scripts that synthesize or reverse-engineer internal application database hashes (e.g. NetBird PATs). Official tokens must be generated through the application's native UI/API, saved to GCP Secret Manager, and preserved via database backups.
-19. **Decoupled Identity vs. VPN Approval Governance**: Lab member compute identities (POSIX UIDs, GIDs, home paths, group memberships) are strictly declared and managed as code in Terraform (`identity/users.tf`). Human VPN access is governed via Google OAuth2 SSO with manual administrator approval in the NetBird Web Dashboard, while network firewall ACLs and device groups remain 100% versioned in Terraform (`vpn/*.tf`).
+19. **Identity GitOps & Group Governance**:
+    - **Source of Truth**: All lab members, POSIX UIDs, GIDs, and home paths are declared in `mgmt/identity/members.yaml` and synchronized via `sync_users.py`.
+    - **Sole Administrator**: Only the master lab account (`bci` / `brainlab@ait.asia`) is granted `admin` membership. All other members belong strictly to `brainlab`.
+    - **Multi-Email Binding (Zero Alumni Group)**: Graduated members and alumni do not use an `alumni` group. Their personal `@gmail.com` accounts are bound directly to their single persistent POSIX UID (`uidNumber`) in `members.yaml`.
+    - **Read-Only Query Service Account (`ldapservice`)**: Provisioned post-deployment via `sync_users.py` in group `lldap_strict_readonly`. Password is stored in GCP Secret Manager as `lldap-readonly-password` and consumed by Linux SSSD (`/etc/sssd/sssd.conf`) and JupyterHub. Never provision `ldapservice` inside Terraform.
+20. **Single-Port Container SSH Gateway**: Compute nodes (`la`, `tokyo`) provide direct SSH access into user Jupyter containers via a single host gateway port (e.g. `2222`) using OpenSSH `ForceCommand docker exec -it -u %u jupyter-%u /bin/bash`. Never allocate or store per-student port numbers (`jupyterSshPort`) on host machines.
 
 ---
 
