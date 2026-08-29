@@ -1,0 +1,123 @@
+name: 📡 NetBird PAT Expiration Check & Reminder
+
+on:
+  schedule:
+    # Run at 00:00 UTC on the 1st of every month
+    - cron: '0 0 1 * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-pat-expiration:
+    name: Check NetBird PAT Expiration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: 'ait-brainlab-mgmt'
+          # Use Workload Identity Federation or Service Account Key if configured in GitHub Secrets
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+        continue-on-error: true
+
+      - name: Check NetBird Token Expiration
+        id: check_token
+        run: |
+          python3 - << 'EOF'
+          import os, sys, json, ssl, urllib.request, subprocess
+          from datetime import datetime, timezone
+
+          token = os.environ.get("NETBIRD_MGMT_TOKEN")
+          if not token:
+              try:
+                  token = subprocess.check_output(
+                      "gcloud secrets versions access latest --secret=netbird-mgmt-token --project=ait-brainlab-mgmt",
+                      shell=True
+                  ).decode().strip()
+              except Exception as e:
+                  print(f"Warning: Could not fetch token from Secret Manager: {e}")
+                  sys.exit(0)
+
+          api_url = "https://netbird2.brain.cs.ait.ac.th/api/users"
+          ctx = ssl.create_default_context()
+          ctx.check_hostname = False
+          ctx.verify_mode = ssl.CERT_NONE
+
+          req = urllib.request.Request(api_url, headers={"Authorization": f"Token {token}"})
+          try:
+              with urllib.request.urlopen(req, context=ctx) as res:
+                  users = json.loads(res.read().decode())
+          except Exception as e:
+              print(f"Failed to query NetBird API: {e}")
+              sys.exit(0)
+
+          now = datetime.now(timezone.utc)
+          expiring_tokens = []
+
+          for u in users:
+              for pat in u.get("personal_access_tokens", []):
+                  exp_str = pat.get("expiration_date")
+                  if exp_str:
+                      try:
+                          # ISO format parse
+                          exp_date = datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
+                          days_left = (exp_date - now).days
+                          if days_left <= 30:
+                              expiring_tokens.append({
+                                  "name": pat.get("name"),
+                                  "user": u.get("email"),
+                                  "days_left": days_left,
+                                  "exp_date": exp_str
+                              })
+                      except Exception:
+                          pass
+
+          if expiring_tokens:
+              print("EXPIRED_WARNING=true")
+              with open("expiring_tokens.json", "w") as f:
+                  json.dump(expiring_tokens, f)
+          else:
+              print("All PAT tokens are healthy and valid.")
+          EOF
+
+      - name: Create Alert Issue if Token is Expiring
+        if: steps.check_token.outputs.EXPIRED_WARNING == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const tokens = JSON.parse(fs.readFileSync('expiring_tokens.json', 'utf8'));
+            let body = `## ⚠️ Action Required: NetBird Personal Access Token (PAT) Expiring Soon\n\n`;
+            body += `The following NetBird API tokens used by GitOps automation are expiring within **30 days**:\n\n`;
+            body += `| Token Name | Account | Days Remaining | Expiration Date |\n`;
+            body += `| :--- | :--- | :---: | :--- |\n`;
+            for (const t of tokens) {
+              body += `| \`${t.name}\` | \`${t.user}\` | **${t.days_left} days** | \`${t.exp_date}\` |\n`;
+            }
+            body += `\n### 🔄 Renewal Standard Operating Procedure (60 Seconds)\n`;
+            body += `1. Log in to [https://netbird2.brain.cs.ait.ac.th](https://netbird2.brain.cs.ait.ac.th) as \`brainlab@ait.asia\`.\n`;
+            body += `2. Go to **Settings** $\\rightarrow$ **Access Tokens** $\\rightarrow$ Click **Create Access Token** (name: \`gitops-sync\`, expiry: 365 days).\n`;
+            body += `3. Add new version to GCP Secret Manager:\n`;
+            body += `   \`\`\`bash\n   echo -n "nbp_NEW_TOKEN" | gcloud secrets versions add netbird-mgmt-token --data-file=- --project=ait-brainlab-mgmt\n   \`\`\`\n`;
+            body += `4. Verify with: \`./mgmt/vpn/sync_netbird.py\`\n`;
+            body += `5. Revoke the old expired token in the NetBird Web Dashboard.\n`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 [Ops Alert] NetBird GitOps PAT Token Expiring Soon',
+              body: body,
+              labels: ['maintenance', 'security']
+            });

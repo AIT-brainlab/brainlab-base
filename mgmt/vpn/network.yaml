@@ -1,0 +1,97 @@
+# ==========================================================
+# 📡 AIT Brainlab - Declarative Network-as-Code (GitOps)
+# ==========================================================
+# Single Source of Truth for NetBird Groups, Policies & Setup Keys
+# Synchronized via ./mgmt/vpn/sync_netbird.py [--dry-run | --apply]
+
+# ----------------------------------------------------------
+# 1. Device Groups (Composable 2-Tag Model: loc-* and tier-*)
+# ----------------------------------------------------------
+groups:
+  # Location Tags
+  - name: loc-onprem-csim
+    description: "CSIM Server Room physical hardware (10GbE LAN)"
+  - name: loc-onprem-lab
+    description: "Physical workstations in Brainlab student room"
+  - name: loc-cloud-gcp
+    description: "Google Cloud Platform compute instances"
+  - name: loc-cloud-aws
+    description: "Amazon Web Services compute instances"
+
+  # Role / Tier Tags
+  - name: tier-servers
+    description: "All GPU compute and NAS servers across all locations"
+  - name: tier-storage
+    description: "Central network-attached storage (TrueNAS cairo)"
+  - name: tier-mgmt
+    description: "Management control plane VM"
+  - name: tier-operators
+    description: "SysAdmin personal laptops (full god-mode access)"
+  - name: tier-students
+    description: "General researcher & student personal laptops"
+
+# ----------------------------------------------------------
+# 2. Zero-Trust Access Control Policies
+# ----------------------------------------------------------
+policies:
+  - name: Servers-Cluster-Mesh
+    description: "Allow full interconnectivity between servers for distributed training & NFS"
+    enabled: true
+    rules:
+      - name: cluster-all-traffic
+        action: accept
+        protocol: all
+        bidirectional: true
+        sources: [tier-servers]
+        destinations: [tier-servers]
+
+  - name: SysAdmin-God-Mode
+    description: "Full remote administrative access for SysAdmin operators"
+    enabled: true
+    rules:
+      - name: sysadmin-to-all
+        action: accept
+        protocol: all
+        bidirectional: true
+        sources: [tier-operators]
+        destinations: [tier-servers, tier-mgmt]
+
+  - name: Student-Compute-Access
+    description: "Grant students access to compute services while isolating student laptops"
+    enabled: true
+    rules:
+      - name: student-to-compute-ports
+        action: accept
+        protocol: tcp
+        bidirectional: false
+        sources: [tier-students]
+        destinations: [tier-servers]
+        ports: ["2222", "8888", "8000", "5000", "631"]
+      - name: student-ping
+        action: accept
+        protocol: icmp
+        bidirectional: false
+        sources: [tier-students]
+        destinations: [tier-servers]
+
+  - name: LDAP-Directory-Access
+    description: "Allow servers to query Cloud LLDAP over encrypted WireGuard mesh"
+    enabled: true
+    rules:
+      - name: ldap-query-port
+        action: accept
+        protocol: tcp
+        bidirectional: false
+        sources: [tier-servers]
+        destinations: [tier-mgmt]
+        ports: ["3890"]
+
+# ----------------------------------------------------------
+# 3. Server Setup Keys (Day 1 Ansible / Host Onboarding)
+# ----------------------------------------------------------
+setup_keys:
+  - name: onprem-csim-enrollment
+    type: reusable
+    expires_in_days: 30
+    auto_groups: [loc-onprem-csim, tier-servers]
+    usage_limit: 0

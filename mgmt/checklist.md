@@ -116,17 +116,21 @@ flowchart TD
 | `3.2` | Develop `mgmt/identity/sync_users.py` calling LLDAP GraphQL API with `--dry-run` and `--apply` | Akraradet | 🔵 | Standard Python; auto-provisions schema attributes |
 | `3.3` | Seed all 28 lab users into LLDAP with forced POSIX UIDs, GIDs, and home paths | Akraradet | 🔵 | Applied live: all 28 users created; only `bci` is admin |
 | `3.4` | Verify directory queries (LDAP authentication and POSIX UID resolution) | Akraradet | 🔵 | Verified live: all 28 members, UIDs, and multi-email bound |
+| `3.5` | Provision read-only service account `ldapservice` in `lldap_strict_readonly` with secret `lldap-readonly-password` | Akraradet | 🔵 | Created live in LLDAP; tested and backed up to GCS |
 
 ---
 
-## 📡 Phase 4: NetBird Mesh Network Operations (Ansible Day 1)
+## 📡 Phase 4: NetBird GitOps & Mesh Network Operations (`mgmt/vpn`)
 
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `4.1` | Log in to NetBird Web Dashboard (`https://netbird2.brain.cs.ait.ac.th`) and configure groups & policies (Runbook: [`netbird_setup.md`](netbird_setup.md)) | Akraradet | 🔴 | Single Account Mode: `brainlab@ait.asia` |
-| `4.2` | Create Ansible Playbook (`mgmt/ansible/enroll_peer.yml`) for peer enrollment | Akraradet | 🔴 | Generates ephemeral single-use setup keys |
-| `4.3` | Enroll physical GPU nodes (`la`, `tokyo`, `cairo`) and VM peer on-demand | Akraradet | 🔴 | Zero keys stored in Secret Manager |
-| `4.4` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔴 | 100% persistent across VM reboots |
+| `4.1` | Initial Google SSO login to NetBird (`https://netbird2.brain.cs.ait.ac.th`) as `brainlab@ait.asia` to claim Ownership | Akraradet | 🔵 | Claimed live: `brainlab@ait.asia` is master Account Owner |
+| `4.2` | Generate 365-day PAT `gitops-sync` and store in GCP Secret Manager `netbird-mgmt-token` | Akraradet | 🟡 | One-time bridge to enable GitOps API automation |
+| `4.3` | Build Declarative Network-as-Code ([`network.yaml`](vpn/network.yaml)) and Sync Engine ([`sync_netbird.py`](vpn/sync_netbird.py)) | Akraradet | 🔵 | Supports Composable 2-Tag Model, policies, and setup keys |
+| `4.4` | Execute `./mgmt/vpn/sync_netbird.py --apply` to reconcile groups, policies, and keys | Akraradet | 🟡 | Reconciles 6 groups, 4 policies, and setup keys in 2s |
+| `4.5` | Deploy GitHub Action ([`.github/workflows/netbird_pat_reminder.yml`](../.github/workflows/netbird_pat_reminder.yml)) for 365-day PAT reminder | Akraradet | 🔵 | Runs monthly; creates alert issue 30 days before expiration |
+| `4.6` | Enroll physical GPU nodes (`la`, `tokyo`, `cairo`) via Ansible / Setup Key | Akraradet | 🔴 | Day 1 host onboarding using single-use setup keys |
+| `4.7` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔴 | 100% persistent across VM reboots |
 
 ---
 
