@@ -1,0 +1,157 @@
+---
+# ==========================================================
+# 📡 AIT Brainlab - Automated NetBird Peer Enrollment Playbook
+# ==========================================================
+# Enrolls hosts into the WireGuard mesh with automated tags:
+#   - Management VM   -> tier-mgmt
+#   - TrueNAS (cairo) -> loc-onprem-csim, tier-storage
+#   - Compute (la, tokyo) -> loc-onprem-csim, tier-servers
+# ==========================================================
+
+- name: 🔑 Resolve Ephemeral Setup Keys from NetBird Control Plane
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Fetch NetBird Management Token from GCP Secret Manager
+      ansible.builtin.command:
+        cmd: gcloud secrets versions access latest --secret=netbird-mgmt-token --project=ait-brainlab-mgmt
+      register: secret_token_cmd
+      changed_when: false
+
+    - name: Query NetBird Management API for Setup Keys
+      ansible.builtin.uri:
+        url: "{{ netbird_management_url }}/api/setup-keys"
+        method: GET
+        headers:
+          Authorization: "Token {{ secret_token_cmd.stdout | trim }}"
+        return_content: true
+      register: setup_keys_resp
+
+    - name: Parse Setup Keys by Name
+      ansible.builtin.set_fact:
+        nb_keys: "{{ setup_keys_resp.json | items2dict(key_name='name', value_name='key') }}"
+
+    - name: Display Resolved Setup Keys
+      ansible.builtin.debug:
+        msg: "Successfully resolved setup keys for: {{ nb_keys.keys() | list }}"
+
+- name: 🖥️ Enroll Management VM Peer (tier-mgmt)
+  hosts: mgmt
+  gather_facts: true
+  tasks:
+    - name: Ensure NetBird client directory exists
+      ansible.builtin.file:
+        path: /opt/brainlab/netbird/client
+        state: directory
+        mode: '0750'
+
+    - name: Deploy netbird-client Docker Container
+      ansible.builtin.shell: |
+        if [ ! "$(docker ps -q -f name=netbird-client)" ]; then
+          docker rm -f netbird-client 2>/dev/null || true
+          docker run -d \
+            --name netbird-client \
+            --restart unless-stopped \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add SYS_MODULE \
+            -v /dev/net/tun:/dev/net/tun \
+            -v /opt/brainlab/netbird/client:/etc/netbird \
+            -e TZ=Asia/Bangkok \
+            -e NB_MANAGEMENT_URL="{{ netbird_management_url }}" \
+            -e NB_SETUP_KEY="{{ hostvars['localhost']['nb_keys']['mgmt-vm-enrollment'] | default(setup_key | default('')) }}" \
+            netbirdio/netbird:{{ netbird_version }}
+        fi
+      register: docker_run_cmd
+      changed_when: docker_run_cmd.stdout != ""
+
+    - name: Wait for wt0 WireGuard interface
+      ansible.builtin.command:
+        cmd: ip addr show wt0
+      register: wt0_check
+      until: wt0_check.rc == 0
+      retries: 15
+      delay: 2
+      changed_when: false
+
+    - name: Verify Management NetBird Status
+      ansible.builtin.command:
+        cmd: docker exec netbird-client netbird status
+      register: mgmt_status
+      changed_when: false
+
+    - name: Print Management VM NetBird Status
+      ansible.builtin.debug:
+        var: mgmt_status.stdout_lines
+
+- name: 💾 Enroll TrueNAS Storage Node (loc-onprem-csim, tier-storage)
+  hosts: storage
+  gather_facts: true
+  tasks:
+    - name: Check if NetBird is installed
+      ansible.builtin.command:
+        cmd: which netbird
+      register: netbird_installed
+      failed_when: false
+      changed_when: false
+
+    - name: Install NetBird Client (if missing)
+      ansible.builtin.shell:
+        cmd: curl -fsSL https://pkgs.netbird.io/install.sh | sh
+      when: netbird_installed.rc != 0
+
+    - name: Connect TrueNAS to NetBird Mesh
+      ansible.builtin.command:
+        cmd: >
+          netbird up
+          --management-url {{ netbird_management_url }}
+          --setup-key {{ hostvars['localhost']['nb_keys']['truenas-storage-enrollment'] | default(setup_key | default('')) }}
+      register: truenas_up
+      changed_when: "'Connected' in truenas_up.stdout or truenas_up.rc == 0"
+
+    - name: Verify TrueNAS NetBird Status
+      ansible.builtin.command:
+        cmd: netbird status
+      register: truenas_status
+      changed_when: false
+
+    - name: Print TrueNAS Status
+      ansible.builtin.debug:
+        var: truenas_status.stdout_lines
+
+- name: ⚡ Enroll Compute Servers (loc-onprem-csim, tier-servers)
+  hosts: servers
+  gather_facts: true
+  tasks:
+    - name: Check if NetBird is installed
+      ansible.builtin.command:
+        cmd: which netbird
+      register: netbird_installed
+      failed_when: false
+      changed_when: false
+
+    - name: Install NetBird Client (if missing)
+      ansible.builtin.shell:
+        cmd: curl -fsSL https://pkgs.netbird.io/install.sh | sh
+      when: netbird_installed.rc != 0
+
+    - name: Connect Server to NetBird Mesh
+      ansible.builtin.command:
+        cmd: >
+          netbird up
+          --management-url {{ netbird_management_url }}
+          --setup-key {{ hostvars['localhost']['nb_keys']['onprem-csim-enrollment'] | default(setup_key | default('')) }}
+      register: server_up
+      changed_when: "'Connected' in server_up.stdout or server_up.rc == 0"
+
+    - name: Verify Server NetBird Status
+      ansible.builtin.command:
+        cmd: netbird status
+      register: server_status
+      changed_when: false
+
+    - name: Print Server Status
+      ansible.builtin.debug:
+        var: server_status.stdout_lines
