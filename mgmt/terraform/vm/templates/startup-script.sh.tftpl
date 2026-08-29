@@ -62,7 +62,7 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
   "PKCEAuthorizationFlow": {
     "ProviderConfig": {
       "ClientID": "${google_oauth_client_id}",
-      "ClientSecret": "",
+      "ClientSecret": "${google_oauth_client_secret}",
       "Audience": "${google_oauth_client_id}",
       "Scope": "openid profile email",
       "RedirectURLs": [
