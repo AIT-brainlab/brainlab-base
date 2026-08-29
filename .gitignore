@@ -42,6 +42,8 @@ data/
 *.sqlite
 *.sqlite3
 *.db
+*.ldif
+*.lidf
 
 # --- Logs & Cache ---
 /api/*/cache/*

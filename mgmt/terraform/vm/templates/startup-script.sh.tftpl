@@ -45,7 +45,7 @@ else
 fi
 
 # Add local loopback entry for self-referential SSL traffic (bypasses GCP Hairpin NAT)
-echo "127.0.0.1 ${netbird_staging_subdomain}.${domain} authen2.${domain}" >> /etc/hosts
+echo "127.0.0.1 ${netbird_subdomain}.${domain} ${lldap_subdomain}.${domain}" >> /etc/hosts
 
 # Generate NetBird Management Configuration with Google OAuth2 enabled
 cat << 'EOF' > /opt/brainlab/netbird/management.json
@@ -61,7 +61,7 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
   "SingleAccountModeDomain": "ait.asia",
   "Datadir": "/var/lib/netbird",
   "Signal": {
-    "URI": "${netbird_staging_subdomain}.${domain}:443",
+    "URI": "${netbird_subdomain}.${domain}:443",
     "Proto": "https"
   },
   "EmbeddedIdP": {
@@ -140,6 +140,11 @@ cd /opt/brainlab
 docker compose pull --quiet
 docker compose up -d --remove-orphans
 
+echo "==> ⏳ Verifying control plane containers..."
+sleep 3
+docker compose ps
+
 echo "=========================================================="
 echo "🎉 ALL BRAINLAB MANAGEMENT SERVICES ARE OPERATIONAL!"
 echo "=========================================================="
+

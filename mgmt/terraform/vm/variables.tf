@@ -29,25 +29,13 @@ variable "domain" {
 }
 
 variable "lldap_subdomain" {
-  description = "Production subdomain for LLDAP"
+  description = "Subdomain for LLDAP Directory Service"
   type        = string
-  default     = "authen"
-}
-
-variable "lldap_staging_subdomain" {
-  description = "Staging/Canary subdomain for LLDAP"
-  type        = string
-  default     = "authen2"
+  default     = "ldap"
 }
 
 variable "netbird_subdomain" {
-  description = "Production subdomain for NetBird VPN"
-  type        = string
-  default     = "netbird"
-}
-
-variable "netbird_staging_subdomain" {
-  description = "Staging/Canary subdomain for NetBird VPN"
+  description = "Subdomain for NetBird VPN Control Plane"
   type        = string
   default     = "netbird2"
 }
@@ -63,3 +51,22 @@ variable "state_bucket" {
   type        = string
   default     = "ait-brainlab-mgmt-tfstate"
 }
+
+variable "netbird_version" {
+  description = "Version tag for NetBird Management, Signal, and Client"
+  type        = string
+  default     = "0.77.0"
+}
+
+variable "lldap_version" {
+  description = "Version tag for LLDAP directory container"
+  type        = string
+  default     = "2026-08-10-debian"
+}
+
+variable "traefik_version" {
+  description = "Version tag for Traefik reverse proxy"
+  type        = string
+  default     = "v3.7"
+}
+

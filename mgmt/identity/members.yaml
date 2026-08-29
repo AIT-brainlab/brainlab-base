@@ -1,0 +1,264 @@
+# ==========================================================
+# 👥 AIT Brainlab Members (Identity-as-Code)
+# ==========================================================
+
+groups:
+  - name: admin
+    display_name: "Administrators"
+  - name: brainlab
+    display_name: "Brainlab Members"
+
+members:
+  - username: bci
+    display_name: "brainlab"
+    primary_email: brainlab@ait.asia
+    uid: 2009
+    gid: 2009
+    home_directory: /home/bci
+    login_shell: /bin/bash
+    groups: [admin, brainlab]
+
+  - username: worachotn
+    display_name: "Worachot Nakduk"
+    primary_email: st122153@ait.asia
+    uid: 101001
+    gid: 2030
+    home_directory: /mnt/pool-1/home/worachotn
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: nopphawann
+    display_name: "Nopphawan Nurnuansuwan"
+    primary_email: st122410@ait.asia
+    uid: 101003
+    gid: 2031
+    home_directory: /mnt/pool-1/home/nopphawann
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: pranisaac
+    display_name: "Pranisaa Charnparttaravanit"
+    primary_email: st123175@ait.asia
+    uid: 101004
+    gid: 2011
+    home_directory: /mnt/pool-1/home/pranisaac
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: chaklams
+    display_name: "Chaklam Silpasuwanchai"
+    primary_email: chaklam@ait.asia
+    uid: 101007
+    gid: 2010
+    home_directory: /mnt/pool-1/home/chaklams
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: pasitt
+    display_name: "Pasit Tiwawongrut"
+    primary_email: pasitt@ait.asia
+    uid: 101011
+    gid: 2023
+    home_directory: /mnt/pool-1/home/pasitt
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: wanchanoks
+    display_name: "Wanchanok Sunthorn"
+    primary_email: st122053@ait.asia
+    uid: 101014
+    gid: 2034
+    home_directory: /mnt/pool-1/home/wanchanoks
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: aimanl
+    display_name: "Aiman Lameesa"
+    primary_email: aiman.lameesa@gmail.com
+    uid: 110008
+    gid: 2018
+    home_directory: /mnt/pool-1/home/aimanl
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: akraradets
+    display_name: "Akraradet Sinsamersuk"
+    primary_email: st121413@ait.asia
+    secondary_emails:
+      - akraradets@gmail.com
+    uid: 121413
+    gid: 2008
+    home_directory: /mnt/pool-1/home/akraradets
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: pirunratk
+    display_name: "Pirunrat Kaewphanoaw"
+    primary_email: st124003@ait.asia
+    uid: 124003
+    gid: 2028
+    home_directory: /mnt/pool-1/home/pirunratk
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: rakshyam
+    display_name: "Rakshya Moktan"
+    primary_email: st124088@ait.asia
+    uid: 124088
+    gid: 2027
+    home_directory: /mnt/pool-1/home/rakshyam
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: minnb
+    display_name: "Minn Banya"
+    primary_email: st124145@ait.asia
+    uid: 124145
+    gid: 2015
+    home_directory: /mnt/pool-1/home/minnb
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: nathass
+    display_name: "Nathas Sung"
+    primary_email: st124323@ait.asia
+    uid: 124323
+    gid: 2024
+    home_directory: /mnt/pool-1/home/nathass
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: deepalim
+    display_name: "Deepali Mishra"
+    primary_email: st124434@ait.asia
+    uid: 124434
+    gid: 2026
+    home_directory: /mnt/pool-1/home/deepalim
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: thamakornk
+    display_name: "Thamakorn Kiattikaikul"
+    primary_email: st124481@ait.asia
+    uid: 124481
+    gid: 2033
+    home_directory: /mnt/pool-1/home/thamakornk
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: binitk
+    display_name: "Binit Khadka"
+    primary_email: st124783@ait.asia
+    uid: 124783
+    gid: 2019
+    home_directory: /mnt/pool-1/home/binitk
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: phuet
+    display_name: "Phue Pwint Thwe"
+    primary_email: st124784@ait.asia
+    uid: 124784
+    gid: 2016
+    home_directory: /mnt/pool-1/home/phuet
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: todsavadt
+    display_name: "Todsavad Tangtortan"
+    primary_email: st124859@ait.asia
+    uid: 124859
+    gid: 2029
+    home_directory: /mnt/pool-1/home/todsavadt
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: patsakornt
+    display_name: "Patsakorn Tangkachaiyanunt"
+    primary_email: st124876@ait.asia
+    uid: 124876
+    gid: 2032
+    home_directory: /mnt/pool-1/home/patsakornt
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: duyenl
+    display_name: "Duyen Lam"
+    primary_email: st124942@ait.asia
+    uid: 124942
+    gid: 2020
+    home_directory: /mnt/pool-1/home/duyenl
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: luk
+    display_name: "Lu Kyaw"
+    primary_email: st124956@ait.asia
+    uid: 124956
+    gid: 2012
+    home_directory: /mnt/pool-1/home/luk
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: khiny
+    display_name: "Khin Yadanar"
+    primary_email: st124959@ait.asia
+    uid: 124959
+    gid: 2014
+    home_directory: /mnt/pool-1/home/khiny
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: kaungs
+    display_name: "Kaung Sithu"
+    primary_email: st124974@ait.asia
+    uid: 124974
+    gid: 2022
+    home_directory: /mnt/pool-1/home/kaungs
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: kaungn
+    display_name: "Kaung Nyo Lwin"
+    primary_email: st125066@ait.asia
+    uid: 125066
+    gid: 2021
+    home_directory: /mnt/pool-1/home/kaungn
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: soehn
+    display_name: "Soe Htet Naing"
+    primary_email: st125166@ait.asia
+    uid: 125166
+    gid: 2017
+    home_directory: /mnt/pool-1/home/soehn
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: aryas
+    display_name: "Arya Shah"
+    primary_email: st125462@ait.asia
+    uid: 125462
+    gid: 2013
+    home_directory: /mnt/pool-1/home/aryas
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: nabing
+    display_name: "Nabin Gangtan Lama"
+    primary_email: st125985@ait.ac.th
+    uid: 125985
+    gid: 2042
+    home_directory: /mnt/pool-1/home/nabing
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: abhinavl
+    display_name: "Abhinav Lugun"
+    primary_email: abhinavlugun@yahoo.com
+    uid: 220001
+    gid: 2025
+    home_directory: /mnt/pool-1/home/abhinavl
+    login_shell: /bin/bash
+    groups: [brainlab]

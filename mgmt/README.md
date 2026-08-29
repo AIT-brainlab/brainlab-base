@@ -39,7 +39,7 @@ flowchart TD
             NBSignal["📡 NetBird Signal<br/>• gRPC :33073 (Connection Broker)"]
         end
 
-        Traefik -->|"Proxy authen2.brain..."| LLDAP
+        Traefik -->|"Proxy ldap.brain..."| LLDAP
         Traefik -->|"Proxy netbird2.brain... (h2c)"| NBMgmt
         Traefik -->|"PathPrefix(/signalexchange...) (h2c)"| NBSignal
     end
@@ -63,14 +63,14 @@ Every single element of the management plane is either **declared in Git** or **
 
 | Component | Technology | Where State Lives | Self-Healing / Recovery |
 | :--- | :--- | :--- | :--- |
-| **👤 User Directory** | LLDAP | Git (`identity/*.tf`) + GCS (`backups/lldap/users.db`) | Restored from GCS in 1s on boot. Synced to Git via Terraform. |
-| **📡 VPN Network** | NetBird | Git (`vpn/*.tf`) + GCS (`backups/netbird/store.db`) | Restored from GCS in 1s on boot. Zero-trust ACLs & setup keys versioned in Git. |
-| **🌐 Domain Routing** | Cloud DNS | Git (`dns/*.tf`) | 100% managed on Google Anycast network. Zero downtime during VM reboots. |
-| **👥 Governance** | IAM | Git (`iam/*.tf`) | Root owners & automation service account versioned in Git. |
+| **👤 User Directory** | LLDAP | Git ([`mgmt/identity/members.yaml`](identity/members.yaml)) + GCS (`backups/lldap/users.db`) | Restored from GCS in 1s on boot. Synced to Git via [`sync_users.py`](identity/sync_users.py). |
+| **📡 VPN Network** | NetBird | Web UI / Ansible + GCS (`backups/netbird/store.db`) | Restored from GCS in 1s on boot. Automated peer enrollment via Ansible Day 1. |
+| **🌐 Domain Routing** | Cloud DNS | Git ([`foundation/dns.tf`](terraform/foundation/dns.tf)) | 100% managed on Google Anycast network. Zero downtime during VM reboots. |
+| **👥 Governance** | IAM | Git ([`foundation/iam.tf`](terraform/foundation/iam.tf)) | Root owners & automation service account versioned in Git. |
 | **🔐 Credentials** | Secret Manager | GCP Secret Manager | Protected by `lifecycle.prevent_destroy = true`. |
 | **🔒 SSL Certificates** | Traefik | Let's Encrypt ACME | Traefik automatically requests & renews HTTPS certs on boot in 10s. |
 | **🖥️ Compute VM** | `e2-micro` | Disposable | 100% Cattle. If destroyed, rebuilt from Git & GCS state in <90s. |
-| **💾 User Data** | TrueNAS NFS | CSIM Server Room | All permanent research files stay safely on physical NAS (`/mnt/HDD/home`). |
+| **💾 User Data** | TrueNAS NFS | CSIM Server Room | All permanent research files stay safely on physical NAS (`/mnt/pool-1/home`). |
 
 ---
 

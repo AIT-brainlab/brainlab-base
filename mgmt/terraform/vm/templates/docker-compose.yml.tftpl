@@ -3,7 +3,7 @@ services:
   # 🔒 Traefik v3: Edge Proxy & Automated Let's Encrypt SSL
   # ==========================================================
   traefik:
-    image: traefik:v3.7
+    image: traefik:${traefik_version}
     container_name: traefik
     restart: unless-stopped
     environment:
@@ -38,7 +38,7 @@ services:
   # 👤 LLDAP: Lightweight Identity & POSIX Directory
   # ==========================================================
   lldap:
-    image: lldap/lldap:2026-08-10-debian
+    image: lldap/lldap:${lldap_version}
     container_name: lldap
     restart: unless-stopped
     environment:
@@ -46,7 +46,7 @@ services:
       - LLDAP_JWT_SECRET=$${LLDAP_JWT_SECRET}
       - LLDAP_LDAP_USER_PASS=$${LLDAP_ADMIN_PASSWORD}
       - LLDAP_LDAP_BASE_DN=dc=brain,dc=cs,dc=ait,dc=ac,dc=th
-      - LLDAP_HTTP_URL=https://${lldap_staging_subdomain}.${domain}
+      - LLDAP_HTTP_URL=https://${lldap_subdomain}.${domain}
       - LLDAP_LDAP_PORT=3890
       - LLDAP_HTTP_PORT=17170
     ports:
@@ -57,7 +57,7 @@ services:
       - "/etc/timezone:/etc/timezone:ro"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.lldap.rule=Host(`${lldap_staging_subdomain}.${domain}`)"
+      - "traefik.http.routers.lldap.rule=Host(`${lldap_subdomain}.${domain}`)"
       - "traefik.http.routers.lldap.entrypoints=websecure"
       - "traefik.http.routers.lldap.tls.certresolver=letsencrypt"
       - "traefik.http.services.lldap.loadbalancer.server.port=17170"
@@ -73,8 +73,8 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Asia/Bangkok
-      - NETBIRD_MGMT_API_ENDPOINT=https://${netbird_staging_subdomain}.${domain}
-      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${netbird_staging_subdomain}.${domain}
+      - NETBIRD_MGMT_API_ENDPOINT=https://${netbird_subdomain}.${domain}
+      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${netbird_subdomain}.${domain}
       - AUTH_AUTHORITY=https://accounts.google.com
       - AUTH_CLIENT_ID=$${GOOGLE_OAUTH_CLIENT_ID}
       - AUTH_CLIENT_SECRET=$${GOOGLE_OAUTH_CLIENT_SECRET}
@@ -87,7 +87,7 @@ services:
       - USE_AUTH0=false
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.netbird-dashboard.rule=Host(`${netbird_staging_subdomain}.${domain}`)"
+      - "traefik.http.routers.netbird-dashboard.rule=Host(`${netbird_subdomain}.${domain}`)"
       - "traefik.http.routers.netbird-dashboard.entrypoints=websecure"
       - "traefik.http.routers.netbird-dashboard.tls.certresolver=letsencrypt"
       - "traefik.http.routers.netbird-dashboard.priority=1"
@@ -99,7 +99,7 @@ services:
   # 📡 NetBird: Self-Hosted WireGuard VPN Signal Service
   # ==========================================================
   netbird-signal:
-    image: netbirdio/signal:0.77.0
+    image: netbirdio/signal:${netbird_version}
     container_name: netbird-signal
     restart: unless-stopped
     environment:
@@ -109,7 +109,7 @@ services:
       - "/etc/timezone:/etc/timezone:ro"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.netbird-signal.rule=Host(`${netbird_staging_subdomain}.${domain}`) && PathPrefix(`/signalexchange.SignalExchange/`)"
+      - "traefik.http.routers.netbird-signal.rule=Host(`${netbird_subdomain}.${domain}`) && PathPrefix(`/signalexchange.SignalExchange/`)"
       - "traefik.http.routers.netbird-signal.entrypoints=websecure"
       - "traefik.http.routers.netbird-signal.tls.certresolver=letsencrypt"
       - "traefik.http.routers.netbird-signal.priority=100"
@@ -123,7 +123,7 @@ services:
   # 📡 NetBird: Self-Hosted WireGuard Management Control Plane
   # ==========================================================
   netbird-management:
-    image: netbirdio/management:0.77.0
+    image: netbirdio/management:${netbird_version}
     container_name: netbird-management
     restart: unless-stopped
     environment:
@@ -137,7 +137,7 @@ services:
       - "/etc/timezone:/etc/timezone:ro"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.netbird-mgmt.rule=Host(`${netbird_staging_subdomain}.${domain}`) && (PathPrefix(`/api`) || PathPrefix(`/management.`) || PathPrefix(`/.well-known`) || PathPrefix(`/oauth2`) || PathPrefix(`/dex`))"
+      - "traefik.http.routers.netbird-mgmt.rule=Host(`${netbird_subdomain}.${domain}`) && (PathPrefix(`/api`) || PathPrefix(`/management.`) || PathPrefix(`/.well-known`) || PathPrefix(`/oauth2`) || PathPrefix(`/dex`))"
       - "traefik.http.routers.netbird-mgmt.entrypoints=websecure"
       - "traefik.http.routers.netbird-mgmt.tls.certresolver=letsencrypt"
       - "traefik.http.routers.netbird-mgmt.priority=10"
@@ -149,3 +149,5 @@ services:
 networks:
   mgmt-network:
     name: brainlab-mgmt-net
+
+

@@ -3,27 +3,17 @@ output "vm_name" {
   value       = google_compute_instance.mgmt_vm.name
 }
 
-output "vm_static_ip" {
-  description = "Permanent Public Static IP assigned to the Management Control Plane"
-  value       = google_compute_address.mgmt_ip.address
+output "vm_public_ip" {
+  description = "Dynamic Ephemeral Public IP assigned to the Management VM"
+  value       = google_compute_instance.mgmt_vm.network_interface[0].access_config[0].nat_ip
 }
 
-output "lldap_staging_url" {
-  description = "Staging URL for the LLDAP Identity Management Portal"
-  value       = "https://${var.lldap_staging_subdomain}.${var.domain}"
-}
-
-output "netbird_staging_url" {
-  description = "Staging URL for the NetBird VPN Control Plane Dashboard"
-  value       = "https://${var.netbird_staging_subdomain}.${var.domain}"
-}
-
-output "lldap_production_url" {
-  description = "Production URL for the LLDAP Identity Management Portal"
+output "lldap_url" {
+  description = "URL for the LLDAP Identity Management Portal"
   value       = "https://${var.lldap_subdomain}.${var.domain}"
 }
 
-output "netbird_production_url" {
-  description = "Production URL for the NetBird VPN Control Plane Dashboard"
+output "netbird_url" {
+  description = "URL for the NetBird VPN Control Plane Dashboard"
   value       = "https://${var.netbird_subdomain}.${var.domain}"
 }

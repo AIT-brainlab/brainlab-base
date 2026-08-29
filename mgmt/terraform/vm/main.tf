@@ -1,3 +1,12 @@
+# ==========================================================
+# 🖥️ AIT Brainlab - Disposable Management VM Engine
+# ==========================================================
+# 100% Stateless & Self-Healing Control Plane ("Cattle, not Pets")
+# - Runs Traefik v3, LLDAP, NetBird Management, Signal, and Client
+# - Automatically binds authen2 and netbird2 to its dynamic ephemeral IP
+# - Hydrates SQLite databases from GCS in 1 second on boot
+# ==========================================================
+
 terraform {
   required_version = ">= 1.5.0"
   required_providers {
@@ -50,43 +59,6 @@ data "google_secret_manager_secret_version" "google_oauth_client_secret" {
   project = var.project_id
   secret  = "google-oauth-client-secret"
   version = "latest"
-}
-
-# ----------------------------------------------------------
-# 🌐 Reserved Static External Public IP
-# ----------------------------------------------------------
-resource "google_compute_address" "mgmt_ip" {
-  name        = "brainlab-mgmt-static-ip"
-  region      = var.region
-  description = "Permanent static IP for AIT Brainlab Management Control Plane"
-  depends_on  = [google_project_service.compute_api]
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-# ----------------------------------------------------------
-# 🌐 Service DNS Ingress Records (Service-Bounded Context)
-# ----------------------------------------------------------
-# Automatically bind authen2.brain.cs.ait.ac.th to this VM's Static IP
-resource "google_dns_record_set" "authen2" {
-  name         = "${var.lldap_staging_subdomain}.${var.domain}."
-  type         = "A"
-  ttl          = 300
-  managed_zone = "ait-brainlab"
-  rrdatas      = [google_compute_address.mgmt_ip.address]
-  depends_on   = [google_compute_address.mgmt_ip]
-}
-
-# Automatically bind netbird2.brain.cs.ait.ac.th to this VM's Static IP
-resource "google_dns_record_set" "netbird2" {
-  name         = "${var.netbird_staging_subdomain}.${var.domain}."
-  type         = "A"
-  ttl          = 300
-  managed_zone = "ait-brainlab"
-  rrdatas      = [google_compute_address.mgmt_ip.address]
-  depends_on   = [google_compute_address.mgmt_ip]
 }
 
 # ----------------------------------------------------------
@@ -150,12 +122,13 @@ resource "google_compute_firewall" "allow_iap_ssh" {
 # ----------------------------------------------------------
 locals {
   docker_compose_rendered = templatefile("${path.module}/templates/docker-compose.yml.tftpl", {
-    domain                    = var.domain
-    lldap_subdomain           = var.lldap_subdomain
-    lldap_staging_subdomain   = var.lldap_staging_subdomain
-    netbird_subdomain         = var.netbird_subdomain
-    netbird_staging_subdomain = var.netbird_staging_subdomain
-    acme_email                = var.acme_email
+    domain            = var.domain
+    lldap_subdomain   = var.lldap_subdomain
+    netbird_subdomain = var.netbird_subdomain
+    acme_email        = var.acme_email
+    netbird_version   = var.netbird_version
+    lldap_version     = var.lldap_version
+    traefik_version   = var.traefik_version
   })
 
   startup_script_rendered = templatefile("${path.module}/templates/startup-script.sh.tftpl", {
@@ -165,7 +138,8 @@ locals {
     google_oauth_client_id     = data.google_secret_manager_secret_version.google_oauth_client_id.secret_data
     google_oauth_client_secret = data.google_secret_manager_secret_version.google_oauth_client_secret.secret_data
     domain                     = var.domain
-    netbird_staging_subdomain  = var.netbird_staging_subdomain
+    lldap_subdomain            = var.lldap_subdomain
+    netbird_subdomain          = var.netbird_subdomain
     project_id                 = var.project_id
     state_bucket               = var.state_bucket
   })
@@ -191,7 +165,7 @@ resource "google_compute_instance" "mgmt_vm" {
   network_interface {
     network = "default"
     access_config {
-      nat_ip = google_compute_address.mgmt_ip.address
+      // Dynamic Ephemeral Public IP ($0 cost when destroyed)
     }
   }
 
@@ -204,15 +178,35 @@ resource "google_compute_instance" "mgmt_vm" {
   # Native GCE Automated Startup Script
   metadata_startup_script = local.startup_script_rendered
 
-  # Ensure API & Network are completely ready before provisioning
   depends_on = [
     google_project_service.compute_api,
     google_compute_firewall.allow_web,
     google_compute_firewall.allow_netbird,
     google_compute_firewall.allow_iap_ssh,
-    google_dns_record_set.authen2,
-    google_dns_record_set.netbird2,
   ]
+}
+
+# ----------------------------------------------------------
+# 🌐 Dynamic DNS Bindings (Points to VM Ephemeral Public IP)
+# ----------------------------------------------------------
+# Primary LDAP Directory Service DNS
+resource "google_dns_record_set" "ldap" {
+  name         = "${var.lldap_subdomain}.${var.domain}."
+  type         = "A"
+  ttl          = 300
+  managed_zone = "ait-brainlab"
+  rrdatas      = [google_compute_instance.mgmt_vm.network_interface[0].access_config[0].nat_ip]
+  depends_on   = [google_compute_instance.mgmt_vm]
+}
+
+# NetBird VPN DNS
+resource "google_dns_record_set" "netbird" {
+  name         = "${var.netbird_subdomain}.${var.domain}."
+  type         = "A"
+  ttl          = 300
+  managed_zone = "ait-brainlab"
+  rrdatas      = [google_compute_instance.mgmt_vm.network_interface[0].access_config[0].nat_ip]
+  depends_on   = [google_compute_instance.mgmt_vm]
 }
 
 # ==========================================================
@@ -221,8 +215,8 @@ resource "google_compute_instance" "mgmt_vm" {
 resource "terraform_data" "wait_for_vm_init" {
   depends_on = [
     google_compute_instance.mgmt_vm,
-    google_dns_record_set.authen2,
-    google_dns_record_set.netbird2,
+    google_dns_record_set.ldap,
+    google_dns_record_set.netbird,
   ]
 
   triggers_replace = [

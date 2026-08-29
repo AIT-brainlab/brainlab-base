@@ -1,98 +1,153 @@
 # Master Implementation & Migration Task Checklist (`mgmt/`)
 
+**Architecture Version**: 2.0 (Consolidated 2-Terraform + GitOps Persistence)  
 **Legend**: 🔴 Not Started | 🟡 In Progress | 🟢 Completed | 🔵 Verified
 
 ---
 
 ## 🎯 Architecture Review & Design Status: 🟢 COMPLETED
-- [x] **Decoupled Billing & Compute**: Permanent management plane (`ait-brainlab-mgmt`) strictly separate from GPU workloads (`brainlab-res-*`).
-- [x] **AuthN vs. AuthZ Decoupling**: Google OAuth2 handles 100% of user authentication & lifecycles; LLDAP acts as a passwordless authorization/POSIX directory.
-- [x] **Multi-Email Binding**: Single POSIX UID supports `@ait.asia`, `@ait.ac.th`, and personal alumni `@gmail.com` with zero data copying on TrueNAS.
-- [x] **Zero Internal TLS Overhead**: Internal LDAP runs over NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890`).
-- [x] **100% Stateless GitOps Control Plane**: All users, UIDs, VPN ACLs, and routing rules declared in Git; zero state stored on the VM.
-- [x] **Canary Staging Strategy**: `authen2` & `netbird2` allow side-by-side testing with zero disruption to live on-prem services.
+
+- [x] **Consolidated 2-Tier Terraform**:
+  - **`foundation/`**: Permanent cloud assets (IAM, Cloud DNS, Secret Manager, Static IP). Deployed once, permanently protected by `prevent_destroy`.
+  - **`vm/`**: Disposable `e2-micro` compute instance & VPC firewall rules. 100% Cattle.
+- [x] **Decoupled Identity & VPN from Terraform**:
+  - **Identity**: Single source of truth in [`mgmt/identity/members.yaml`](../identity/members.yaml). Synchronized to LLDAP via lightweight `sync_users.py` script. Zero third-party Terraform providers (`tasansga/lldap` eliminated).
+  - **VPN Control Plane**: Self-hosted NetBird configured via Web UI and Google OAuth2 SSO. Setup keys and device groups are generated dynamically. Zero `local-exec` SSH provisioners (`netbirdio/netbird` eliminated).
+  - **VPN Client Mesh Enrollment**: Client enrollment (`netbird-client` on nodes and VM) is decoupled from Day 0 Terraform and delegated to Day 1 Ansible using ephemeral, single-use setup keys (zero keys stored in Secret Manager).
+- [x] **Durable GCS SQLite Persistence & Clean Wipe**:
+  - `users.db` (LLDAP) and `store.db` (NetBird) are snapshotted to `gs://ait-brainlab-mgmt-tfstate/backups/`.
+  - Previous legacy snapshots archived to `archive/clean-wipe-backup/` to allow a 100% fresh, clean bootstrap.
+- [x] **Multi-Email Binding & AuthN/AuthZ Separation**:
+  - Google OAuth2 handles 100% of user authentication.
+  - LLDAP maps emails (`@ait.asia`, `@ait.ac.th`, `@gmail.com`) to numeric Unix UIDs (10000+) without storing passwords.
+- [x] **Zero Internal TLS Overhead**:
+  - Internal LDAP queries from Linux SSSD and TrueNAS traverse the encrypted NetBird WireGuard mesh tunnel (`ldap://` on port `:3890`).
+- [x] **Clean Domain Topology (Zero Canary Duplication)**:
+  - **Identity**: Permanent domain `ldap.brain.cs.ait.ac.th` (eliminates legacy `authen2`, zero collision with on-prem).
+  - **VPN**: Active cloud domain `netbird2.brain.cs.ait.ac.th` (coexists with on-prem `netbird.brain.cs.ait.ac.th` until cutover).
 
 ---
 
-## 📋 Modular Execution Sequence
+## 📋 Master Execution Sequence
 
 ```mermaid
-flowchart LR
-    Step1["👥 1. IAM<br/>(terraform/iam/)<br/>🟢 COMPLETED"] --> Step2["🌐 2. DNS<br/>(terraform/dns/)<br/>🟢 COMPLETED"] --> Step3["🔐 3. Secrets<br/>(terraform/secrets/)<br/>🟢 COMPLETED"] --> Step4["🖥️ 4. VM Engine<br/>(terraform/vm/)<br/>🟢 COMPLETED"] --> Step5["👤 5. Identity-as-Code<br/>(terraform/identity/)<br/>🟢 COMPLETED"] --> Step6["📡 6. NetBird-as-Code<br/>(terraform/vpn/)<br/>🟢 COMPLETED"] --> Step7["🚀 7. OIDC & Services<br/>(JupyterHub & Web Print)<br/>🔴 CURRENT STEP"] --> Step8["✂️ 8. Cutover & Decommission<br/>(Update DNS in Terraform)"]
+flowchart TD
+    subgraph REBUILD ["🔄 Rebuild & Consolidation Transition"]
+        R1["💾 R1. Verify GCS Backups<br/>(users.db & store.db)"]
+        R2["✂️ R2. Decouple Static IP & DNS<br/>(State rm from old vm)"]
+        R3["🗑️ R3. Graceful Teardown<br/>(Destroy vpn, identity, old vm)"]
+        R1 --> R2 --> R3
+    end
+
+    subgraph PHASE1 ["🛡️ Phase 1: Foundation Module"]
+        P1["mgmt/terraform/foundation/<br/>• IAM & Automation SA<br/>• Cloud DNS (brain & dpi)<br/>• Secret Manager Keys<br/>• Static IP (brainlab-mgmt-static-ip)<br/>🔵 VERIFIED LIVE"]
+    end
+
+    subgraph PHASE2 ["🖥️ Phase 2: Disposable Compute VM"]
+        P2["mgmt/terraform/vm/<br/>• e2-micro VM Instance<br/>• VPC Firewall Rules<br/>• Unified Docker Compose<br/>  (Traefik, LLDAP, NetBird, Client)<br/>• GCS Database Auto-Restore"]
+    end
+
+    subgraph PHASE3 ["👤 Phase 3: Identity GitOps"]
+        P3["mgmt/identity/<br/>• members.yaml<br/>• sync_users.py<br/>• test_login.py"]
+    end
+
+    subgraph PHASE4 ["📡 Phase 4: NetBird Mesh Network"]
+        P4["NetBird Control Plane<br/>• Google OAuth2 SSO<br/>• Auto wt0 Peer Mesh<br/>• GCS store.db Sync"]
+    end
+
+    subgraph PHASE5 ["🚀 Phase 5: OIDC & Lab Services"]
+        P5["JupyterHub & Web Print<br/>• hub.brain.cs.ait.ac.th<br/>• print.brain.cs.ait.ac.th<br/>• TrueNAS /mnt/HDD/home"]
+    end
+
+    subgraph PHASE6 ["✂️ Phase 6: Production Cutover"]
+        P6["DNS Cutover & Decommission<br/>• Repoint authen & netbird DNS<br/>• Switch SSSD on nodes<br/>• Decommission legacy slapd"]
+    end
+
+    R3 --> PHASE1
+    PHASE1 --> PHASE2
+    PHASE2 --> PHASE3
+    PHASE3 --> PHASE4
+    PHASE4 --> PHASE5
+    PHASE5 --> PHASE6
 ```
 
 ---
 
-### 👥 Phase 1: IAM & Project Governance (`mgmt/terraform/iam`)
+## 🔄 Rebuild & Consolidation Transition (Current Priority)
+
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `1.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/iam/` | Akraradet | 🔵 | State locked in `gs://ait-brainlab-mgmt-tfstate/iam` |
-| `1.2` | Apply `roles/owner` bindings for root project owners | Akraradet | 🔵 | `brainlab@ait.asia`, `st121413@ait.asia`, `akraradets@gmail.com` |
-| `1.3` | Provision `brainlab-mgmt-terraform` service account with `roles/dns.admin` & `roles/secretmanager.admin` | Akraradet | 🔵 | Automation SA ready for autonomous VM Secret Manager management |
+| `R.1` | **Verify GCS Database Backups**: Confirm `users.db` and `store.db` snapshots exist in `gs://ait-brainlab-mgmt-tfstate/backups/` | Akraradet | 🔵 | Verified live: `users.db` (139KB) and `store.db` (745KB) snapshotted to GCS |
+| `R.2` | **Decouple Static IP & DNS from Old VM State**: Run `terraform state rm google_compute_address.mgmt_ip` and staging DNS records in `mgmt/terraform/vm/` | Akraradet | 🔵 | Successfully removed static IP (`34.143.234.182`) and DNS records from VM state |
+| `R.3` | **Teardown Retired Terraform Modules**: Retire `mgmt/terraform/vpn/` and `mgmt/terraform/identity/` | Akraradet | 🔵 | Preserved `netbird-setup-key` in Secret Manager; archived old states to GCS |
+| `R.4` | **Destroy Old VM Instance**: Run `terraform destroy` in `mgmt/terraform/vm/` | Akraradet | 🔵 | Successfully destroyed old VM & firewall; Static IP (`34.143.234.182`) preserved in RESERVED status |
 
 ---
 
-### 🌐 Phase 2: Cloud DNS Deployment (`mgmt/terraform/dns`)
+## 🛡️ Phase 1: Consolidated Foundation (`mgmt/terraform/foundation`)
+
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `2.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/dns/` | Akraradet | 🔵 | State locked in `gs://ait-brainlab-mgmt-tfstate/dns` |
-| `2.2` | Adopt live GCP zones (`ait-brainlab`, `dpi-center`) and all 14 service records | Akraradet | 🔵 | 100% matched with zero drift |
-| `2.3` | Apply Cloud DNS configuration with `lifecycle.prevent_destroy = true` | Akraradet | 🔵 | Nameservers permanently protected |
-| `2.4` | Automated delegation health check via `bash check_delegation.sh` | Phue Pwint Thwe | 🔵 | `brain.cs.ait.ac.th` & `dpi.ait.ac.th` verified live! |
+| `1.1` | Consolidate `iam/`, `dns/`, and `secrets/` into `mgmt/terraform/foundation/` | Akraradet | 🔵 | Successfully unified 27 resources into single `foundation` state; zero drift |
+| `1.2` | **Project Governance & IAM**: Bind project owners (`brainlab`, `st121413`, `akraradets`) and automation SA (`brainlab-mgmt-terraform`) | Akraradet | 🔵 | Pre-verified in GCP IAM |
+| `1.3` | **Cloud DNS Zones & Records**: Permanently manage `brain.cs.ait.ac.th` and `dpi.ait.ac.th` with `lifecycle.prevent_destroy = true` | Akraradet | 🔵 | Pre-verified live delegation |
+| `1.4` | **Secret Manager Keys**: Ensure `lldap-jwt`, `lldap-admin-password`, `google-oauth-client-id`, `google-oauth-client-secret` exist | Akraradet | 🔵 | Pre-verified in Secret Manager |
+| `1.5` | **Dynamic Public IP Architecture**: Released unattached static IP; VM manages ephemeral IP and dynamically updates DNS | Akraradet | 🔵 | $0 unattached IP cost; dynamic DNS bindings in `vm/` |
 
 ---
 
-### 🔐 Phase 3: Secret Manager Deployment (`mgmt/terraform/secrets`)
+## 🖥️ Phase 2: Disposable Compute VM Engine (`mgmt/terraform/vm`)
+
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
-| :--- | :--- | :--- | :---: | :--- |
-| `3.1` | Run `terraform init` and `terraform apply` in `mgmt/terraform/secrets/` | Akraradet | 🔵 | Generated `lldap-jwt`, `lldap-admin-password`, `netbird-setup-key` |
-| `3.2` | Automated zero-leakage secret verification via `bash check_secrets.sh` | Akraradet | 🔵 | All secrets verified live in Secret Manager |
+| :--- | :--- | :--- | :--- | :--- |
+| `2.1` | Configure `mgmt/terraform/vm/` with clean `google` provider referencing `foundation` outputs | Akraradet | 🔵 | State: `gs://.../vm`; dynamic ephemeral IP |
+| `2.2` | Define VPC Firewall rules for Web (`80`, `443`), NetBird (`33073`), and IAP SSH (`22` from `35.235.240.0/20`) | Akraradet | 🔵 | Zero-trust datacenter edge firewall verified |
+| `2.3` | Build unified `docker-compose.yml`: Traefik v3, LLDAP, NetBird Dashboard, Signal, Management + `update_services.sh` | Akraradet | 🔵 | Clean 5-service control plane; version-pinned variables |
+| `2.4` | Configure startup script for clean bootstrap, /etc/hosts loopback, and 6-hourly automated backup cron | Akraradet | 🔵 | Archived old DBs; starting fresh with automated backup |
+| `2.5` | Run `terraform apply` in `mgmt/terraform/vm/` and verify endpoints (`ldap`, `netbird2`) | Akraradet | 🔵 | Verified: HTTP 200 & Let's Encrypt SSL live on both endpoints |
 
 ---
 
-### 🖥️ Phase 4: Disposable Management VM Engine (`mgmt/terraform/vm`)
+## 👤 Phase 3: Identity GitOps Directory (`mgmt/identity`)
+
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
-| :--- | :--- | :--- | :---: | :--- |
-| `4.1` | Run `terraform init` with GCS remote backend in `mgmt/terraform/vm/` | Akraradet | 🔵 | State locked in `gs://.../vm` |
-| `4.2` | 1-Click Deploy: Launch `e2-micro` VM, Static IP, Firewall, and auto-paired DNS records (`authen2`, `netbird2`) | Akraradet | 🔵 | Docker stack + automated DNS |
-| `4.3` | Automated staging health check via `bash check_vm_health.sh` | Akraradet | 🔵 | `authen2` (HTTP 200) & `netbird2` verified live! |
+| :--- | :--- | :--- | :--- | :--- |
+| `3.1` | Create `mgmt/identity/members.yaml` declaring groups (`admin`, `brainlab`) and lab users | Akraradet | 🔵 | Generated from `member.lidf`: 28 real members |
+| `3.2` | Develop `mgmt/identity/sync_users.py` calling LLDAP GraphQL API with `--dry-run` and `--apply` | Akraradet | 🔵 | Standard Python; auto-provisions schema attributes |
+| `3.3` | Seed all 28 lab users into LLDAP with forced POSIX UIDs, GIDs, and home paths | Akraradet | 🔵 | Applied live: all 28 users created; only `bci` is admin |
+| `3.4` | Verify directory queries (LDAP authentication and POSIX UID resolution) | Akraradet | 🔵 | Verified live: all 28 members, UIDs, and multi-email bound |
 
 ---
 
-### 👤 Phase 5: Identity-as-Code Directory (`mgmt/terraform/identity`)
+## 📡 Phase 4: NetBird Mesh Network Operations (Ansible Day 1)
+
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `5.1` | Define simplified lab groups (`admin`, `member`, `student`, `alumni`) with forced GIDs | Akraradet | 🔵 | 4 clean groups provisioned |
-| `5.2` | Declare users, forced POSIX UIDs, home paths, and multi-email bindings in `users.tf` | Akraradet | 🔵 | `brainlab`, `akraradet`, `phue`, `st121413` |
-| `5.3` | Apply `tasansga/lldap` Terraform module to seed LLDAP directory | Akraradet | 🔵 | 100% Stateless GitOps verified live! |
+| `4.1` | Log in to NetBird Web Dashboard (`https://netbird2.brain.cs.ait.ac.th`) via Google SSO | Akraradet | 🔴 | Single Account Mode: `@ait.asia` |
+| `4.2` | Create Ansible Playbook (`mgmt/ansible/enroll_peer.yml`) for peer enrollment | Akraradet | 🔴 | Generates ephemeral single-use setup keys |
+| `4.3` | Enroll physical GPU nodes (`la`, `tokyo`, `cairo`) and VM peer on-demand | Akraradet | 🔴 | Zero keys stored in Secret Manager |
+| `4.4` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔴 | 100% persistent across VM reboots |
 
 ---
 
-### 📡 Phase 6: NetBird-as-Code Mesh Network (`mgmt/terraform/vpn`)
+## 🚀 Phase 5: Google OIDC & Lab Services (JupyterHub & Web Print)
+
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `6.1` | Declare device groups (`servers`, `sysadmin-devices`), Zero-Trust ACLs, and setup keys in `mgmt/terraform/vpn/` | Akraradet | 🔵 | Clean minimalist model (2 groups, 2 rules) |
-| `6.2` | Automated peer enrollment of Management VM (Peer #1) with upgrade-aware lifecycle triggers | Akraradet | 🔵 | Live on `100.122.211.186` with `wt0` interface up! |
-| `6.3` | Continuous GCS Database Snapshot & Persistence (`store.db` + `users.db`) | Akraradet | 🔵 | Atomic SQLite snapshots in GCS (`gs://.../backups/`) |
+| `5.1` | Verify Google OAuth2 credentials in GCP Console (SOP: [`oauth_setup.md`](oauth_setup.md)) | Akraradet | 🔵 | Pre-verified live |
+| `5.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 | Test 1-click Google login on `hub.brain.cs.ait.ac.th` |
+| `5.3` | Verify end-to-end user home directory read/write on `/mnt/HDD/home` | Whole Team | 🔴 | Zero permission conflicts on TrueNAS NFS |
+| `5.4` | **Deploy Web Print Service (`docker-cups`)**: Launch web print portal at `print.brain.cs.ait.ac.th` with Google OAuth2 SSO | Akraradet | 🔴 | Drag-and-drop PDF upload from any browser |
+| `5.5` | **Bridge Web Print to CSIM Printer**: Route print jobs over NetBird mesh to on-prem CSIM printer with CSIM quota auth | Akraradet | 🔴 | Print remotely from home/laptops to lab printer |
 
 ---
 
-### 🚀 Phase 7: Google OIDC & Lab Web Services (JupyterHub & Web Print)
+## ✂️ Phase 6: Production Cutover & On-Prem Decommissioning
+
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
-| `7.1` | Create OAuth2 Client ID & Secret in `GCP Console > APIs & Services` (SOP: [`oauth_setup.md`](oauth_setup.md)) | Akraradet | 🔵 **Verified** | Verified live with NetBird & GCP Secret Manager |
-| `7.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 **CURRENT STEP** | Test 1-click Google login on `hub.brain.cs.ait.ac.th` |
-| `7.3` | Verify end-to-end user home directory read/write on `/mnt/HDD/home` | Whole Team | 🔴 | Zero permission conflicts on TrueNAS NFS |
-| `7.4` | **Deploy Web Print Service (`docker-cups`)**: Launch web print portal at `print.brain.cs.ait.ac.th` with Google OAuth2 SSO | Akraradet | 🔴 | Drag-and-drop PDF upload from any browser |
-| `7.5` | **Bridge Web Print to CSIM Printer**: Route print jobs over NetBird mesh to on-prem CSIM printer with CSIM quota auth | Akraradet | 🔴 | Print remotely from home/laptops to lab printer |
-
----
-
-### ✂️ Phase 8: Production Cutover & On-Prem Decommissioning (DNS Cutoff)
-| Task ID | Task Description | Target Identity | Status | Notes / Output |
-| :--- | :--- | :--- | :---: | :--- |
-| `8.1` | **Update DNS A Records in Terraform**: Update `authen` and `netbird` in `mgmt/terraform/dns/brainlab.tf` to Cloud VM Static IP | Akraradet | 🔴 | Apply `terraform apply` in `dns/` |
-| `8.2` | **Enable Production Domain SSL in Traefik**: Add `authen` and `netbird` to `docker-compose.yml.tftpl` router rules so Let's Encrypt acquires production SSL | Akraradet | 🔴 | Automated production SSL issuance in <10s |
-| `8.3` | **Re-point SSSD on Physical Nodes**: Update `/etc/sssd/sssd.conf` on compute nodes (`la`, `tokyo`) and NAS (`cairo`) to point to new LLDAP | Phue Pwint Thwe | 🔴 | Connect over NetBird WireGuard mesh |
-| `8.4` | **Enroll Production On-Prem Servers**: Run `sudo netbird up` on `la`, `tokyo`, `cairo` with the new setup key | Phue Pwint Thwe | 🔴 | Switch all physical nodes to new mesh |
-| `8.5` | **Decommission Legacy On-Prem Services**: Stop and disable old OpenLDAP (`slapd`) and legacy NetBird containers on `192.41.170.39` | Phue Pwint Thwe | 🔴 | Safe shutdown with zero rollback risk |
+| `6.1` | **Update DNS A Records in Foundation**: Update `authen` and `netbird` in `mgmt/terraform/foundation/dns.tf` to Static IP | Akraradet | 🔴 | Apply `terraform apply` in `foundation/` |
+| `6.2` | **Enable Production Domain SSL in Traefik**: Add production subdomains to `docker-compose.yml` router rules | Akraradet | 🔴 | Automated Let's Encrypt production SSL |
+| `6.3` | **Re-point SSSD on Physical Nodes**: Update `/etc/sssd/sssd.conf` on compute nodes (`la`, `tokyo`) and NAS (`cairo`) to point to new LLDAP | Phue Pwint Thwe | 🔴 | Connect over NetBird WireGuard mesh |
+| `6.4` | **Enroll Production On-Prem Servers**: Run `sudo netbird up` on `la`, `tokyo`, `cairo` with the new setup key | Phue Pwint Thwe | 🔴 | Switch all physical nodes to new mesh |
+| `6.5` | **Decommission Legacy On-Prem Services**: Stop and disable old OpenLDAP (`slapd`) and legacy NetBird containers on `192.41.170.39` | Phue Pwint Thwe | 🔴 | Safe shutdown with zero rollback risk |

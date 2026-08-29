@@ -1,0 +1,4 @@
+project_id                 = "ait-brainlab-mgmt"
+region                     = "asia-southeast1"
+google_oauth_client_id     = "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com"
+google_oauth_client_secret = "GOCSPX-YOUR_OAUTH_CLIENT_SECRET"
