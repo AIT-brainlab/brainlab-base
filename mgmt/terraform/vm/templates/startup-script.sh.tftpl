@@ -64,7 +64,10 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
       "ClientID": "${google_oauth_client_id}",
       "ClientSecret": "${google_oauth_client_secret}",
       "Audience": "${google_oauth_client_id}",
+      "TokenEndpoint": "https://oauth2.googleapis.com/token",
+      "AuthorizationEndpoint": "https://accounts.google.com/o/oauth2/v2/auth",
       "Scope": "openid profile email",
+      "UseIDToken": true,
       "RedirectURLs": [
         "http://localhost:53000"
       ]
