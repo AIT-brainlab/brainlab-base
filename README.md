@@ -36,7 +36,7 @@ The decoupled, permanent control plane running under GCP project **`ait-brainlab
 - [**Modular Terraform IaC**](mgmt/terraform/): 6 independent modules (`iam/`, `dns/`, `secrets/`, `vm/`, `identity/`, `vpn/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
 
 ### 2. 🛠️ [Infrastructure Domain (`infra/`)](infra/README.md)
-- [**`infra/onprem/`**](infra/onprem/README.md): Ubuntu 22.04 installation, NVIDIA GPU drivers, TrueNAS NFS mounting (`/mnt/HDD/home`), and Docker engine.
+- [**`infra/onprem/`**](infra/onprem/README.md): Ubuntu 22.04 installation, NVIDIA GPU drivers, TrueNAS NFS mounting (`/mnt/pool-1/home`), and Docker engine.
 - [**`infra/cloud/`**](infra/cloud/README.md): Research compute templates (Spot GPU VMs, GCS buckets) and Google Cloud research credit guides ($5k Faculty / $1k PhD).
 - [**`infra/network/`**](infra/network/README.md): NetBird mesh VPN setup, CSIM proxy configuration (`192.41.170.23:3128`), and DNS topology.
 
@@ -57,7 +57,27 @@ Historical configurations, legacy Docker images, screenshots, and older notebook
 
 ---
 
+## 🐍 Python Environment Management (`uv`)
+
+This repository uses [**`uv`**](https://docs.astral.sh/uv/) for blazing-fast, deterministic Python dependency management:
+
+```bash
+# 1. Sync virtual environment and install all dependencies
+uv sync
+
+# 2. Run Identity GitOps synchronization
+uv run mgmt/identity/sync_users.py
+
+# 3. Run NetBird VPN GitOps synchronization
+uv run mgmt/vpn/sync_netbird.py
+
+# 4. Run Day 1 Ansible mesh operations playbooks
+uv run ansible-playbook -i mgmt/ansible/inventory.ini mgmt/ansible/enroll_netbird.yml
+```
+
+---
+
 ## 🔒 Security & Safe Operating Protocols
 - **No Hardcoded Secrets**: Never commit passwords, private keys, or API tokens to version control.
 - **Proxy Aware**: Outbound traffic on CSIM network requires `http://192.41.170.23:3128`.
-- **Persistent User Data**: Always stored on TrueNAS at `/mnt/HDD/home/{username}/work`.
+- **Persistent User Data**: Always stored on TrueNAS at `/mnt/pool-1/home/{username}`.
