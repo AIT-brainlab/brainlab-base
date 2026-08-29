@@ -52,10 +52,23 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
 {
   "DataDir": "/var/lib/netbird",
   "HttpConfig": {
+    "AuthClientID": "${google_oauth_client_id}",
     "AuthAudience": "${google_oauth_client_id}",
     "AuthAuthority": "https://accounts.google.com",
     "AuthIssuer": "https://accounts.google.com",
-    "AuthKeysLocation": "https://www.googleapis.com/oauth2/v3/certs"
+    "AuthKeysLocation": "https://www.googleapis.com/oauth2/v3/certs",
+    "OIDCConfigEndpoint": "https://accounts.google.com/.well-known/openid-configuration"
+  },
+  "PKCEAuthorizationFlow": {
+    "ProviderConfig": {
+      "ClientID": "${google_oauth_client_id}",
+      "ClientSecret": "",
+      "Audience": "${google_oauth_client_id}",
+      "Scope": "openid profile email",
+      "RedirectURLs": [
+        "http://localhost:53000"
+      ]
+    }
   },
   "IdpManagerConfig": null,
   "SingleAccountModeDomain": "ait.asia",
