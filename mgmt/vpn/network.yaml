@@ -75,23 +75,35 @@ policies:
         destinations: [tier-servers]
 
   - name: LDAP-Directory-Access
-    description: "Allow servers to query Cloud LLDAP over encrypted WireGuard mesh"
+    description: "Allow servers and TrueNAS storage to query Cloud LLDAP over encrypted WireGuard mesh"
     enabled: true
     rules:
       - name: ldap-query-port
         action: accept
         protocol: tcp
         bidirectional: false
-        sources: [tier-servers]
+        sources: [tier-servers, tier-storage]
         destinations: [tier-mgmt]
         ports: ["3890"]
 
 # ----------------------------------------------------------
-# 3. Server Setup Keys (Day 1 Ansible / Host Onboarding)
+# 3. Server Setup Keys (Day 1 Host Onboarding)
 # ----------------------------------------------------------
 setup_keys:
   - name: onprem-csim-enrollment
     type: reusable
     expires_in_days: 30
     auto_groups: [loc-onprem-csim, tier-servers]
+    usage_limit: 0
+
+  - name: mgmt-vm-enrollment
+    type: reusable
+    expires_in_days: 365
+    auto_groups: [tier-mgmt]
+    usage_limit: 0
+
+  - name: truenas-storage-enrollment
+    type: reusable
+    expires_in_days: 365
+    auto_groups: [loc-onprem-csim, tier-storage]
     usage_limit: 0

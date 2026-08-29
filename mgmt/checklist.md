@@ -129,7 +129,7 @@ flowchart TD
 | `4.3` | Build Declarative Network-as-Code ([`network.yaml`](vpn/network.yaml)) and Sync Engine ([`sync_netbird.py`](vpn/sync_netbird.py)) | Akraradet | 🔵 | Supports Composable 2-Tag Model, policies, and setup keys |
 | `4.4` | Execute `./mgmt/vpn/sync_netbird.py --apply` to reconcile groups, policies, and keys | Akraradet | 🔵 | Applied live: 9 groups, 4 zero-trust policies, and enrollment setup key |
 | `4.5` | Deploy GitHub Action ([`.github/workflows/netbird_pat_reminder.yml`](../.github/workflows/netbird_pat_reminder.yml)) for 365-day PAT reminder | Akraradet | 🔵 | Runs monthly; creates alert issue 30 days before expiration |
-| `4.6` | Deploy NetBird Client on Management VM (`brainlab-mgmt-vm`) | Akraradet | 🟡 | Joins mesh with tag `tier-mgmt`; exposes internal `ldap://` (:3890) |
+| `4.6` | Deploy NetBird Client on Management VM (`brainlab-mgmt-vm`) | Akraradet | 🔵 | Live P2P WireGuard (`100.103.75.243`); `wt0` active; port 3890 verified |
 | `4.7` | Deploy NetBird Client on TrueNAS Storage Node (`cairo`) | Akraradet | 🔴 | Joins mesh with tags `loc-onprem-csim`, `tier-storage` |
 | `4.8` | Configure TrueNAS Directory Services LDAP using internal NetBird URL | Akraradet | 🔴 | `ldap://mgmt.netbird.selfhosted:3890` with service account `ldapservice` |
 | `4.9` | Enroll physical GPU nodes (`la`, `tokyo`) via Ansible / Setup Key | Akraradet | 🔴 | Joins mesh with tags `loc-onprem-csim`, `tier-servers` |
