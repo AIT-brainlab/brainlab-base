@@ -87,8 +87,7 @@ def api_request(base_url, endpoint, token, method="GET", data=None):
 
 def parse_yaml_file(filepath):
     """
-    Lightweight YAML parser for network.yaml.
-    Supports standard yaml syntax without external pyyaml package.
+    Zero-dependency YAML parser tailored for network.yaml.
     Falls back to PyYAML if installed.
     """
     try:
@@ -98,18 +97,95 @@ def parse_yaml_file(filepath):
     except ImportError:
         pass
 
-    # Custom minimalist YAML parser for our structured schema
-    with open(filepath, "r", encoding="utf-8") as f:
-        content = f.read()
+    import re
+    result = {"groups": [], "policies": [], "setup_keys": []}
+    current_section = None
+    current_item = None
+    current_rule = None
 
-    # Try running python with pyyaml if available in environment
-    try:
-        py_code = "import yaml, json, sys; print(json.dumps(yaml.safe_load(open(sys.argv[1]))))"
-        out = subprocess.check_output(["python3", "-c", py_code, str(filepath)], stderr=subprocess.DEVNULL)
-        return json.loads(out)
-    except Exception:
-        print(f"{RED}❌ PyYAML is required to parse '{filepath}'. Run: pip install pyyaml{NC}")
-        sys.exit(1)
+    with open(filepath, "r", encoding="utf-8") as f:
+        for line in f:
+            raw = line.rstrip()
+            stripped = raw.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+
+            if stripped == "groups:":
+                current_section = "groups"
+                current_item = None
+                continue
+            elif stripped == "policies:":
+                current_section = "policies"
+                current_item = None
+                continue
+            elif stripped == "setup_keys:":
+                current_section = "setup_keys"
+                current_item = None
+                continue
+
+            if current_section == "groups":
+                if stripped.startswith("- name:"):
+                    name = stripped.split(":", 1)[1].strip()
+                    current_item = {"name": name}
+                    result["groups"].append(current_item)
+                elif current_item and stripped.startswith("description:"):
+                    current_item["description"] = stripped.split(":", 1)[1].strip().strip('"\'')
+
+            elif current_section == "policies":
+                if raw.startswith("  - name:"):
+                    name = stripped.split(":", 1)[1].strip()
+                    current_item = {"name": name, "rules": []}
+                    result["policies"].append(current_item)
+                    current_rule = None
+                elif current_item:
+                    if raw.startswith("      - name:"):
+                        r_name = stripped.split(":", 1)[1].strip()
+                        current_rule = {"name": r_name}
+                        current_item["rules"].append(current_rule)
+                    elif stripped.startswith("description:"):
+                        current_item["description"] = stripped.split(":", 1)[1].strip().strip('"\'')
+                    elif stripped.startswith("enabled:"):
+                        current_item["enabled"] = stripped.split(":", 1)[1].strip().lower() == "true"
+                    elif stripped == "rules:":
+                        pass
+                    elif current_rule:
+                        if stripped.startswith("action:"):
+                            current_rule["action"] = stripped.split(":", 1)[1].strip()
+                        elif stripped.startswith("protocol:"):
+                            current_rule["protocol"] = stripped.split(":", 1)[1].strip()
+                        elif stripped.startswith("bidirectional:"):
+                            current_rule["bidirectional"] = stripped.split(":", 1)[1].strip().lower() == "true"
+                        elif stripped.startswith("sources:"):
+                            m = re.search(r"\[(.*)\]", stripped)
+                            if m:
+                                current_rule["sources"] = [s.strip() for s in m.group(1).split(",") if s.strip()]
+                        elif stripped.startswith("destinations:"):
+                            m = re.search(r"\[(.*)\]", stripped)
+                            if m:
+                                current_rule["destinations"] = [d.strip() for d in m.group(1).split(",") if d.strip()]
+                        elif stripped.startswith("ports:"):
+                            m = re.search(r"\[(.*)\]", stripped)
+                            if m:
+                                current_rule["ports"] = [p.strip().strip('"\'') for p in m.group(1).split(",") if p.strip()]
+
+            elif current_section == "setup_keys":
+                if stripped.startswith("- name:"):
+                    name = stripped.split(":", 1)[1].strip()
+                    current_item = {"name": name}
+                    result["setup_keys"].append(current_item)
+                elif current_item:
+                    if stripped.startswith("type:"):
+                        current_item["type"] = stripped.split(":", 1)[1].strip()
+                    elif stripped.startswith("expires_in_days:"):
+                        current_item["expires_in_days"] = int(stripped.split(":", 1)[1].strip())
+                    elif stripped.startswith("usage_limit:"):
+                        current_item["usage_limit"] = int(stripped.split(":", 1)[1].strip())
+                    elif stripped.startswith("auto_groups:"):
+                        m = re.search(r"\[(.*)\]", stripped)
+                        if m:
+                            current_item["auto_groups"] = [g.strip() for g in m.group(1).split(",") if g.strip()]
+
+    return result
 
 def sync_groups(base_url, token, declared_groups, dry_run=True):
     """Synchronize declared device groups."""
@@ -143,14 +219,12 @@ def sync_policies(base_url, token, declared_policies, group_name_to_id, dry_run=
     existing = api_request(base_url, "/policies", token)
     existing_map = {p["name"]: p for p in existing}
 
-    # Identify and disable default "All" policy if present
+    # Identify and remove default "All" policy if present
     for p in existing:
         if p["name"].lower() in ["default", "all"]:
-            if p.get("enabled", True):
-                print(f"  {YELLOW}⚠️  Detected default open policy '{p['name']}'. Disabling for Zero-Trust...{NC}")
-                if not dry_run:
-                    p["enabled"] = False
-                    api_request(base_url, f"/policies/{p['id']}", token, method="PUT", data=p)
+            print(f"  {YELLOW}⚠️  Detected default open policy '{p['name']}'. Deleting for Zero-Trust...{NC}")
+            if not dry_run:
+                api_request(base_url, f"/policies/{p['id']}", token, method="DELETE")
 
     synced_count = 0
 
@@ -308,7 +382,7 @@ def main():
     synced_policies = sync_policies(args.api_url, token, declared_policies, group_map, dry_run=not args.apply)
 
     # 3. Sync Setup Keys
-    synced_keys = sync_setup_keys(args.api_url, token, declared_keys, group_map, dry_run=not args.apply)
+    synced_keys = sync_setup_keys(args.api_url, token, declared_setup_keys, group_map, dry_run=not args.apply)
 
     print(f"\n{BLUE}{'=' * 65}{NC}")
     if not args.apply:
