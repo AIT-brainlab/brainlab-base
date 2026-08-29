@@ -1,38 +1,160 @@
-# NetBird WireGuard Mesh VPN Architecture
+# NetBird WireGuard Mesh Network Architecture & Runbook
 
-## Overview
-NetBird establishes an encrypted, zero-trust peer-to-peer WireGuard network interconnecting physical lab servers, cloud compute instances on GCP, and remote researcher laptops.
+## 📌 Architecture Overview
+AIT Brainlab operates a **Self-Hosted NetBird WireGuard Mesh Overlay Network** (`100.66.0.0/16`). It interconnects physical on-premise compute servers (`la`, `tokyo`), TrueNAS storage (`cairo`), the cloud management plane (`brainlab-mgmt-vm`), and remote researcher laptops.
 
----
-
-## 1. Network Topology
-- **Unified Control Plane**: Co-hosted on Management VM (`ait-brainlab-mgmt`) at `https://netbird.brain.cs.ait.ac.th`.
-- **Authentication**: Single Sign-On via Google OAuth2 (`@ait.asia` & `@gmail.com`).
-- **Data Plane**: Direct peer-to-peer (P2P) WireGuard UDP tunneling with automatic STUN/TURN NAT traversal (zero cloud bandwidth costs).
+- **Unified Control Plane**: Self-hosted on GCP Management VM at [`https://netbird2.brain.cs.ait.ac.th`](https://netbird2.brain.cs.ait.ac.th).
+- **Identity & AuthN**: Authenticated 100% via Google OAuth2 SSO (`@ait.asia` and approved alumni `@gmail.com`).
+- **Data Plane**: Direct peer-to-peer (P2P) encrypted WireGuard UDP tunnels with automatic NAT traversal (STUN/ICE). Traffic does not route through central cloud relays.
 
 ---
 
-## 2. Onboarding a Headless Lab Server
-Run the setup script with the lab enrollment key fetched from GCP Secret Manager:
+## 🏗️ Core Architectural Principles
 
-```bash
-# 1. Install NetBird client
-sudo curl -fsSL https://pkgs.netbird.io/install.sh | sh
+### 1. Per-Node Agent Model (Every Server Joins the Mesh)
+Instead of deploying a single "VPN gateway" or "subnet router" for the whole server room, **every physical server (`la`, `tokyo`, `cairo`) runs its own lightweight NetBird agent**:
 
-# 2. Fetch enrollment key from Secret Manager
-SETUP_KEY=$(gcloud secrets versions access latest --secret="netbird-setup-key" --project="ait-brainlab-mgmt")
+```
+                       ┌──────────────────────────────┐
+                       │ ☁️ cloud-mgmt                │
+                       │ (LLDAP :3890, NetBird :443)  │
+                       └──────────────▲───────────────┘
+                                      │
+              WireGuard Mesh P2P      │      WireGuard Mesh P2P
+        ┌─────────────────────────────┼─────────────────────────────┐
+        │                             │                             │
+        ▼                             ▼                             ▼
+┌──────────────┐              ┌──────────────┐              ┌──────────────┐
+│  🖥️ la       │              │  🖥️ tokyo    │              │  💾 cairo    │
+│ (GPU Server) │              │ (GPU Server) │              │ (TrueNAS NAS)│
+│ NetBird Peer │              │ NetBird Peer │              │ NetBird Peer │
+└───────▲──────┘              └───────▲──────┘              └───────▲──────┘
+        │                             │                             │
+        └─────────────────────────────┴─────────────────────────────┘
+          Physical 10Gbps CSIM Switch (Local High-Speed NFS Traffic)
+```
 
-# 3. Connect to the mesh
-sudo netbird up --management-url https://netbird.brain.cs.ait.ac.th --key "$SETUP_KEY"
+#### Why Per-Node Mesh is Superior:
+1. **Zero Single Point of Failure (SPOF)**: If `la` is being rebooted for GPU maintenance, `tokyo` and `cairo` remain 100% accessible remotely.
+2. **Direct P2P Bandwidth**: Remote SSH and Jupyter sessions connect directly to the destination node via WireGuard without hairpinned middleman hops.
+3. **Least-Privilege Security (Micro-Segmentation)**: You can grant students compute access to GPU servers (`la:2222`, `tokyo:2222`) while keeping TrueNAS admin consoles (`cairo:443`) restricted strictly to SysAdmins.
+4. **Zero Device Limits**: Because we self-host our NetBird control plane, device limits do not apply (unlimited peers at $0 cost).
+
+---
+
+### 2. Cluster/Tier Groups vs. Service Meshes
+Do **not** create separate VPN meshes for individual services (e.g. an "NFS mesh" or "LDAP mesh"). A single physical machine is simultaneously an NFS client, an LDAP client, and a GPU runner.
+
+Instead, organize peers by **Environment/Cluster Tier**, and enforce service isolation via **Access Control Policies**:
+
+```
+                   ┌───────────────────────────────────────┐
+                   │        4 Natural Device Groups        │
+                   ├───────────────────────────────────────┤
+                   │ 1. onprem-bkk      (la, tokyo, cairo) │
+                   │ 2. cloud-mgmt      (Management VM)    │
+                   │ 3. sysadmin-devices (Admin laptops)   │
+                   │ 4. students        (Student laptops)  │
+                   └───────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Verifying Peer Status
+### 3. Physical 10GbE LAN vs. NetBird Mesh Tunneling
+A vital performance rule for physical lab infrastructure:
+
+> [!IMPORTANT]
+> **Heavy on-prem NFS traffic stays on the physical LAN!**  
+> `la`, `tokyo`, and `cairo` are connected to a physical 10Gbps CSIM Ethernet switch. NFS mounts between servers in the rack use local private IPs (`192.41.170.x`) to achieve full 10Gbps throughput with zero CPU encryption overhead.  
+> **NetBird WireGuard is used for:**
+> - Remote access from off-campus (students and sysadmins at home).
+> - Cross-cloud connections (GCP Cloud GPU VMs to on-prem TrueNAS).
+> - Encrypted LDAP queries from on-prem servers to Cloud LLDAP (`:3890`).
+
+---
+
+## 🔒 Access Control Policies (Zero-Trust)
+
+In NetBird Dashboard (**Access Control** $\rightarrow$ **Policies**), define 4 clean policies:
+
+| Policy Name | Source Group | Destination Group | Direction | Allowed Ports | Purpose |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| **`Cluster-Interconnect`** | `onprem-bkk` | `onprem-bkk` | `<->` | ALL | Server-to-server distributed training (MPI, PyTorch DDP). |
+| **`Cloud-LDAP-Queries`** | `onprem-bkk` | `cloud-mgmt` | `->` | `TCP 3890` | On-prem SSSD and JupyterHub query LLDAP over encrypted tunnel. |
+| **`SysAdmin-God-Mode`** | `sysadmin-devices` | `onprem-bkk` + `cloud-mgmt` | `<->` | ALL | Full SSH (22), TrueNAS Web UI (443), IPMI/iDRAC, container logs. |
+| **`Student-Compute-Access`** | `students` | `onprem-bkk` | `->` | `TCP 2222`<br>`TCP 8888`<br>`TCP 5000`<br>`TCP 631`<br>`ICMP` | Grants access to Jupyter SSH gateway, JupyterHub, and MLflow while **isolating student laptops from one another**. |
+
+---
+
+## 🚀 Server Onboarding SOP (Headless Nodes)
+
+Headless servers cannot open a web browser for interactive Google SSO. They authenticate using dynamic **Setup Keys**.
+
+### Step 1: Generate an Ephemeral Setup Key
+1. Log in to [`https://netbird2.brain.cs.ait.ac.th`](https://netbird2.brain.cs.ait.ac.th) as `brainlab@ait.asia`.
+2. Go to **Setup Keys** $\rightarrow$ **Add Setup Key**.
+3. Settings:
+   - **Name**: `onprem-bkk-enrollment`
+   - **Type**: Reusable (Expires in 24 hours) or One-off.
+   - **Auto-assigned Groups**: Select **`onprem-bkk`**.
+4. Copy the generated key.
+
+### Step 2: Install & Connect NetBird Agent on Ubuntu Server
+Run directly on the server (`la`, `tokyo`, or `cairo`):
+
 ```bash
-# Check client connection state
+# 1. Install official NetBird package
+curl -fsSL https://pkgs.netbird.io/install.sh | sh
+
+# 2. Connect to the self-hosted management server
+sudo netbird up \
+  --management-url https://netbird2.brain.cs.ait.ac.th \
+  --setup-key <YOUR_SETUP_KEY>
+```
+
+NetBird registers as a systemd service (`netbird.service`) that automatically starts on boot and reconnects after network disruptions.
+
+---
+
+## 🔍 Verification & Health Checks
+
+```bash
+# 1. Check client connection and assigned WireGuard IP
 netbird status
 
-# Check peer list and latency
+# Expected Output:
+# Management: Connected to https://netbird2.brain.cs.ait.ac.th:443
+# Signal: Connected to https://netbird2.brain.cs.ait.ac.th:443
+# Relays: 0/0 Available
+# Nameservers: 0/0 Available
+# NetBird IP: 100.66.X.Y/16
+# Interface type: Kernel (wt0)
+# Peers count: 3/3 Connected
+
+# 2. Check peer details and verify DIRECT P2P connection (ICE)
 netbird status -d
+
+# Look for:
+# Peer: tokyo (100.66.X.Z)
+#   Connection type: P2P (Direct WireGuard)
+#   Latency: 0.8ms
+
+# 3. Test ping to another mesh peer
+ping -c 3 100.66.X.Z
 ```
+
+---
+
+## 🖨️ Subnet Routers: When to Use Network Routes
+If the lab has "dumb" hardware devices that **cannot run software agents** (e.g., the CSIM physical network printer `192.41.170.x` or Dell iDRAC / HP iLO management cards):
+
+1. Pick one stable server (e.g. `cairo` or `tokyo`) to act as a **Routing Peer**.
+2. In NetBird Dashboard, navigate to **Network Routes** $\rightarrow$ **Add Route**.
+3. Specify:
+   - **Network Range**: e.g., `192.41.170.25/32` (Single printer IP) or `192.41.170.0/24`.
+   - **Routing Peer**: Select `cairo`.
+   - **Distribution Groups**: Select `sysadmin-devices` (or `students` for printing).
+4. On the routing server, ensure IP forwarding is enabled:
+   ```bash
+   sudo sysctl -w net.ipv4.ip_forward=1
+   ```
