@@ -30,49 +30,54 @@
 
 ---
 
-### Step 2: Configure Device Groups
+### Step 2: Configure Composable Device Groups
 
-NetBird uses **Groups** to categorize peers and enforce network segmentation.
+NetBird allows peers to belong to multiple groups simultaneously. We use a **Composable 2-Tag Model** (`loc-*` for physical/cloud location, and `tier-*` for operational role):
 
 1. In the left navigation, click **Access Control** $\rightarrow$ **Groups**.
-2. Click **Add Group** and create the following three groups:
+2. Click **Add Group** and create the standard lab taxonomy:
 
-| Group Name | Auto-Assign Rule | Purpose |
-| :--- | :--- | :--- |
-| **`servers`** | *None (Assigned via Setup Key)* | Physical compute nodes (`la`, `tokyo`), TrueNAS storage (`cairo`), and cloud VMs. |
-| **`sysadmin-devices`** | User: `brainlab@ait.asia`, `st121413@ait.asia` | Full mesh reachability for operator workstations and sysadmin laptops. |
-| **`lab-members`** | User: `@ait.asia`, approved alumni `@gmail.com` | Student and researcher personal laptops. |
+| Group Name | Tag Type | Purpose & Scope | Target Devices / Auto-Assign |
+| :--- | :---: | :--- | :--- |
+| **`loc-onprem-csim`** | **Location** | CSIM Server Room physical hardware. | Assigned via Setup Key for `la`, `tokyo`, `cairo` |
+| **`loc-onprem-lab`** | **Location** | Interactive lab desktop workstations. | Workstations in Brainlab student room |
+| **`loc-cloud-gcp`** | **Location** | Google Cloud Platform instances. | `brainlab-mgmt-vm`, GCP Spot GPU VMs |
+| **`loc-cloud-aws`** | **Location** | Amazon Web Services instances. | AWS research grant EC2 / GPU nodes |
+| **`tier-servers`** | **Role** | All GPU and NAS servers across all locations. | All compute and storage nodes |
+| **`tier-mgmt`** | **Role** | Control plane management services. | `brainlab-mgmt-vm` |
+| **`tier-operators`** | **Role** | SysAdmin laptops (full god-mode). | Auto-assign: `brainlab@ait.asia`, `st121413@ait.asia` |
+| **`tier-students`** | **Role** | General researcher & student laptops. | Auto-assign: Default for `@ait.asia` users |
 
 ---
 
 ### Step 3: Configure Zero-Trust Access Policies
 
-By default, NetBird creates an "All-to-All" rule. For lab security, replace it with **least-privilege Zero-Trust policies** so students cannot probe each other's laptops.
+By default, NetBird creates an "All-to-All" rule. Replace it with **least-privilege Zero-Trust policies**:
 
 1. Navigate to **Access Control** $\rightarrow$ **Policies**.
 2. **Disable or Delete** the default `All` rule.
-3. Create the following **3 clean policies**:
+3. Create the following **4 clean policies**:
 
-#### Policy A: Server Interconnect (Full Mesh for Cluster Nodes)
-- **Name**: `Server-Cluster-Interconnect`
-- **Sources**: `servers`
-- **Destinations**: `servers`
+#### Policy 1: Server Cluster Interconnect
+- **Name**: `Servers-Cluster-Mesh`
+- **Sources**: `tier-servers`
+- **Destinations**: `tier-servers`
 - **Direction**: Bidirectional (`<->`)
 - **Protocol**: ALL (TCP/UDP/ICMP)
-- *Rationale*: Allows GPU nodes to mount TrueNAS NFS (`/mnt/HDD/home`), query LLDAP (`:3890`), and execute distributed PyTorch/MPI training across servers.
+- *Rationale*: Allows GPU nodes to communicate for distributed PyTorch/MPI training and mount TrueNAS NFS.
 
-#### Policy B: SysAdmin Management Access
-- **Name**: `SysAdmin-Full-Access`
-- **Sources**: `sysadmin-devices`
-- **Destinations**: `servers`
+#### Policy 2: SysAdmin Full Management
+- **Name**: `SysAdmin-God-Mode`
+- **Sources**: `tier-operators`
+- **Destinations**: `tier-servers`, `tier-mgmt`
 - **Direction**: Bidirectional (`<->`)
 - **Protocol**: ALL
-- *Rationale*: Grants sysadmins unrestricted SSH, TrueNAS Web Admin, IPMI/iDRAC, and container debugging access from anywhere.
+- *Rationale*: Grants sysadmins unrestricted root SSH (port 22), TrueNAS Web Admin, IPMI/iDRAC, and remote management.
 
-#### Policy C: Student & Researcher Compute Access
-- **Name**: `Lab-Member-To-Compute`
-- **Sources**: `lab-members`
-- **Destinations**: `servers`
+#### Policy 3: Student & Researcher Compute Access
+- **Name**: `Student-Compute-Access`
+- **Sources**: `tier-students`
+- **Destinations**: `tier-servers`
 - **Direction**: One-way (`->`)
 - **Protocol / Ports Allowed**:
   - `TCP 2222` (Single-Port Container SSH Gateway)
@@ -82,21 +87,29 @@ By default, NetBird creates an "All-to-All" rule. For lab security, replace it w
   - `ICMP` (Ping diagnostics)
 - *Rationale*: Allows students to train models and connect to Jupyter containers while **completely isolating student laptops from one another**.
 
+#### Policy 4: LDAP Directory Queries
+- **Name**: `LDAP-Directory-Access`
+- **Sources**: `tier-servers`
+- **Destinations**: `tier-mgmt`
+- **Direction**: One-way (`->`)
+- **Protocol / Ports**: `TCP 3890` (LDAP)
+- *Rationale*: Allows physical Linux SSSD and JupyterHub on compute servers to query LLDAP securely over WireGuard.
+
 ---
 
 ### Step 4: Generate Server Setup Keys (Day 1 Ansible)
 
-Headless servers (`la`, `tokyo`, `cairo`) do not have web browsers for interactive Google OAuth2 login. They connect using **Setup Keys**.
+Headless servers (`la`, `tokyo`, `cairo`) authenticate using **Setup Keys**.
 
 1. Navigate to **Setup Keys** in the dashboard.
 2. Click **Add Setup Key**.
 3. Fill in:
-   - **Key Name**: `servers-onboarding-key`
-   - **Type**:
-     - **Reusable** (Expires in 24h or 7 days) if onboarding multiple physical servers at once.
-     - **One-off** (Single-use) for strict ephemeral enrollment.
-   - **Auto-assigned Groups**: Select **`servers`**.
-4. Click **Create Key** and copy the generated token string (`A1B2C3D4...`).
+   - **Key Name**: `onprem-csim-enrollment`
+   - **Type**: **Reusable** (Expires in 24h or 7 days)
+   - **Auto-assigned Groups**: Select **both**:
+     - ✅ **`loc-onprem-csim`**
+     - ✅ **`tier-servers`**
+4. Click **Create Key** and copy the generated token string.
 
 #### Manual Enrollment Test on a Physical Server:
 ```bash

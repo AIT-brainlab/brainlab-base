@@ -42,21 +42,56 @@ Instead of deploying a single "VPN gateway" or "subnet router" for the whole ser
 
 ---
 
-### 2. Cluster/Tier Groups vs. Service Meshes
+### 2. Multi-Site & Multi-Cloud Naming Scheme (Composable 2-Tag Model)
 Do **not** create separate VPN meshes for individual services (e.g. an "NFS mesh" or "LDAP mesh"). A single physical machine is simultaneously an NFS client, an LDAP client, and a GPU runner.
 
-Instead, organize peers by **Environment/Cluster Tier**, and enforce service isolation via **Access Control Policies**:
+Furthermore, do **not** bake every detail into monolithic group names (like `onprem-csim-gpu-servers`). NetBird allows a single peer to belong to **multiple groups simultaneously**.
+
+We use a **Composable 2-Tag Model**: Every peer is tagged with its **Location (`loc-*`)** and its **Role/Tier (`tier-*`)**:
 
 ```
-                   ┌───────────────────────────────────────┐
-                   │        4 Natural Device Groups        │
-                   ├───────────────────────────────────────┤
-                   │ 1. onprem-bkk      (la, tokyo, cairo) │
-                   │ 2. cloud-mgmt      (Management VM)    │
-                   │ 3. sysadmin-devices (Admin laptops)   │
-                   │ 4. students        (Student laptops)  │
-                   └───────────────────────────────────────┘
+                     ┌──────────────────────────────────────────────┐
+                     │           NETBIRD PEER TAGGING               │
+                     └──────────────────────┬───────────────────────┘
+                                            │
+               ┌────────────────────────────┴────────────────────────────┐
+               ▼                                                         ▼
+     📍 LOCATION TAGS                                          ⚙️ ROLE / TIER TAGS
+  (Where does the box sit?)                                 (What permissions does it need?)
+  • loc-onprem-csim   (CSIM Server Room)                     • tier-servers   (Compute & NAS nodes)
+  • loc-onprem-lab    (Brainlab Room / Lab)                  • tier-mgmt      (GCP Control Plane)
+  • loc-cloud-gcp     (Google Cloud)                         • tier-operators (SysAdmin Laptops)
+  • loc-cloud-aws     (Amazon Web Services)                  • tier-students  (Student Laptops)
 ```
+
+#### Standard Group Taxonomy:
+
+| Group Name | Tag Type | Purpose & Scope | Target Devices / Members |
+| :--- | :---: | :--- | :--- |
+| **`loc-onprem-csim`** | **Location** | Physical CSIM Server Room rack (10GbE LAN). | `la`, `tokyo`, `cairo` |
+| **`loc-onprem-lab`** | **Location** | Physical workstations in the Brainlab student room. | Interactive lab desktop workstations |
+| **`loc-cloud-gcp`** | **Location** | Google Cloud Platform instances. | `brainlab-mgmt-vm`, GCP Spot GPU VMs |
+| **`loc-cloud-aws`** | **Location** | Amazon Web Services instances. | AWS research grant EC2 / GPU nodes |
+| **`tier-servers`** | **Role** | All backend compute, GPU, and storage servers. | `la`, `tokyo`, `cairo`, cloud GPU VMs |
+| **`tier-storage`** | **Role** | Central network-attached storage. | `cairo` (TrueNAS NFS / SMB) |
+| **`tier-mgmt`** | **Role** | Management control plane services. | `brainlab-mgmt-vm` (LLDAP, NetBird) |
+| **`tier-operators`** | **Role** | Infrastructure administrators. | Laptops of `akraradets`, `phue`, `bci` |
+| **`tier-students`** | **Role** | Lab researchers and students. | Student personal laptops |
+
+#### Standard Peer Hostname Conventions:
+When peers register with NetBird, enforce standard hostnames:
+1. **On-Premise Physical Servers**: Use memorable **City Names** in lowercase:
+   - `la` (GPU compute node)
+   - `tokyo` (GPU compute node)
+   - `cairo` (TrueNAS NFS storage)
+   - *Future nodes*: `paris`, `oslo`, `berlin`, `kyoto`
+2. **Cloud GPU Instances**: Use structured provider identifiers:
+   - `gpu-gcp-<id>` (e.g. `gpu-gcp-01`, `gpu-gcp-a100`)
+   - `gpu-aws-<id>` (e.g. `gpu-aws-01`, `gpu-aws-h100`)
+3. **Management Control Plane**:
+   - `mgmt-vm` (or `brainlab-mgmt-vm`)
+4. **User & Admin Laptops**:
+   - `laptop-<username>` (e.g. `laptop-akraradets`, `laptop-phue`, `laptop-st123456`)
 
 ---
 
