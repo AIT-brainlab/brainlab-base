@@ -1,4 +1,4 @@
-# TrueNAS Shared NFS Storage (`/mnt/HDD/home`)
+# TrueNAS Shared NFS Storage (`/mnt/pool-1/home`)
 
 ## Overview
 All user home directories, persistent datasets, and SSH keys are hosted centrally on TrueNAS (`cairo`) and mounted over NFS across all lab servers.
@@ -16,7 +16,7 @@ sudo apt install -y nfs-common
 ## 2. Mount Point Setup
 Create the standard mount target directory:
 ```bash
-sudo mkdir -p /mnt/HDD/home
+sudo mkdir -p /mnt/pool-1/home
 ```
 
 ---
@@ -24,7 +24,7 @@ sudo mkdir -p /mnt/HDD/home
 ## 3. Persistent `/etc/fstab` Configuration
 Add the following entry to `/etc/fstab`:
 ```text
-cairo:/mnt/HDD/home     /mnt/HDD/home   nfs     auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+cairo:/mnt/pool-1/home     /mnt/pool-1/home   nfs     auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
 ```
 
 ### Mount Parameters Explained:
@@ -41,8 +41,8 @@ cairo:/mnt/HDD/home     /mnt/HDD/home   nfs     auto,nofail,noatime,nolock,intr,
 sudo mount -a
 
 # Verify mount point
-df -h | grep /mnt/HDD/home
+df -h | grep /mnt/pool-1/home
 
 # Verify directory ownership & permissions
-ls -la /mnt/HDD/home/
+ls -la /mnt/pool-1/home/
 ```

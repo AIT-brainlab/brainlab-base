@@ -129,8 +129,11 @@ flowchart TD
 | `4.3` | Build Declarative Network-as-Code ([`network.yaml`](vpn/network.yaml)) and Sync Engine ([`sync_netbird.py`](vpn/sync_netbird.py)) | Akraradet | 🔵 | Supports Composable 2-Tag Model, policies, and setup keys |
 | `4.4` | Execute `./mgmt/vpn/sync_netbird.py --apply` to reconcile groups, policies, and keys | Akraradet | 🔵 | Applied live: 9 groups, 4 zero-trust policies, and enrollment setup key |
 | `4.5` | Deploy GitHub Action ([`.github/workflows/netbird_pat_reminder.yml`](../.github/workflows/netbird_pat_reminder.yml)) for 365-day PAT reminder | Akraradet | 🔵 | Runs monthly; creates alert issue 30 days before expiration |
-| `4.6` | Enroll physical GPU nodes (`la`, `tokyo`, `cairo`) via Ansible / Setup Key | Akraradet | 🔴 | Setup key ready: `AB6E3D96-8AC5-4D89-8252-4EC9A737F464` |
-| `4.7` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔵 | 100% persistent across VM reboots; snapshot uploaded to GCS |
+| `4.6` | Deploy NetBird Client on Management VM (`brainlab-mgmt-vm`) | Akraradet | 🟡 | Joins mesh with tag `tier-mgmt`; exposes internal `ldap://` (:3890) |
+| `4.7` | Deploy NetBird Client on TrueNAS Storage Node (`cairo`) | Akraradet | 🔴 | Joins mesh with tags `loc-onprem-csim`, `tier-storage` |
+| `4.8` | Configure TrueNAS Directory Services LDAP using internal NetBird URL | Akraradet | 🔴 | `ldap://mgmt.netbird.selfhosted:3890` with service account `ldapservice` |
+| `4.9` | Enroll physical GPU nodes (`la`, `tokyo`) via Ansible / Setup Key | Akraradet | 🔴 | Joins mesh with tags `loc-onprem-csim`, `tier-servers` |
+| `4.10` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔵 | 100% persistent across VM reboots; snapshot uploaded to GCS |
 
 ---
 
@@ -140,7 +143,7 @@ flowchart TD
 | :--- | :--- | :--- | :---: | :--- |
 | `5.1` | Verify Google OAuth2 credentials in GCP Console (SOP: [`oauth_setup.md`](oauth_setup.md)) | Akraradet | 🔵 | Pre-verified live |
 | `5.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 | Test 1-click Google login on `hub.brain.cs.ait.ac.th` |
-| `5.3` | Verify end-to-end user home directory read/write on `/mnt/HDD/home` | Whole Team | 🔴 | Zero permission conflicts on TrueNAS NFS |
+| `5.3` | Verify end-to-end user home directory read/write on `/mnt/pool-1/home` | Whole Team | 🔴 | Zero permission conflicts on TrueNAS NFS |
 | `5.4` | **Deploy Web Print Service (`docker-cups`)**: Launch web print portal at `print.brain.cs.ait.ac.th` with Google OAuth2 SSO | Akraradet | 🔴 | Drag-and-drop PDF upload from any browser |
 | `5.5` | **Bridge Web Print to CSIM Printer**: Route print jobs over NetBird mesh to on-prem CSIM printer with CSIM quota auth | Akraradet | 🔴 | Print remotely from home/laptops to lab printer |
 

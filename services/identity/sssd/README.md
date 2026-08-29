@@ -30,7 +30,7 @@ SSSD integrates local Linux PAM/NSS authentication with our central **LLDAP** co
               │
               ├─► Verifies User Password / Credentials
               ├─► Returns Numeric POSIX UID (e.g. 121413) & GID (10001)
-              ├─► Sets Home Directory Path (/mnt/HDD/home/<user>)
+              ├─► Sets Home Directory Path (/mnt/pool-1/home/<user>)
               └─► Grants 'sudo' access if user belongs to group 'admin'
 ```
 
@@ -86,7 +86,7 @@ id akraradet
 
 # Verify getent passwd
 getent passwd st121413
-# Expected output: st121413:*:121413:10001:Akraradet Sinsamersuk:/mnt/HDD/home/st121413:/bin/bash
+# Expected output: st121413:*:121413:10001:Akraradet Sinsamersuk:/mnt/pool-1/home/st121413:/bin/bash
 ```
 
 ---
