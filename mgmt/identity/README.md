@@ -59,7 +59,7 @@ members:
     secondary_emails:
       - akraradets@gmail.com             # Multi-Email Binding for alumni access
     uid: 121413                         # Matches TrueNAS numeric POSIX UID
-    gid: 2008                          # Primary GID
+    gid: 2002                          # Primary GID (brainlab)
     home_directory: /mnt/pool-1/home/akraradets
     login_shell: /bin/bash
     groups: [brainlab]
