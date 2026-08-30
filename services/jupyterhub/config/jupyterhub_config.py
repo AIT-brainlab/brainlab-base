@@ -108,6 +108,7 @@ class BrainlabAuthenticator(GoogleOAuthenticator):
         return True
 
 c.JupyterHub.authenticator_class = BrainlabAuthenticator
+c.Authenticator.allow_all = True
 
 c.GoogleOAuthenticator.client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
 c.GoogleOAuthenticator.client_secret = os.environ.get('GOOGLE_CLIENT_SECRET', '')
