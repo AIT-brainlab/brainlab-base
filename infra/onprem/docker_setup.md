@@ -42,12 +42,12 @@ sudo systemctl restart docker
 ---
 
 ## 3. Storage Data Root Configuration
-To avoid filling the OS root partition with Docker images, configure `/data/docker`:
+To avoid filling the OS root partition with Docker images, compute nodes mount dedicated 1 TB block storage from TrueNAS over iSCSI at `/mnt/docker-root` (see [[truenas_iscsi|TrueNAS iSCSI Block Storage Runbook]]):
 
 Edit `/etc/docker/daemon.json`:
 ```json
 {
-  "data-root": "/data/docker"
+  "data-root": "/mnt/docker-root"
 }
 ```
 Restart Docker:

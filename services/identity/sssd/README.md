@@ -23,13 +23,13 @@ SSSD integrates local Linux PAM/NSS authentication with our central **LLDAP** co
        PAM / NSS Stack
               │
               ▼
-         Linux SSSD 
+          Linux SSSD 
               │
-              ▼ (Encrypted WireGuard Mesh: ldap://34.143.234.182:3890)
-       LLDAP Directory (ait-brainlab-mgmt)
+              ▼ (Encrypted WireGuard Mesh: ldap://ldap.brain.cs.ait.ac.th:3890)
+        LLDAP Directory (ait-brainlab-mgmt)
               │
               ├─► Verifies User Password / Credentials
-              ├─► Returns Numeric POSIX UID (e.g. 121413) & GID (10001)
+              ├─► Returns Numeric POSIX UID (e.g. 121413) & GID (2002:brainlab)
               ├─► Sets Home Directory Path (/mnt/pool-1/home/<user>)
               └─► Grants 'sudo' access if user belongs to group 'admin'
 ```
@@ -46,12 +46,12 @@ sudo apt-get install -y sssd sssd-tools libpam-sss libnss-sss ldap-utils
 
 ### Step 2: Deploy SSSD Configuration
 ```bash
-# Retrieve LLDAP admin password from GCP Secret Manager
-ADMIN_PW=$(gcloud secrets versions access latest --secret="lldap-admin-password" --project="ait-brainlab-mgmt")
+# Retrieve read-only ldapservice password from GCP Secret Manager
+READONLY_PW=$(gcloud secrets versions access latest --secret="lldap-readonly-password" --project="ait-brainlab-mgmt")
 
 # Copy template and substitute variables
 sudo cp sssd.conf.template /etc/sssd/sssd.conf
-sudo sed -i "s/<LLDAP_ADMIN_PASSWORD>/$ADMIN_PW/g" /etc/sssd/sssd.conf
+sudo sed -i "s/<LLDAP_READONLY_PASSWORD>/$READONLY_PW/g" /etc/sssd/sssd.conf
 
 # Enforce strict security permissions (SSSD will not start if permissions are loose)
 sudo chown root:root /etc/sssd/sssd.conf

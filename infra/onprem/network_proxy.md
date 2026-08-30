@@ -41,7 +41,7 @@ Add proxy exports to `/etc/environment` or user `~/.bashrc`:
 export http_proxy=http://192.41.170.82:3128
 export https_proxy=http://192.41.170.82:3128
 export ftp_proxy=http://192.41.170.82:3128
-export no_proxy="localhost,127.0.0.1,192.41.170.0/24,*.ait.ac.th,*.ait.asia,*.brainlab"
+export no_proxy="localhost,127.0.0.1,192.41.170.0/24,100.74.0.0/16,*.ait.ac.th,*.ait.asia,*.brain.cs.ait.ac.th"
 ```
 
 ### Step 2: APT Package Manager Proxy

@@ -32,13 +32,13 @@ flowchart TD
     end
 
     subgraph LabServices ["🚀 AIT Brainlab Services"]
-        NetBird["📡 NetBird Web Dashboard<br/>(netbird2.brain.cs.ait.ac.th)"]
-        JupyterHub["⚡ GPU JupyterHub<br/>(hub.brain.cs.ait.ac.th)"]
+        NetBird["📡 NetBird Web Dashboard<br/>(netbird.brain.cs.ait.ac.th)"]
+        JupyterHub["⚡ GPU JupyterHub<br/>(la.cs.ait.ac.th)"]
         WebPrint["🖨️ Web Print Portal<br/>(print.brain.cs.ait.ac.th)"]
     end
 
     subgraph LLDAP_Dir ["👤 LLDAP Passwordless POSIX Directory (:3890)"]
-        POSIX["Maps Email ──► UID 1042 / GID 10001<br/>• Zero passwords stored for humans"]
+        POSIX["Maps Email ──► UID / GID 2002:brainlab<br/>• Zero passwords stored for humans"]
     end
 
     User -->|"1. Click 'Sign in with Google'"| GoogleOIDC
@@ -72,26 +72,21 @@ flowchart TD
 3. Set **Application type**: **Web application**.
 4. Set **Name**: `AIT Brainlab SSO (NetBird, JupyterHub, Web Print)`.
 
-5. **Authorized JavaScript Origins** (Add all 6 URLs):
+5. **Authorized JavaScript Origins**:
    ```text
-   https://netbird2.brain.cs.ait.ac.th
    https://netbird.brain.cs.ait.ac.th
-   https://authen2.brain.cs.ait.ac.th
-   https://authen.brain.cs.ait.ac.th
-   https://hub.brain.cs.ait.ac.th
+   https://ldap.brain.cs.ait.ac.th
+   https://la.cs.ait.ac.th
    https://print.brain.cs.ait.ac.th
    ```
 
-6. **Authorized Redirect URIs** (Add all URLs):
+6. **Authorized Redirect URIs**:
    ```text
-   https://netbird2.brain.cs.ait.ac.th
-   https://netbird2.brain.cs.ait.ac.th/auth
-   https://netbird2.brain.cs.ait.ac.th/silent-auth
    https://netbird.brain.cs.ait.ac.th
    https://netbird.brain.cs.ait.ac.th/auth
    https://netbird.brain.cs.ait.ac.th/silent-auth
    http://localhost:53000
-   https://hub.brain.cs.ait.ac.th/hub/oauth_callback
+   https://la.cs.ait.ac.th/hub/oauth_callback
    https://print.brain.cs.ait.ac.th/oauth2/callback
    ```
 
@@ -99,24 +94,15 @@ flowchart TD
 
 ---
 
-### Step 3: Store Credentials in GCP Secret Manager
-
-Once Google generates your credentials, save them into **GCP Secret Manager** so that Terraform and all services can read them securely:
-
+### Step 3: Store Client ID & Secret in GCP Secret Manager
 ```bash
-PROJECT_ID="ait-brainlab-mgmt"
+# 1. Store Client ID
+echo -n "YOUR_CLIENT_ID.apps.googleusercontent.com" | \
+  gcloud secrets versions add google-oauth-client-id --data-file=- --project=ait-brainlab-mgmt
 
-# 1. Store Google OAuth Client ID
-echo -n "<YOUR_GOOGLE_CLIENT_ID>" | gcloud secrets create google-oauth-client-id \
-  --data-file=- \
-  --project="$PROJECT_ID" \
-  --replication-policy="automatic"
-
-# 2. Store Google OAuth Client Secret
-echo -n "<YOUR_GOOGLE_CLIENT_SECRET>" | gcloud secrets create google-oauth-client-secret \
-  --data-file=- \
-  --project="$PROJECT_ID" \
-  --replication-policy="automatic"
+# 2. Store Client Secret
+echo -n "GOCSPX-YOUR_CLIENT_SECRET" | \
+  gcloud secrets versions add google-oauth-client-secret --data-file=- --project=ait-brainlab-mgmt
 ```
 
 ---
@@ -125,8 +111,8 @@ echo -n "<YOUR_GOOGLE_CLIENT_SECRET>" | gcloud secrets create google-oauth-clien
 
 | Service | Configuration Method | Behavior |
 | :--- | :--- | :--- |
-| **📡 NetBird Web UI** | Read from Secret Manager $\rightarrow$ `docker-compose.yml` (`AUTH_CLIENT_ID`) | Shows 1-click Google Sign-in button on `https://netbird2.brain.cs.ait.ac.th` |
-| **⚡ JupyterHub** | Read from Secret Manager $\rightarrow$ `jupyterhub_config.py` (`OAuthenticator`) | 1-Click login on `https://hub.brain.cs.ait.ac.th` spawning user GPU notebook |
+| **📡 NetBird Web UI** | Read from Secret Manager $\rightarrow$ `docker-compose.yml` (`AUTH_CLIENT_ID`) | Shows 1-click Google Sign-in button on `https://netbird.brain.cs.ait.ac.th` |
+| **⚡ JupyterHub** | Read from Secret Manager $\rightarrow$ `jupyterhub_config.py` (`OAuthenticator`) | 1-Click login on `https://la.cs.ait.ac.th` spawning user GPU notebook |
 | **🖨️ Web Print Portal** | Read from Secret Manager $\rightarrow$ OAuth2 Proxy | Protects `https://print.brain.cs.ait.ac.th` requiring Google login before PDF upload |
 
 ---

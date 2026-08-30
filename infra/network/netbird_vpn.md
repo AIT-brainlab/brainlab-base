@@ -1,9 +1,9 @@
 # NetBird WireGuard Mesh Network Architecture & Runbook
 
 ## 📌 Architecture Overview
-AIT Brainlab operates a **Self-Hosted NetBird WireGuard Mesh Overlay Network** (`100.66.0.0/16`). It interconnects physical on-premise compute servers (`la`, `tokyo`), TrueNAS storage (`cairo`), the cloud management plane (`brainlab-mgmt-vm`), and remote researcher laptops.
+AIT Brainlab operates a **Self-Hosted NetBird WireGuard Mesh Overlay Network** (`100.74.0.0/16`). It interconnects physical on-premise compute servers (`la`, `tokyo`), TrueNAS storage (`cairo`), the cloud management plane (`brainlab-mgmt-vm`), and remote researcher laptops.
 
-- **Unified Control Plane**: Self-hosted on GCP Management VM at [`https://netbird2.brain.cs.ait.ac.th`](https://netbird2.brain.cs.ait.ac.th).
+- **Unified Control Plane**: Self-hosted on GCP Management VM at [`https://netbird.brain.cs.ait.ac.th`](https://netbird.brain.cs.ait.ac.th).
 - **Identity & AuthN**: Authenticated 100% via Google OAuth2 SSO (`@ait.asia` and approved alumni `@gmail.com`).
 - **Data Plane**: Direct peer-to-peer (P2P) encrypted WireGuard UDP tunnels with automatic NAT traversal (STUN/ICE). Traffic does not route through central cloud relays.
 
@@ -126,13 +126,9 @@ In NetBird Dashboard (**Access Control** $\rightarrow$ **Policies**), define 4 c
 Headless servers cannot open a web browser for interactive Google SSO. They authenticate using dynamic **Setup Keys**.
 
 ### Step 1: Generate an Ephemeral Setup Key
-1. Log in to [`https://netbird2.brain.cs.ait.ac.th`](https://netbird2.brain.cs.ait.ac.th) as `brainlab@ait.asia`.
-2. Go to **Setup Keys** $\rightarrow$ **Add Setup Key**.
-3. Settings:
-   - **Name**: `onprem-bkk-enrollment`
-   - **Type**: Reusable (Expires in 24 hours) or One-off.
-   - **Auto-assigned Groups**: Select **`onprem-bkk`**.
-4. Copy the generated key.
+1. Log in to [`https://netbird.brain.cs.ait.ac.th`](https://netbird.brain.cs.ait.ac.th) as `brainlab@ait.asia`.
+2. Go to **Setup Keys** $\rightarrow$ **Add Setup Key** (or use declarative GitOps in `mgmt/vpn/network.yaml`).
+3. Copy the generated key.
 
 ### Step 2: Install & Connect NetBird Agent on Ubuntu Server
 Run directly on the server (`la`, `tokyo`, or `cairo`):
@@ -141,9 +137,12 @@ Run directly on the server (`la`, `tokyo`, or `cairo`):
 # 1. Install official NetBird package
 curl -fsSL https://pkgs.netbird.io/install.sh | sh
 
-# 2. Connect to the self-hosted management server
+# 2. For on-prem nodes behind CSIM Squid proxy (la, cairo), start the proxy tunnel:
+sudo systemctl enable --now netbird-proxy-tunnel.service
+
+# 3. Connect to the self-hosted management server
 sudo netbird up \
-  --management-url https://netbird2.brain.cs.ait.ac.th \
+  --management-url https://netbird.brain.cs.ait.ac.th \
   --setup-key <YOUR_SETUP_KEY>
 ```
 
@@ -158,13 +157,13 @@ NetBird registers as a systemd service (`netbird.service`) that automatically st
 netbird status
 
 # Expected Output:
-# Management: Connected to https://netbird2.brain.cs.ait.ac.th:443
-# Signal: Connected to https://netbird2.brain.cs.ait.ac.th:443
-# Relays: 0/0 Available
-# Nameservers: 0/0 Available
-# NetBird IP: 100.66.X.Y/16
-# Interface type: Kernel (wt0)
-# Peers count: 3/3 Connected
+# Management: Connected to https://netbird.brain.cs.ait.ac.th:443
+# Signal: Connected to https://netbird.brain.cs.ait.ac.th:443
+# Relays: Available
+# Nameservers: Available
+# NetBird IP: 100.74.X.Y/16
+# Interface type: Kernel (wt0) or Userspace
+# Peers count: N/N Connected
 
 # 2. Check peer details and verify DIRECT P2P connection (ICE)
 netbird status -d

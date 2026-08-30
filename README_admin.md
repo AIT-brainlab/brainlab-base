@@ -1,4 +1,13 @@
-This is the current implementation of Jupyterhub of the AIT Brainlab.
+> [!NOTE]
+> **Modern Documentation Notice**:  
+> This file contains legacy initial setup notes. For current, production-grade, and modular runbooks, refer to:
+> - Base OS & Network: [`infra/onprem/os_setup.md`](infra/onprem/os_setup.md) & [`infra/onprem/network_proxy.md`](infra/onprem/network_proxy.md)
+> - TrueNAS NFS & iSCSI: [`infra/onprem/truenas_nfs.md`](infra/onprem/truenas_nfs.md) & [`infra/onprem/truenas_iscsi.md`](infra/onprem/truenas_iscsi.md)
+> - SSSD & Identity: [`services/identity/sssd/README.md`](services/identity/sssd/README.md) & [`mgmt/identity/README.md`](mgmt/identity/README.md)
+> - JupyterHub: [`services/jupyterhub/README.md`](services/jupyterhub/README.md)
+> - NetBird Mesh VPN: [`infra/network/netbird_vpn.md`](infra/network/netbird_vpn.md) & [`mgmt/netbird_setup.md`](mgmt/netbird_setup.md)
+
+This is the historical implementation notes of JupyterHub of the AIT Brainlab.
 Below is the step to install a new machine.
 
 # A step to install Ubuntu 22.04 for AIT Brainlab system
@@ -56,8 +65,8 @@ The `http_proxy` and `https_proxy` should be set for both user and sudoers file.
 First, configuring `.bashrc` with
 
 ```sh
-export http_proxy=http://192.41.170.23:3128
-export https_proxy=http://192.41.170.23:3128
+export http_proxy=http://192.41.170.82:3128
+export https_proxy=http://192.41.170.82:3128
 ```
 
 Then, to keep the environment variables for the `sudo` command, do the following
@@ -87,11 +96,11 @@ or using Ubuntu-Driver https://help.ubuntu.com/community/NvidiaDriversInstallati
 ## 6. Configuring NAS for `home`
 ```shell
 sudo apt install -y nfs-common
-sudo mkdir -p /mnt/HDD/home
+sudo mkdir -p /mnt/pool-1/home
 ```
 add mount command to `/etc/fstab`
 ```shell
-cairo:/mnt/HDD/home     /mnt/HDD/home   nfs     auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+cairo:/mnt/pool-1/home     /mnt/pool-1/home   nfs     auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
 ```
 Then try to mount with
 ```

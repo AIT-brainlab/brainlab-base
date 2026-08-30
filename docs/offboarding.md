@@ -1,16 +1,16 @@
 # 📋 Member Offboarding & Data Archiving Runbook
 
 > **AIT Brainlab Modern Offboarding & Archiving SOP**  
-> Covers data preservation on TrueNAS NFS, Google OAuth2 access revocation, and GitOps user archiving in `identity/users.tf`.
+> Covers data preservation on TrueNAS NFS, Google OAuth2 access revocation, and GitOps user archiving in `mgmt/identity/members.yaml`.
 
 ---
 
 ## 🎯 Offboarding Overview
 
-Because AIT Brainlab uses **Google OAuth2 SSO** and **Identity-as-Code (`identity/users.tf`)**, member offboarding is fast, safe, and automated:
+Because AIT Brainlab uses **Google OAuth2 SSO** and **Declarative Identity-as-Code (`mgmt/identity/members.yaml`)**, member offboarding is fast, safe, and automated:
 
 1. **Institutional Deactivation**: When AIT IT deactivates the graduating student's `@ait.asia` Google account, their access to **NetBird VPN**, **JupyterHub**, and **Web Print** is **instantly revoked by Google** with zero manual intervention.
-2. **Alumni Transition**: If the member continues as an external collaborator, their account is transitioned to an approved personal email in `identity/users.tf` with the `"alumni"` group.
+2. **Alumni Transition**: If the member continues as an external collaborator, their personal email is added to `secondary_emails` in `mgmt/identity/members.yaml` (Multi-Email Binding), preserving their existing POSIX UID without copying data.
 
 ---
 
@@ -20,39 +20,39 @@ Because AIT Brainlab uses **Google OAuth2 SSO** and **Identity-as-Code (`identit
 1. Notify the researcher 30 days prior to graduation to transfer code, models, and datasets.
 2. Create a timestamped archive of their work directory on TrueNAS NFS (`cairo`):
    ```bash
-   sudo tar -czvf /mnt/HDD/archive/<username>_$(date +%Y%m%d).tar.gz /mnt/HDD/home/<username>/work
+   sudo tar -czvf /mnt/pool-1/archive/<username>_$(date +%Y%m%d).tar.gz /mnt/pool-1/home/<username>/work
    ```
 3. Set the archive permissions to read-only for lab preservation:
    ```bash
-   sudo chmod 400 /mnt/HDD/archive/<username>_*.tar.gz
+   sudo chmod 400 /mnt/pool-1/archive/<username>_*.tar.gz
    ```
 
 ---
 
-### Step 2: Archive or Remove Identity in GitOps (`identity/users.tf`)
+### Step 2: Archive or Remove Identity in GitOps (`mgmt/identity/members.yaml`)
 
 #### Scenario A: Retain as Alumni / External Collaborator
 If the member transitions to alumni status:
-1. Open [`mgmt/terraform/identity/users.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/mgmt/terraform/identity/users.tf).
-2. Change their email to their personal address and update groups to `["member", "alumni"]`:
-   ```hcl
-   "johndoe" = {
-     email      = "johndoe@gmail.com"
-     first_name = "John"
-     last_name  = "Doe"
-     uid        = 123456
-     gid        = 10001
-     home       = "/mnt/HDD/home/johndoe"
-     shell      = "/bin/bash"
-     groups     = ["member", "alumni"]
-   }
+1. Open [`mgmt/identity/members.yaml`](../mgmt/identity/members.yaml).
+2. Add their approved personal email under `secondary_emails`:
+   ```yaml
+   - username: johndoe
+     display_name: "John Doe"
+     primary_email: st123456@ait.asia
+     secondary_emails:
+       - johndoe@gmail.com
+     uid: 123456
+     gid: 2002
+     home_directory: /mnt/pool-1/home/johndoe
+     login_shell: /bin/bash
+     groups: [brainlab]
    ```
-3. Run `terraform apply` in `mgmt/terraform/identity/`.
+3. Run `python3 mgmt/identity/sync_users.py --apply`.
 
 #### Scenario B: Complete Account Removal
 If the member has left permanently:
-1. Remove their user block from `users` in [`mgmt/terraform/identity/users.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/mgmt/terraform/identity/users.tf).
-2. Run `terraform apply` in `mgmt/terraform/identity/` to cleanly remove the account from LLDAP.
+1. Remove their entry from `members` in [`mgmt/identity/members.yaml`](../mgmt/identity/members.yaml).
+2. Run `python3 mgmt/identity/sync_users.py --apply` to cleanly archive the account from LLDAP.
 
 ---
 

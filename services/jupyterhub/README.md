@@ -6,10 +6,10 @@ AIT Brainlab operates a multi-user JupyterHub environment providing containerize
 ---
 
 ## 🏗 Architecture & Stack
-- **Hub URL**: `https://la.cs.ait.ac.th` (or `https://hub.brain.cs.ait.ac.th`)
-- **Spawner**: Custom `DockerSpawner` dynamically mapping user UIDs/GIDs and allocating GPUs per user.
-- **Storage**: User home directories mounted live from `/mnt/HDD/home/{username}/work`.
-- **Authentication**: OpenLDAP / `lldap` or Google OIDC.
+- **Hub URL**: `https://la.cs.ait.ac.th`
+- **Spawner**: Custom `DockerSpawner` dynamically mapping user UIDs/GIDs and allocating GPUs (e.g. dual NVIDIA RTX A6000) per user.
+- **Storage**: User working directory lands at `/home/{username}`, mounting TrueNAS NFS `/mnt/pool-1/home/{username}` as `work`, plus FastSSD datasets.
+- **Authentication**: Google OAuth2 SSO (`@ait.asia`) dynamically querying Cloud LLDAP (`ldap.brain.cs.ait.ac.th:3890`) for numeric POSIX UID/GID (`2002:brainlab`).
 - **Service Management**: Controlled by systemd unit (`jupyterhub.service`).
 
 ---
