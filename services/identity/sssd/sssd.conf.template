@@ -50,6 +50,5 @@ ldap_group_member = uniqueMember
 
 # 🛡️ Offline Resilience Settings
 cache_credentials = true
-account_cache_expiration = 14
 entry_cache_timeout = 600
 enumerate = false
