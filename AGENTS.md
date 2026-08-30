@@ -132,6 +132,12 @@ brainlab-base/
     - **Setup Key vs. PSK**: In NetBird client installations on Windows, setup keys are UUID strings containing hyphens (`-`). They must strictly be passed to `--setup-key` (or the "Setup Key" GUI input), never to `--preshared-key` or the WireGuard Pre-Shared Key field, which triggers base64 decoding failures (`illegal base64 data at input byte 8`).
     - **Subnet Routing (Routing Peers)**: When configuring a Windows NetBird peer as a subnet router (e.g. bridging physical on-prem devices like CCTV IP cameras) with `masquerade: true`, Windows requires IP forwarding explicitly enabled across its network interfaces via PowerShell `Set-NetIPInterface -Forwarding Enabled` and registry `Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -Name "IPEnableRouter" -Value 1`.
 30. **TrueNAS Persistent iSCSI Mount Standards**: Compute nodes mounting dedicated block storage volumes from TrueNAS over iSCSI (such as `/mnt/docker-root`) must enable automatic node login via `iscsiadm -m node -T <target> -p <ip>:3260 --op=update -n node.startup -v automatic`, and declare `_netdev` in `/etc/fstab` (`rw,suid,_netdev,exec,auto...`) to ensure systemd defers mounting until the network stack and `open-iscsi` initiator are active.
+31. **Canonical Domain Name Taxonomy & Anti-Drift Invariant**: AI assistants and documentation templates MUST NOT invent or reference hypothetical subdomains like `auth.brain.cs.ait.ac.th`, `authen.brain.cs.ait.ac.th`, or `hub.brain.cs.ait.ac.th`. The lab domain taxonomy is strictly partitioned as:
+    - **`ldap.brain.cs.ait.ac.th`**: LLDAP Web Administration Portal (`https://`, port 443) and encrypted WireGuard POSIX directory query endpoint (`ldap://`, port 3890).
+    - **`netbird.brain.cs.ait.ac.th`**: NetBird Dashboard, Management REST API, and Signal gRPC (`https://`, port 443 via Traefik `h2c`).
+    - **`la.cs.ait.ac.th`**: Production multi-user GPU JupyterHub platform running on physical server `la` (dual RTX A6000).
+    - **`ml.brain.cs.ait.ac.th`** / **`*.ml.brain.cs.ait.ac.th`**: MLflow experiment tracking server and deployed research demonstration APIs running on on-prem node `tokyo`.
+    - **`print.brain.cs.ait.ac.th`**: Remote Web Print Portal bridging cloud uploads to the CSIM physical printer.
 
 ---
 
