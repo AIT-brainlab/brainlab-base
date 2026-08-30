@@ -219,7 +219,7 @@ while True:
 EOF
 chmod 755 "$TUNNEL_SCRIPT"
 
-# Create and enable systemd service for proxy tunnel
+# Create and enable systemd service for proxy tunnel with automatic iptables persistence
 cat << EOF > /etc/systemd/system/netbird-proxy-tunnel.service
 [Unit]
 Description=NetBird CSIM Squid Proxy Tunnel
@@ -227,7 +227,9 @@ After=network.target
 
 [Service]
 Type=simple
+ExecStartPre=/bin/sh -c 'CLOUD_IP=\$\$(python3 -c "import socket; print(socket.gethostbyname(\"$NETBIRD_DOMAIN\"))" 2>/dev/null || echo "$CLOUD_MGMT_IP"); iptables -t nat -C OUTPUT -p tcp -d \$\$CLOUD_IP --dport 443 -j REDIRECT --to-ports $TUNNEL_PORT 2>/dev/null || iptables -t nat -A OUTPUT -p tcp -d \$\$CLOUD_IP --dport 443 -j REDIRECT --to-ports $TUNNEL_PORT'
 ExecStart=/usr/bin/python3 $TUNNEL_SCRIPT
+ExecStopPost=/bin/sh -c 'CLOUD_IP=\$\$(python3 -c "import socket; print(socket.gethostbyname(\"$NETBIRD_DOMAIN\"))" 2>/dev/null || echo "$CLOUD_MGMT_IP"); iptables -t nat -D OUTPUT -p tcp -d \$\$CLOUD_IP --dport 443 -j REDIRECT --to-ports $TUNNEL_PORT 2>/dev/null || true'
 Restart=always
 RestartSec=3
 
@@ -235,22 +237,15 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+# Ensure custom binary directory is in global shell PATH
+if [ "$BIN_DIR" != "/usr/local/bin" ]; then
+    echo "export PATH=\"$BIN_DIR:\$PATH\"" > /etc/profile.d/netbird.sh
+    chmod 644 /etc/profile.d/netbird.sh
+fi
+
 systemctl daemon-reload
 systemctl enable --now netbird-proxy-tunnel.service
-echo "✔ Proxy tunnel active on 127.0.0.1:$TUNNEL_PORT -> $CSIM_PROXY."
-
-# ------------------------------------------------------------------------------
-# 6. Apply Kernel iptables REDIRECT
-# ------------------------------------------------------------------------------
-echo "🧭 [5/6] Applying kernel iptables REDIRECT..."
-
-# Clean any legacy /etc/hosts redirect
-sed -i "/$NETBIRD_DOMAIN/d" /etc/hosts 2>/dev/null || true
-
-# Direct outbound TCP traffic to the live Cloud IP through the local tunnel
-iptables -t nat -C OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT" 2>/dev/null || \
-iptables -t nat -A OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT"
-echo "✔ Kernel redirects $CLOUD_MGMT_IP:443 -> 127.0.0.1:$TUNNEL_PORT."
+echo "✔ Proxy tunnel active on 127.0.0.1:$TUNNEL_PORT (with automatic boot iptables redirect)."
 
 # ------------------------------------------------------------------------------
 # 7. Connect to NetBird Mesh
