@@ -161,8 +161,8 @@ async def custom_pre_spawn_hook(spawner):
     spawner.environment['HTTP_PROXY'] = CSIM_PROXY
     spawner.environment['HTTPS_PROXY'] = CSIM_PROXY
 
-    # Set notebook directory to /home/{username}/work
-    spawner.notebook_dir = f"/home/{posix_user}/work"
+    # Set default landing directory to /home/{username}
+    spawner.notebook_dir = f"/home/{posix_user}"
 
     # Mount TrueNAS NFS work directories and shared datasets
     spawner.volumes = {
