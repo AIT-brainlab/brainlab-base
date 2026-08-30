@@ -142,8 +142,8 @@ flowchart TD
 | Task ID | Task Description | Target Identity | Status | Notes / Output |
 | :--- | :--- | :--- | :---: | :--- |
 | `5.1` | Verify Google OAuth2 credentials in GCP Console (SOP: [`oauth_setup.md`](oauth_setup.md)) | Akraradet | 🔵 | Pre-verified live |
-| `5.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔴 | Test 1-click Google login on `hub.brain.cs.ait.ac.th` |
-| `5.3` | Verify end-to-end user home directory read/write on `/mnt/pool-1/home` | Whole Team | 🔴 | Zero permission conflicts on TrueNAS NFS |
+| `5.2` | Configure JupyterHub `oauthenticator.google` with email whitelist & LLDAP spawner hook | Akraradet | 🔵 | Containerized on `la` (`aitbrainlab/jupyterhub:5.2.1`) behind Traefik ACME; Google OAuth2 + dynamic LLDAP auth |
+| `5.3` | Verify end-to-end user home directory read/write on `/mnt/pool-1/home` | Whole Team | 🔵 | TrueNAS NFS mounted live at `/home/akraradets`; dual RTX A6000 GPUs allocated |
 | `5.4` | **Deploy Web Print Service (`docker-cups`)**: Launch web print portal at `print.brain.cs.ait.ac.th` with Google OAuth2 SSO | Akraradet | 🔴 | Drag-and-drop PDF upload from any browser |
 | `5.5` | **Bridge Web Print to CSIM Printer**: Route print jobs over NetBird mesh to on-prem CSIM printer with CSIM quota auth | Akraradet | 🔴 | Print remotely from home/laptops to lab printer |
 
