@@ -1,0 +1,41 @@
+services:
+  traefik:
+    image: traefik:v3.7
+    container_name: jupyterhub-traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+    networks:
+      - jupyterhub-net
+
+  jupyterhub:
+    build: .
+    container_name: jupyterhub
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro
+      - jupyterhub_data:/data
+    env_file:
+      - .env
+    networks:
+      - jupyterhub-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jupyterhub.rule=Host(`la.cs.ait.ac.th`) || Host(`hub.brain.cs.ait.ac.th`)"
+      - "traefik.http.routers.jupyterhub.entrypoints=websecure"
+      - "traefik.http.routers.jupyterhub.tls=true"
+      - "traefik.http.services.jupyterhub.loadbalancer.server.port=8000"
+
+volumes:
+  jupyterhub_data:
+
+networks:
+  jupyterhub-net:
+    name: jupyterhub-net
