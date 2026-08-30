@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 🚀 AIT Brainlab - CSIM On-Premise NetBird Bootstrap Script (Standardized)
+# 🚀 AIT Brainlab - CSIM On-Premise NetBird Bootstrap Script (Dynamic & Resilient)
 # ==============================================================================
 # Purpose:
 #   Bootstraps and enrolls any on-premise node (TrueNAS SCALE, Ubuntu Server,
@@ -8,12 +8,14 @@
 #   WireGuard mesh.
 #
 # Design Principles:
-#   1. Non-Intrusive: Runs local Squid tunnel on high-port 33443 (leaves port 443
-#      100% free for TrueNAS Web GUI or JupyterHub).
-#   2. Kernel Redirection: Uses a single native Linux iptables REDIRECT rule for
-#      outbound packets to Google Cloud (136.85.52.234:443 -> 33443).
-#   3. Zero /etc/hosts Tampering: Does not modify /etc/hosts.
-#   4. Pre-seeds /etc/netbird/config.json with self-hosted URL so it never connects
+#   1. Dynamic Cloud IP: Resolves netbird2.brain.cs.ait.ac.th dynamically on every
+#      run (resilient to GCP VM destructions & IP refreshes).
+#   2. Non-Intrusive: Runs local Squid tunnel on high-port 33443 (leaves port 443
+#      100% free for TrueNAS Web GUI, JupyterHub, Nginx, or Traefik).
+#   3. Kernel Redirection: Uses a single native Linux iptables REDIRECT rule for
+#      outbound packets to the live Cloud IP (CLOUD_MGMT_IP:443 -> 33443).
+#   4. Zero /etc/hosts Tampering: Does not modify /etc/hosts.
+#   5. Pre-seeds /etc/netbird/config.json with self-hosted URL so it never connects
 #      to commercial api.netbird.io.
 #
 # Usage:
@@ -28,7 +30,6 @@ set -euo pipefail
 CSIM_PROXY="http://192.41.170.82:3128"
 NETBIRD_URL="https://netbird2.brain.cs.ait.ac.th"
 NETBIRD_DOMAIN="netbird2.brain.cs.ait.ac.th"
-CLOUD_MGMT_IP="136.85.52.234"
 TUNNEL_PORT=33443
 DEFAULT_SETUP_KEY="947F2BE1-B7C6-4709-9A9B-F6680E9D70A9" # TrueNAS setup key
 
@@ -64,9 +65,26 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Install NetBird Client & Pre-seed Self-Hosted Configuration
+# 3. Dynamic DNS Resolution of Cloud Management IP
 # ------------------------------------------------------------------------------
-echo "📦 [2/5] Checking NetBird installation..."
+echo "🔍 [2/5] Resolving live Cloud Management IP..."
+CLOUD_MGMT_IP=$(python3 -c "import socket; print(socket.gethostbyname('$NETBIRD_DOMAIN'))" 2>/dev/null || true)
+
+if [ -z "$CLOUD_MGMT_IP" ]; then
+    # Fallback to nslookup or dig if python DNS lookup fails
+    CLOUD_MGMT_IP=$(nslookup "$NETBIRD_DOMAIN" 2>/dev/null | awk '/^Address: / { print $2 }' | tail -n 1 || true)
+fi
+
+if [ -z "$CLOUD_MGMT_IP" ]; then
+    echo "❌ Error: Could not resolve $NETBIRD_DOMAIN via DNS." >&2
+    exit 1
+fi
+echo "✔ Discovered live Cloud Management IP: $CLOUD_MGMT_IP"
+
+# ------------------------------------------------------------------------------
+# 4. Install NetBird Client & Pre-seed Self-Hosted Configuration
+# ------------------------------------------------------------------------------
+echo "📦 [3/5] Checking NetBird installation..."
 if ! command -v netbird &> /dev/null; then
     echo "Downloading and installing NetBird client..."
     export http_proxy="$CSIM_PROXY"
@@ -91,9 +109,9 @@ EOF
 fi
 
 # ------------------------------------------------------------------------------
-# 4. Deploy Local Squid Proxy Tunnel (on port 33443)
+# 5. Deploy Local Squid Proxy Tunnel (on port 33443)
 # ------------------------------------------------------------------------------
-echo "🔌 [3/5] Deploying local Squid CONNECT proxy tunnel on port $TUNNEL_PORT..."
+echo "🔌 [4/5] Deploying local Squid CONNECT proxy tunnel on port $TUNNEL_PORT..."
 
 cat << EOF > /usr/local/bin/netbird-proxy-tunnel.py
 import socket, threading, sys
@@ -166,15 +184,10 @@ systemctl daemon-reload
 systemctl enable --now netbird-proxy-tunnel.service
 echo "✔ Proxy tunnel active on 127.0.0.1:$TUNNEL_PORT -> $CSIM_PROXY."
 
-# ------------------------------------------------------------------------------
-# 5. Clean /etc/hosts & Apply Kernel iptables REDIRECT
-# ------------------------------------------------------------------------------
-echo "🧭 [4/5] Applying kernel iptables REDIRECT..."
-
-# Ensure /etc/hosts does NOT point netbird2 to loopback
+# Ensure /etc/hosts does NOT redirect domain to 127.0.0.1
 sed -i "/$NETBIRD_DOMAIN/d" /etc/hosts 2>/dev/null || true
 
-# Direct outbound TCP traffic to Cloud Management IP through local tunnel
+# Direct outbound TCP traffic to the live Cloud IP through the local tunnel
 iptables -t nat -C OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT" 2>/dev/null || \
 iptables -t nat -A OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT"
 echo "✔ Kernel redirects $CLOUD_MGMT_IP:443 -> 127.0.0.1:$TUNNEL_PORT."
