@@ -19,7 +19,7 @@ certificatesResolvers:
   le:
     acme:
       email: brainlab@ait.asia
-      storage: /etc/traefik/acme.json
+      storage: /etc/traefik/acme/acme.json
       httpChallenge:
         entryPoint: web
 
