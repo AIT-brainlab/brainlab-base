@@ -216,6 +216,34 @@ while True:
 EOF
 chmod 755 "$TUNNEL_SCRIPT"
 
+# Deploy dedicated iptables boot helper script
+IPTABLES_HELPER="$BIN_DIR/netbird-iptables.sh"
+cat << 'EOF' > "$IPTABLES_HELPER"
+#!/bin/sh
+NETBIRD_DOMAIN="netbird2.brain.cs.ait.ac.th"
+TUNNEL_PORT=33443
+
+ACTION="${1:-start}"
+CLOUD_IP=$(python3 -c "import socket; print(socket.gethostbyname('$NETBIRD_DOMAIN'))" 2>/dev/null || \
+          nslookup "$NETBIRD_DOMAIN" 2>/dev/null | awk '/^Address: / { print $2 }' | tail -n 1)
+
+if [ -z "$CLOUD_IP" ]; then
+    echo "⚠ netbird-iptables: Could not resolve $NETBIRD_DOMAIN via DNS" >&2
+    exit 0
+fi
+
+if [ "$ACTION" = "stop" ]; then
+    iptables -t nat -D OUTPUT -p tcp -d "$CLOUD_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT" 2>/dev/null || true
+else
+    iptables -t nat -C OUTPUT -p tcp -d "$CLOUD_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT" 2>/dev/null || \
+    iptables -t nat -A OUTPUT -p tcp -d "$CLOUD_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT"
+fi
+EOF
+chmod 755 "$IPTABLES_HELPER"
+
+# Immediately apply the iptables rule
+"$IPTABLES_HELPER" start
+
 # Create and enable systemd service for proxy tunnel with automatic iptables persistence
 cat << EOF > /etc/systemd/system/netbird-proxy-tunnel.service
 [Unit]
@@ -224,9 +252,9 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=/bin/sh -c 'CLOUD_IP=\$\$(python3 -c "import socket; print(socket.gethostbyname(\"$NETBIRD_DOMAIN\"))" 2>/dev/null || echo "$CLOUD_MGMT_IP"); iptables -t nat -C OUTPUT -p tcp -d \$\$CLOUD_IP --dport 443 -j REDIRECT --to-ports $TUNNEL_PORT 2>/dev/null || iptables -t nat -A OUTPUT -p tcp -d \$\$CLOUD_IP --dport 443 -j REDIRECT --to-ports $TUNNEL_PORT'
+ExecStartPre=-$IPTABLES_HELPER start
 ExecStart=/usr/bin/python3 $TUNNEL_SCRIPT
-ExecStopPost=/bin/sh -c 'CLOUD_IP=\$\$(python3 -c "import socket; print(socket.gethostbyname(\"$NETBIRD_DOMAIN\"))" 2>/dev/null || echo "$CLOUD_MGMT_IP"); iptables -t nat -D OUTPUT -p tcp -d \$\$CLOUD_IP --dport 443 -j REDIRECT --to-ports $TUNNEL_PORT 2>/dev/null || true'
+ExecStopPost=-$IPTABLES_HELPER stop
 Restart=always
 RestartSec=3
 
