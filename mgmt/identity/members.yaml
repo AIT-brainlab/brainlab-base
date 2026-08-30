@@ -11,7 +11,7 @@
 #   - 12xxxx: AIT Student IDs (Master / PhD)
 # GID Scheme:
 #   - 2001: admin (bci service account)
-#   - 2008: brainlab (all researchers, faculty, students, alumni)
+#   - 2002: brainlab (all researchers, faculty, students, alumni)
 
 groups:
   - name: admin
@@ -19,7 +19,7 @@ groups:
     gid: 2001
   - name: brainlab
     display_name: "Brainlab Members"
-    gid: 2008
+    gid: 2002
 
 members:
 
@@ -36,7 +36,7 @@ members:
     display_name: "Chaklam Silpasuwanchai"
     primary_email: chaklam@ait.asia
     uid: 2002
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/chaklams
     login_shell: /bin/bash
     groups: [brainlab]
@@ -45,7 +45,7 @@ members:
     display_name: "SLWP1 Project"
     primary_email: slwp1@ait.asia
     uid: 2003
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/slwp1
     login_shell: /bin/bash
     groups: [brainlab]
@@ -54,7 +54,7 @@ members:
     display_name: "Pasit Tiwawongrut"
     primary_email: pasitt@ait.asia
     uid: 3001
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/pasitt
     login_shell: /bin/bash
     groups: [brainlab]
@@ -63,7 +63,7 @@ members:
     display_name: "Aiman Lameesa"
     primary_email: aiman.lameesa@gmail.com
     uid: 3002
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/aimanl
     login_shell: /bin/bash
     groups: [brainlab]
@@ -72,7 +72,7 @@ members:
     display_name: "Abhinav Lugun"
     primary_email: abhinavlugun@yahoo.com
     uid: 3003
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/abhinavl
     login_shell: /bin/bash
     groups: [brainlab]
@@ -81,7 +81,7 @@ members:
     display_name: "Buddhabhushan Sarkate"
     primary_email: buddhabhushans@ait.asia
     uid: 3004
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/buddhabhushans
     login_shell: /bin/bash
     groups: [brainlab]
@@ -90,7 +90,7 @@ members:
     display_name: "Hamza K"
     primary_email: hamzak@ait.asia
     uid: 3005
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/hamzak
     login_shell: /bin/bash
     groups: [brainlab]
@@ -99,7 +99,7 @@ members:
     display_name: "Jinay P"
     primary_email: jinayp@ait.asia
     uid: 3006
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/jinayp
     login_shell: /bin/bash
     groups: [brainlab]
@@ -108,7 +108,7 @@ members:
     display_name: "Moksh S"
     primary_email: mokshs@ait.asia
     uid: 3007
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/mokshs
     login_shell: /bin/bash
     groups: [brainlab]
@@ -119,7 +119,7 @@ members:
     secondary_emails:
       - akraradets@gmail.com
     uid: 121413
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/akraradets
     login_shell: /bin/bash
     groups: [brainlab]
@@ -128,7 +128,7 @@ members:
     display_name: "Wanchanok Sunthorn"
     primary_email: st122053@ait.asia
     uid: 122053
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/wanchanoks
     login_shell: /bin/bash
     groups: [brainlab]
@@ -137,7 +137,7 @@ members:
     display_name: "Worachot Nakduk"
     primary_email: st122153@ait.asia
     uid: 122153
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/worachotn
     login_shell: /bin/bash
     groups: [brainlab]
@@ -146,7 +146,7 @@ members:
     display_name: "Nopphawan Nurnuansuwan"
     primary_email: st122410@ait.asia
     uid: 122410
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/nopphawann
     login_shell: /bin/bash
     groups: [brainlab]
@@ -155,7 +155,7 @@ members:
     display_name: "Pranisaa Charnparttaravanit"
     primary_email: st123175@ait.asia
     uid: 123175
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/pranisaac
     login_shell: /bin/bash
     groups: [brainlab]
@@ -164,7 +164,7 @@ members:
     display_name: "Pirunrat Kaewphanoaw"
     primary_email: st124003@ait.asia
     uid: 124003
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/pirunratk
     login_shell: /bin/bash
     groups: [brainlab]
@@ -173,7 +173,7 @@ members:
     display_name: "Rakshya Moktan"
     primary_email: st124088@ait.asia
     uid: 124088
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/rakshyam
     login_shell: /bin/bash
     groups: [brainlab]
@@ -182,7 +182,7 @@ members:
     display_name: "Minn Banya"
     primary_email: st124145@ait.asia
     uid: 124145
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/minnb
     login_shell: /bin/bash
     groups: [brainlab]
@@ -191,7 +191,7 @@ members:
     display_name: "Nathas Sung"
     primary_email: st124323@ait.asia
     uid: 124323
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/nathass
     login_shell: /bin/bash
     groups: [brainlab]
@@ -200,7 +200,7 @@ members:
     display_name: "Deepali Mishra"
     primary_email: st124434@ait.asia
     uid: 124434
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/deepalim
     login_shell: /bin/bash
     groups: [brainlab]
@@ -209,7 +209,7 @@ members:
     display_name: "Thamakorn Kiattikaikul"
     primary_email: st124481@ait.asia
     uid: 124481
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/thamakornk
     login_shell: /bin/bash
     groups: [brainlab]
@@ -218,7 +218,7 @@ members:
     display_name: "Binit Khadka"
     primary_email: st124783@ait.asia
     uid: 124783
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/binitk
     login_shell: /bin/bash
     groups: [brainlab]
@@ -227,7 +227,7 @@ members:
     display_name: "Phue Pwint Thwe"
     primary_email: st124784@ait.asia
     uid: 124784
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/phuet
     login_shell: /bin/bash
     groups: [brainlab]
@@ -236,7 +236,7 @@ members:
     display_name: "Todsavad Tangtortan"
     primary_email: st124859@ait.asia
     uid: 124859
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/todsavadt
     login_shell: /bin/bash
     groups: [brainlab]
@@ -245,7 +245,7 @@ members:
     display_name: "Patsakorn Tangkachaiyanunt"
     primary_email: st124876@ait.asia
     uid: 124876
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/patsakornt
     login_shell: /bin/bash
     groups: [brainlab]
@@ -254,7 +254,7 @@ members:
     display_name: "Duyen Lam"
     primary_email: st124942@ait.asia
     uid: 124942
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/duyenl
     login_shell: /bin/bash
     groups: [brainlab]
@@ -263,7 +263,7 @@ members:
     display_name: "Lu Kyaw"
     primary_email: st124956@ait.asia
     uid: 124956
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/luk
     login_shell: /bin/bash
     groups: [brainlab]
@@ -272,7 +272,7 @@ members:
     display_name: "Khin Yadanar"
     primary_email: st124959@ait.asia
     uid: 124959
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/khiny
     login_shell: /bin/bash
     groups: [brainlab]
@@ -281,7 +281,7 @@ members:
     display_name: "Kaung Sithu"
     primary_email: st124974@ait.asia
     uid: 124974
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/kaungs
     login_shell: /bin/bash
     groups: [brainlab]
@@ -290,7 +290,7 @@ members:
     display_name: "Kaung Nyo Lwin"
     primary_email: st125066@ait.asia
     uid: 125066
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/kaungn
     login_shell: /bin/bash
     groups: [brainlab]
@@ -299,7 +299,7 @@ members:
     display_name: "Soe Htet Naing"
     primary_email: st125166@ait.asia
     uid: 125166
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/soehn
     login_shell: /bin/bash
     groups: [brainlab]
@@ -308,7 +308,7 @@ members:
     display_name: "Arya Shah"
     primary_email: st125462@ait.asia
     uid: 125462
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/aryas
     login_shell: /bin/bash
     groups: [brainlab]
@@ -317,7 +317,7 @@ members:
     display_name: "Nabin Gangtan Lama"
     primary_email: st125985@ait.ac.th
     uid: 125985
-    gid: 2008
+    gid: 2002
     home_directory: /mnt/pool-1/home/nabing
     login_shell: /bin/bash
     groups: [brainlab]
