@@ -267,3 +267,11 @@ echo "=================================================================="
 echo "🎉 NetBird Node Bootstrap Complete!"
 echo "=================================================================="
 "$NETBIRD_BIN" status
+
+# Automatically refresh Directory Services / SSSD if present
+if command -v sssd &>/dev/null || systemctl is-active --quiet sssd 2>/dev/null; then
+    echo "🔄 Refreshing SSSD Directory Services cache..."
+    command -v sss_cache &>/dev/null && sss_cache -E 2>/dev/null || true
+    systemctl restart sssd 2>/dev/null || true
+    echo "✔ SSSD Directory Services refreshed."
+fi
