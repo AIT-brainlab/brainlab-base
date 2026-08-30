@@ -1,25 +1,23 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 🚀 AIT Brainlab - CSIM On-Premise NetBird Bootstrap & Auto-Recovery Script
+# 🚀 AIT Brainlab - CSIM On-Premise NetBird Bootstrap Script (Standardized)
 # ==============================================================================
 # Purpose:
-#   Automatically bootstraps, enrolls, and permanently maintains any physical or
-#   virtual on-premise node (TrueNAS SCALE, Ubuntu Server, GPU Compute, Workstation)
-#   located inside the CSIM network into the NetBird WireGuard mesh.
+#   Bootstraps and enrolls any on-premise node (TrueNAS SCALE, Ubuntu Server,
+#   GPU Compute, Workstations) located inside the CSIM network into the NetBird
+#   WireGuard mesh.
 #
-# Handled Obstacles & Features:
-#   1. Automatic clock synchronization via Squid to eliminate TLS/gRPC token skew.
-#   2. Pre-seeds /etc/netbird/config.json with self-hosted URL (never dials api.netbird.io).
-#   3. Smart port detection:
-#      - If port 443 is free (TrueNAS): uses 127.0.0.1:443 + /etc/hosts.
-#      - If port 443 is busy (JupyterHub on 'la'): uses port 33443 + iptables REDIRECT.
-#   4. TrueNAS SCALE OS Upgrade Persistence:
-#      - If TrueNAS (/mnt/pool-1) is detected, saves copy to persistent ZFS storage
-#      - Registers Post-Init script in TrueNAS SQLite database so NetBird automatically
-#        restores after every future TrueNAS OS upgrade.
+# Design Principles:
+#   1. Non-Intrusive: Runs local Squid tunnel on high-port 33443 (leaves port 443
+#      100% free for TrueNAS Web GUI or JupyterHub).
+#   2. Kernel Redirection: Uses a single native Linux iptables REDIRECT rule for
+#      outbound packets to Google Cloud (136.85.52.234:443 -> 33443).
+#   3. Zero /etc/hosts Tampering: Does not modify /etc/hosts.
+#   4. Pre-seeds /etc/netbird/config.json with self-hosted URL so it never connects
+#      to commercial api.netbird.io.
 #
 # Usage:
-#   sudo ./bootstrap_netbird_csim.sh [--setup-key <KEY>]
+#   sudo ./bootstrap_netbird_csim.sh [<SETUP_KEY>]
 # ==============================================================================
 
 set -euo pipefail
@@ -31,15 +29,17 @@ CSIM_PROXY="http://192.41.170.82:3128"
 NETBIRD_URL="https://netbird2.brain.cs.ait.ac.th"
 NETBIRD_DOMAIN="netbird2.brain.cs.ait.ac.th"
 CLOUD_MGMT_IP="136.85.52.234"
+TUNNEL_PORT=33443
 DEFAULT_SETUP_KEY="947F2BE1-B7C6-4709-9A9B-F6680E9D70A9" # TrueNAS setup key
 
 SETUP_KEY="${1:-$DEFAULT_SETUP_KEY}"
 
 echo "=================================================================="
-echo "📡 AIT Brainlab - CSIM NetBird Node Bootstrapper (v2.0)"
+echo "📡 AIT Brainlab - CSIM NetBird Node Bootstrapper"
 echo "=================================================================="
 echo "Target Management URL: $NETBIRD_URL"
 echo "CSIM Forward Proxy:    $CSIM_PROXY"
+echo "Tunnel Port:           $TUNNEL_PORT (leaves 443 free)"
 echo "=================================================================="
 
 # Ensure running as root
@@ -49,9 +49,9 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 2. Time Synchronization (Fix Clock Skew)
+# 2. Time Synchronization (Eliminate Clock Skew)
 # ------------------------------------------------------------------------------
-echo "🕒 [1/6] Synchronizing system clock..."
+echo "🕒 [1/5] Synchronizing system clock..."
 timedatectl set-timezone Asia/Bangkok 2>/dev/null || true
 
 DATE_HEADER=$(curl -sI -x "$CSIM_PROXY" --connect-timeout 5 http://www.google.com | grep -i '^Date:' | cut -d' ' -f2- || true)
@@ -66,7 +66,7 @@ fi
 # ------------------------------------------------------------------------------
 # 3. Install NetBird Client & Pre-seed Self-Hosted Configuration
 # ------------------------------------------------------------------------------
-echo "📦 [2/6] Checking NetBird installation & pre-seeding configuration..."
+echo "📦 [2/5] Checking NetBird installation..."
 if ! command -v netbird &> /dev/null; then
     echo "Downloading and installing NetBird client..."
     export http_proxy="$CSIM_PROXY"
@@ -91,25 +91,10 @@ EOF
 fi
 
 # ------------------------------------------------------------------------------
-# 4. Smart Port Detection & Proxy Tunnel Deployment
+# 4. Deploy Local Squid Proxy Tunnel (on port 33443)
 # ------------------------------------------------------------------------------
-echo "🔌 [3/6] Configuring local Squid CONNECT proxy tunnel..."
+echo "🔌 [3/5] Deploying local Squid CONNECT proxy tunnel on port $TUNNEL_PORT..."
 
-# Check if port 443 is already occupied (e.g. JupyterHub on compute servers)
-PORT_443_OCCUPIED=false
-if ss -tulpn 2>/dev/null | grep -E ":443\s" | grep -qv "netbird-proxy-tunnel"; then
-    PORT_443_OCCUPIED=true
-fi
-
-if [ "$PORT_443_OCCUPIED" = true ]; then
-    TUNNEL_PORT=33443
-    echo "ℹ️ Port 443 is in use locally (e.g. JupyterHub). Using high-port 33443 with iptables REDIRECT."
-else
-    TUNNEL_PORT=443
-    echo "ℹ️ Port 443 is free. Using direct loopback port 443."
-fi
-
-# Deploy Python CONNECT Tunnel Script
 cat << EOF > /usr/local/bin/netbird-proxy-tunnel.py
 import socket, threading, sys
 
@@ -182,47 +167,22 @@ systemctl enable --now netbird-proxy-tunnel.service
 echo "✔ Proxy tunnel active on 127.0.0.1:$TUNNEL_PORT -> $CSIM_PROXY."
 
 # ------------------------------------------------------------------------------
-# 5. Routing Strategy (iptables REDIRECT vs. /etc/hosts)
+# 5. Clean /etc/hosts & Apply Kernel iptables REDIRECT
 # ------------------------------------------------------------------------------
-echo "🧭 [4/6] Configuring network routing..."
-if [ "$PORT_443_OCCUPIED" = true ]; then
-    # High-port mode: ensure /etc/hosts does NOT redirect domain to 127.0.0.1
-    sed -i "/$NETBIRD_DOMAIN/d" /etc/hosts 2>/dev/null || true
-    # Add kernel iptables REDIRECT rule for outbound Cloud Management IP
-    iptables -t nat -C OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT" 2>/dev/null || \
-    iptables -t nat -A OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT"
-    echo "✔ Configured iptables REDIRECT: $CLOUD_MGMT_IP:443 -> 127.0.0.1:$TUNNEL_PORT."
-else
-    # Port 443 free mode: route domain to loopback in /etc/hosts
-    if ! grep -q "127.0.0.1 $NETBIRD_DOMAIN" /etc/hosts; then
-        echo "127.0.0.1 $NETBIRD_DOMAIN" >> /etc/hosts
-        echo "✔ Added 127.0.0.1 $NETBIRD_DOMAIN to /etc/hosts."
-    fi
-fi
+echo "🧭 [4/5] Applying kernel iptables REDIRECT..."
+
+# Ensure /etc/hosts does NOT point netbird2 to loopback
+sed -i "/$NETBIRD_DOMAIN/d" /etc/hosts 2>/dev/null || true
+
+# Direct outbound TCP traffic to Cloud Management IP through local tunnel
+iptables -t nat -C OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT" 2>/dev/null || \
+iptables -t nat -A OUTPUT -p tcp -d "$CLOUD_MGMT_IP" --dport 443 -j REDIRECT --to-ports "$TUNNEL_PORT"
+echo "✔ Kernel redirects $CLOUD_MGMT_IP:443 -> 127.0.0.1:$TUNNEL_PORT."
 
 # ------------------------------------------------------------------------------
-# 6. TrueNAS SCALE Upgrade Persistence (Post-Init Script Registration)
+# 6. Connect to NetBird Mesh
 # ------------------------------------------------------------------------------
-echo "💾 [5/6] Checking storage persistence..."
-if [ -d "/mnt/pool-1" ] && command -v midclt &> /dev/null; then
-    mkdir -p /mnt/pool-1/scripts
-    cp -f "$0" /mnt/pool-1/scripts/bootstrap_netbird_csim.sh 2>/dev/null || true
-    chmod +x /mnt/pool-1/scripts/bootstrap_netbird_csim.sh 2>/dev/null || true
-
-    # Register Post-Init script in TrueNAS database if not present
-    REGISTERED=$(midclt call initshutdownscript.query '[["command", "=", "/mnt/pool-1/scripts/bootstrap_netbird_csim.sh"]]' 2>/dev/null || true)
-    if [ -z "$REGISTERED" ] || [ "$REGISTERED" = "[]" ]; then
-        midclt call initshutdownscript.create '{"type": "SCRIPT", "command": "/mnt/pool-1/scripts/bootstrap_netbird_csim.sh", "when": "POSTINIT", "enabled": true, "timeout": 60}' >/dev/null 2>&1 || true
-        echo "✔ Registered Post-Init script in TrueNAS database for zero-touch upgrade persistence!"
-    else
-        echo "✔ TrueNAS Post-Init upgrade persistence already registered."
-    fi
-fi
-
-# ------------------------------------------------------------------------------
-# 7. Connect NetBird Mesh
-# ------------------------------------------------------------------------------
-echo "🚀 [6/6] Connecting to NetBird Mesh..."
+echo "🚀 [5/5] Connecting to NetBird Mesh..."
 systemctl restart netbird
 sleep 3
 
