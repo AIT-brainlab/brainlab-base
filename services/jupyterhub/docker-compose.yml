@@ -10,6 +10,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/acme:/etc/traefik/acme
+    environment:
+      - HTTP_PROXY=http://192.41.170.82:3128
+      - HTTPS_PROXY=http://192.41.170.82:3128
     networks:
       - jupyterhub-net
 
