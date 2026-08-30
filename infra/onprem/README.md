@@ -21,7 +21,6 @@ Welcome to the **On-Premise Infrastructure** administration hub. These guides pr
 | Hostname | Role | IP Address | Primary Hardware |
 | :--- | :--- | :--- | :--- |
 | **`la.cs.ait.ac.th`** | Primary GPU Compute Node & JupyterHub | `192.41.170.85` | Multi-GPU Workstation |
-| **`tokyo.cs.ait.ac.th`** | Web APIs & Reverse Proxy | `192.41.170.86` | Service Server |
 | **`cairo`** | TrueNAS Shared Storage (NFS) | `192.41.170.4` | High-Capacity NAS Arrays |
 
 ---

@@ -28,12 +28,12 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
   - **`admin`**: Strictly reserved for the master lab service account (`bci` / `brainlab@ait.asia`).
   - **`brainlab`**: All active lab researchers, students, faculty, and graduated alumni belong to `brainlab`.
   - **Zero Alumni Group**: Eliminated in favor of Multi-Email Binding (binding personal `@gmail.com` directly to the member's persistent numeric UID).
-- **Read-Only Query Service Account (`ldapservice`)**: Downstream services (Linux SSSD on `la`, `tokyo`, `cairo`, TrueNAS, and JupyterHub) authenticate queries using a dedicated `ldapservice` account in group `lldap_strict_readonly`. Password lives in GCP Secret Manager (`lldap-readonly-password`). Created in post-deployment GitOps, **never in Terraform**.
+- **Read-Only Query Service Account (`ldapservice`)**: Downstream services (Linux SSSD on `la`, `cairo`, TrueNAS, and JupyterHub) authenticate queries using a dedicated `ldapservice` account in group `lldap_strict_readonly`. Password lives in GCP Secret Manager (`lldap-readonly-password`). Created in post-deployment GitOps, **never in Terraform**.
 - **Multi-Email Binding**: A single POSIX user record (`username`, numeric `UID`, `GID`, home path `/mnt/pool-1/home/<username>`) can bind multiple authorized emails (e.g. `stXXXXXX@ait.asia` + `user@gmail.com`) for seamless alumni/graduate continuation without data copying or `chown`.
 - **Zero Internal TLS Overhead**: All internal LDAP communication across TrueNAS, Linux SSSD, and Ubuntu Desktops runs through the NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890` with `ldap_id_use_start_tls = false`). No self-signed certificates or Python `ldap3` package hacks.
 
 ### 3. Infrastructure Admin Domain (`infra/`)
-- **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `tokyo.cs.ait.ac.th`, `cairo`).
+- **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `cairo`).
 - **NVIDIA CUDA & Runtime**: NVIDIA driver management and Container Toolkit (`runtime: nvidia`).
 - **TrueNAS Storage**: Central NFS home directory storage mounted at `/mnt/pool-1/home`.
 - **Institutional Proxy**: CSIM forward proxy required for outbound traffic (`http://192.41.170.82:3128`, `squid.cs.ait.ac.th`).
@@ -116,7 +116,7 @@ brainlab-base/
     - **Sole Administrator**: Only the master lab account (`bci` / `brainlab@ait.asia`) is granted `admin` membership. All other members belong strictly to `brainlab`.
     - **Multi-Email Binding (Zero Alumni Group)**: Graduated members and alumni do not use an `alumni` group. Their personal `@gmail.com` accounts are bound directly to their single persistent POSIX UID (`uidNumber`) in `members.yaml`.
     - **Read-Only Query Service Account (`ldapservice`)**: Provisioned post-deployment via `sync_users.py` in group `lldap_strict_readonly`. Password is stored in GCP Secret Manager as `lldap-readonly-password` and consumed by Linux SSSD (`/etc/sssd/sssd.conf`) and JupyterHub. Never provision `ldapservice` inside Terraform.
-20. **Single-Port Container SSH Gateway**: Compute nodes (`la`, `tokyo`) provide direct SSH access into user Jupyter containers via a single host gateway port (e.g. `2222`) using OpenSSH `ForceCommand docker exec -it -u %u jupyter-%u /bin/bash`. Never allocate or store per-student port numbers (`jupyterSshPort`) on host machines.
+20. **Single-Port Container SSH Gateway**: Compute node (`la`) provides direct SSH access into user Jupyter containers via a single host gateway port (e.g. `2222`) using OpenSSH `ForceCommand docker exec -it -u %u jupyter-%u /bin/bash`. Never allocate or store per-student port numbers (`jupyterSshPort`) on host machines.
 
 ---
 
