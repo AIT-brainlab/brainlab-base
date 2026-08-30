@@ -135,32 +135,29 @@ else
     fi
 fi
 
-# Stop daemon temporarily to reliably inject our self-hosted URL
-systemctl stop netbird 2>/dev/null || true
-
-# Inject self-hosted ManagementURL directly into the active profile file
-if [ -f /var/lib/netbird/default.json ]; then
-    sed -i "s|https://api.netbird.io:443|$NETBIRD_URL|g" /var/lib/netbird/default.json
-    sed -i "s|https://api.netbird.io|$NETBIRD_URL|g" /var/lib/netbird/default.json
-    sed -i "s|https://app.netbird.io:443|$NETBIRD_URL|g" /var/lib/netbird/default.json
-    sed -i "s|https://app.netbird.io|$NETBIRD_URL|g" /var/lib/netbird/default.json
-else
-    cat << EOF > /var/lib/netbird/default.json
-{
-  "ManagementURL": "$NETBIRD_URL",
-  "AdminURL": "$NETBIRD_URL"
-}
-EOF
+# Ensure netbird systemd service unit exists
+if [ ! -f /etc/systemd/system/netbird.service ]; then
+    "$NETBIRD_BIN" service install 2>/dev/null || true
 fi
 
-# Also write to /etc/netbird/config.json
-cat << EOF > /etc/netbird/config.json
-{
-  "ManagementURL": "$NETBIRD_URL",
-  "AdminURL": "$NETBIRD_URL"
-}
-EOF
-echo "✔ Injected self-hosted ManagementURL ($NETBIRD_URL) into NetBird configuration."
+# Ensure directories exist
+mkdir -p /var/log/netbird /var/lib/netbird /etc/netbird
+
+# Stop daemon temporarily to inject clean CLI arguments into service unit
+systemctl stop netbird 2>/dev/null || true
+
+# Clean any broken synthetic JSON files that cause Go struct unmarshal errors
+if [ -f /var/lib/netbird/default.json ] && ! grep -q "WireGuardKeyPair" /var/lib/netbird/default.json 2>/dev/null; then
+    rm -f /var/lib/netbird/default.json /etc/netbird/config.json 2>/dev/null || true
+fi
+
+# Inject --management-url directly into systemd ExecStart so Go parses it natively
+if [ -f /etc/systemd/system/netbird.service ]; then
+    if ! grep -q -- "--management-url" /etc/systemd/system/netbird.service; then
+        sed -i "s|\"service\" \"run\"|\"service\" \"run\" \"--management-url\" \"$NETBIRD_URL\"|g" /etc/systemd/system/netbird.service
+    fi
+fi
+echo "✔ Configured NetBird systemd service with native --management-url flag."
 
 # ------------------------------------------------------------------------------
 # 5. Deploy Local Squid Proxy Tunnel (on port 33443)
@@ -251,7 +248,8 @@ echo "✔ Proxy tunnel active on 127.0.0.1:$TUNNEL_PORT (with automatic boot ipt
 # 7. Connect to NetBird Mesh
 # ------------------------------------------------------------------------------
 echo "🚀 [6/6] Connecting to NetBird Mesh..."
-systemctl start netbird
+systemctl daemon-reload
+systemctl enable --now netbird
 sleep 2
 
 "$NETBIRD_BIN" up \
@@ -263,8 +261,12 @@ echo "🎉 NetBird Node Bootstrap Complete!"
 echo "=================================================================="
 "$NETBIRD_BIN" status
 
-# Automatically refresh Directory Services / SSSD if present
-if command -v sssd &>/dev/null || systemctl is-active --quiet sssd 2>/dev/null; then
+# Automatically refresh Directory Services (TrueNAS midclt or Ubuntu SSSD)
+if command -v midclt &>/dev/null; then
+    echo "🔄 Refreshing TrueNAS Directory Services..."
+    midclt call service.restart "ldap" >/dev/null 2>&1 || true
+    echo "✔ TrueNAS Directory Services refreshed."
+elif command -v sssd &>/dev/null || systemctl is-active --quiet sssd 2>/dev/null; then
     echo "🔄 Refreshing SSSD Directory Services cache..."
     command -v sss_cache &>/dev/null && sss_cache -E 2>/dev/null || true
     systemctl restart sssd 2>/dev/null || true
