@@ -8,15 +8,17 @@
 #   WireGuard mesh.
 #
 # Design Principles:
-#   1. Zero Manual Config: Automatically injects self-hosted ManagementURL into
+#   1. TrueNAS Appliance Aware: Unlocks read-only root (/), installs standalone
+#      static binary (no apt required), and keeps backup copy in /mnt/pool-1/bin/.
+#   2. Zero Manual Config: Automatically injects self-hosted ManagementURL into
 #      /var/lib/netbird/default.json and /etc/netbird/config.json (never touches api.netbird.io).
-#   2. Dynamic Cloud IP: Resolves netbird2.brain.cs.ait.ac.th dynamically on every
+#   3. Dynamic Cloud IP: Resolves netbird2.brain.cs.ait.ac.th dynamically on every
 #      run (resilient to GCP VM destructions & IP refreshes).
-#   3. Non-Intrusive: Runs local Squid tunnel on high-port 33443 (leaves port 443
+#   4. Non-Intrusive: Runs local Squid tunnel on high-port 33443 (leaves port 443
 #      100% free for TrueNAS Web GUI, JupyterHub, Nginx, or Traefik).
-#   4. Kernel Redirection: Uses a single native Linux iptables REDIRECT rule for
+#   5. Kernel Redirection: Uses a single native Linux iptables REDIRECT rule for
 #      outbound packets to the live Cloud IP (CLOUD_MGMT_IP:443 -> 33443).
-#   5. Zero /etc/hosts Tampering: Does not modify /etc/hosts.
+#   6. Zero /etc/hosts Tampering: Does not modify /etc/hosts.
 #
 # Usage:
 #   sudo ./bootstrap_netbird_csim.sh [<SETUP_KEY>]
@@ -48,6 +50,9 @@ if [ "$(id -u)" -ne 0 ]; then
     echo "❌ Error: This script must be run as root (use sudo)." >&2
     exit 1
 fi
+
+# Remount root as Read-Write (essential for TrueNAS SCALE 24.x appliances)
+mount -o remount,rw / 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
 # 2. Time Synchronization (Eliminate Clock Skew)
@@ -84,18 +89,30 @@ echo "✔ Discovered live Cloud Management IP: $CLOUD_MGMT_IP"
 # 4. Install NetBird Client & Auto-Inject Self-Hosted Configuration
 # ------------------------------------------------------------------------------
 echo "📦 [3/6] Installing NetBird & injecting self-hosted configuration..."
+IS_TRUENAS=false
+if grep -qi "truenas" /etc/os-release 2>/dev/null || command -v midclt &>/dev/null; then
+    IS_TRUENAS=true
+fi
+
 if ! command -v netbird &> /dev/null; then
-    echo "Downloading and installing NetBird client..."
-    if command -v midclt &>/dev/null; then
-        echo "TrueNAS appliance detected (apt is locked). Installing official standalone binary..."
+    if [ "$IS_TRUENAS" = true ]; then
+        echo "TrueNAS appliance detected (apt locked). Installing official standalone binary..."
         TMP_DIR=$(mktemp -d)
         curl -x "$CSIM_PROXY" -fsSL "https://github.com/netbirdio/netbird/releases/download/v0.77.1/netbird_0.77.1_linux_amd64.tar.gz" -o "$TMP_DIR/netbird.tar.gz"
         tar -xzf "$TMP_DIR/netbird.tar.gz" -C /usr/local/bin netbird
         chmod 755 /usr/local/bin/netbird
         ln -sf /usr/local/bin/netbird /usr/bin/netbird 2>/dev/null || true
+
+        # If permanent ZFS pool exists, keep persistent backup copy
+        if [ -d "/mnt/pool-1" ]; then
+            mkdir -p /mnt/pool-1/bin
+            cp -f /usr/local/bin/netbird /mnt/pool-1/bin/netbird
+        fi
         rm -rf "$TMP_DIR"
+
         /usr/local/bin/netbird service install 2>/dev/null || true
     else
+        echo "Downloading and installing NetBird client via official package..."
         export http_proxy="$CSIM_PROXY"
         export https_proxy="$CSIM_PROXY"
         curl -fsSL https://pkgs.netbird.io/install.sh | sh
