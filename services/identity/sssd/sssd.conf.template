@@ -22,14 +22,14 @@ chpass_provider = ldap
 sudo_provider = ldap
 
 # Connect over private NetBird WireGuard mesh tunnel
-ldap_uri = ldap://34.143.234.182:3890
+ldap_uri = ldap://ldap.brain.cs.ait.ac.th:3890
 ldap_search_base = dc=brain,dc=cs,dc=ait,dc=ac,dc=th
 ldap_user_search_base = ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
 ldap_group_search_base = ou=groups,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
 
 # Service Bind Account (Read-Only Service Account)
-ldap_default_bind_dn = uid=admin,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
-ldap_default_authtok = <LLDAP_ADMIN_PASSWORD>
+ldap_default_bind_dn = uid=ldapservice,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
+ldap_default_authtok = <LLDAP_READONLY_PASSWORD>
 
 # Zero Internal TLS Overhead (Traffic is already encrypted by NetBird WireGuard)
 ldap_id_use_start_tls = false
@@ -44,11 +44,11 @@ ldap_user_home_directory = homeDirectory
 ldap_user_shell = loginShell
 
 # Group & Sudo Mapping (Members of group 'admin' receive automatic sudo)
-ldap_group_object_class = groupOfUniqueNames
+ldap_group_object_class = groupOfNames
 ldap_group_name = cn
-ldap_group_member = uniqueMember
+ldap_group_member = member
 
 # 🛡️ Offline Resilience Settings
 cache_credentials = true
 entry_cache_timeout = 600
-enumerate = false
+enumerate = true
