@@ -14,7 +14,10 @@ services:
       - jupyterhub-net
 
   jupyterhub:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aitbrainlab/jupyterhub:5.2.1
     container_name: jupyterhub
     restart: always
     volumes:
