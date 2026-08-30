@@ -120,3 +120,11 @@ dns_zones:
         type: A
         content: "100.103.75.243"
         ttl: 300
+      - name: "truenas.brain.cs.ait.ac.th"
+        type: A
+        content: "100.103.82.113"
+        ttl: 300
+      - name: "cairo.brain.cs.ait.ac.th"
+        type: A
+        content: "100.103.82.113"
+        ttl: 300
