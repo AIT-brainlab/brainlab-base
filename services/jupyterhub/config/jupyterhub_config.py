@@ -38,15 +38,15 @@ LLDAP_BIND_DN = os.environ.get('LLDAP_BIND_DN', 'uid=ldapservice,ou=people,dc=br
 LLDAP_PASSWORD = os.environ.get('LLDAP_PASSWORD', '')
 LLDAP_BASE_DN = 'dc=brain,dc=cs,dc=ait,dc=ac,dc=th'
 
-def query_lldap_user(email):
-    """Queries LLDAP over NetBird to map an email address to POSIX uid, uidNumber, and gidNumber."""
-    if not email or not LLDAP_PASSWORD:
+def query_lldap_user(identifier):
+    """Queries LLDAP over NetBird to map an email or username to POSIX uid, uidNumber, and gidNumber."""
+    if not identifier or not LLDAP_PASSWORD:
         return None
     try:
         server = ldap3.Server(LLDAP_URL, get_info=ldap3.NONE, connect_timeout=5)
         conn = ldap3.Connection(server, user=LLDAP_BIND_DN, password=LLDAP_PASSWORD, auto_bind=True)
-        # Search by email attribute in LLDAP
-        search_filter = f"(&(objectClass=posixAccount)(mail={email}))"
+        # Search by either mail OR uid (username)
+        search_filter = f"(&(objectClass=posixAccount)(|(mail={identifier})(uid={identifier})))"
         conn.search(
             search_base=f"ou=people,{LLDAP_BASE_DN}",
             search_filter=search_filter,
@@ -61,7 +61,7 @@ def query_lldap_user(email):
                 'home': str(entry.homeDirectory.value) if 'homeDirectory' in entry else f"/mnt/pool-1/home/{entry.uid.value}"
             }
     except Exception as e:
-        print(f"⚠ LLDAP query error for {email}: {e}")
+        print(f"⚠ LLDAP query error for {identifier}: {e}")
     return None
 
 # ------------------------------------------------------------------------------
@@ -132,6 +132,10 @@ CSIM_PROXY = "http://192.41.170.82:3128"
 async def custom_pre_spawn_hook(spawner):
     auth_state = await spawner.user.get_auth_state()
     posix_info = auth_state.get('posix') if auth_state else None
+
+    # Fallback to direct query by username if not cached in auth_state
+    if not posix_info:
+        posix_info = query_lldap_user(spawner.user.name)
 
     if not posix_info:
         raise web.HTTPError(
