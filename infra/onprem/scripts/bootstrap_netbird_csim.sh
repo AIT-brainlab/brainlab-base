@@ -8,8 +8,8 @@
 #   WireGuard mesh.
 #
 # Design Principles:
-#   1. TrueNAS Appliance Aware: Unlocks read-only root (/), installs standalone
-#      static binary (no apt required), and keeps backup copy in /mnt/pool-1/bin/.
+#   1. TrueNAS Appliance Aware: Stores binaries and scripts in writable persistent
+#      locations (/mnt/pool-1/bin or /var/lib/netbird/bin), bypassing root read-only locks.
 #   2. Zero Manual Config: Automatically injects self-hosted ManagementURL into
 #      /var/lib/netbird/default.json and /etc/netbird/config.json (never touches api.netbird.io).
 #   3. Dynamic Cloud IP: Resolves netbird2.brain.cs.ait.ac.th dynamically on every
@@ -51,8 +51,23 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Remount root as Read-Write (essential for TrueNAS SCALE 24.x appliances)
-mount -o remount,rw / 2>/dev/null || true
+# Detect appliance type and select writable binary directory
+IS_TRUENAS=false
+if grep -qi "truenas" /etc/os-release 2>/dev/null || command -v midclt &>/dev/null; then
+    IS_TRUENAS=true
+fi
+
+if [ "$IS_TRUENAS" = true ]; then
+    if [ -d "/mnt/pool-1" ]; then
+        BIN_DIR="/mnt/pool-1/bin"
+    else
+        BIN_DIR="/var/lib/netbird/bin"
+    fi
+else
+    BIN_DIR="/usr/local/bin"
+fi
+mkdir -p "$BIN_DIR" /etc/netbird /var/lib/netbird
+echo "✔ Target binary path: $BIN_DIR"
 
 # ------------------------------------------------------------------------------
 # 2. Time Synchronization (Eliminate Clock Skew)
@@ -89,43 +104,39 @@ echo "✔ Discovered live Cloud Management IP: $CLOUD_MGMT_IP"
 # 4. Install NetBird Client & Auto-Inject Self-Hosted Configuration
 # ------------------------------------------------------------------------------
 echo "📦 [3/6] Installing NetBird & injecting self-hosted configuration..."
-IS_TRUENAS=false
-if grep -qi "truenas" /etc/os-release 2>/dev/null || command -v midclt &>/dev/null; then
-    IS_TRUENAS=true
-fi
+NETBIRD_BIN="$BIN_DIR/netbird"
 
-if ! command -v netbird &> /dev/null; then
+if [ ! -f "$NETBIRD_BIN" ] && ! command -v netbird &> /dev/null; then
     if [ "$IS_TRUENAS" = true ]; then
-        echo "TrueNAS appliance detected (apt locked). Installing official standalone binary..."
+        echo "TrueNAS appliance detected. Installing standalone binary into $BIN_DIR..."
         TMP_DIR=$(mktemp -d)
         curl -x "$CSIM_PROXY" -fsSL "https://github.com/netbirdio/netbird/releases/download/v0.77.1/netbird_0.77.1_linux_amd64.tar.gz" -o "$TMP_DIR/netbird.tar.gz"
-        tar -xzf "$TMP_DIR/netbird.tar.gz" -C /usr/local/bin netbird
-        chmod 755 /usr/local/bin/netbird
-        ln -sf /usr/local/bin/netbird /usr/bin/netbird 2>/dev/null || true
-
-        # If permanent ZFS pool exists, keep persistent backup copy
-        if [ -d "/mnt/pool-1" ]; then
-            mkdir -p /mnt/pool-1/bin
-            cp -f /usr/local/bin/netbird /mnt/pool-1/bin/netbird
-        fi
+        tar -xzf "$TMP_DIR/netbird.tar.gz" -C "$BIN_DIR" netbird
+        chmod 755 "$NETBIRD_BIN"
         rm -rf "$TMP_DIR"
 
-        /usr/local/bin/netbird service install 2>/dev/null || true
+        # Register systemd unit pointing directly to our persistent binary
+        "$NETBIRD_BIN" service install 2>/dev/null || true
     else
         echo "Downloading and installing NetBird client via official package..."
         export http_proxy="$CSIM_PROXY"
         export https_proxy="$CSIM_PROXY"
         curl -fsSL https://pkgs.netbird.io/install.sh | sh
         unset http_proxy https_proxy
+        NETBIRD_BIN=$(command -v netbird)
     fi
-    echo "✔ NetBird client installed."
+    echo "✔ NetBird client installed at $NETBIRD_BIN."
 else
-    echo "✔ NetBird client is already installed."
+    if [ -f "$NETBIRD_BIN" ]; then
+        echo "✔ NetBird client exists at $NETBIRD_BIN."
+    else
+        NETBIRD_BIN=$(command -v netbird)
+        echo "✔ NetBird client exists at $NETBIRD_BIN."
+    fi
 fi
 
 # Stop daemon temporarily to reliably inject our self-hosted URL
 systemctl stop netbird 2>/dev/null || true
-mkdir -p /var/lib/netbird /etc/netbird
 
 # Inject self-hosted ManagementURL directly into the active profile file
 if [ -f /var/lib/netbird/default.json ]; then
@@ -155,8 +166,9 @@ echo "✔ Injected self-hosted ManagementURL ($NETBIRD_URL) into NetBird configu
 # 5. Deploy Local Squid Proxy Tunnel (on port 33443)
 # ------------------------------------------------------------------------------
 echo "🔌 [4/6] Deploying local Squid CONNECT proxy tunnel on port $TUNNEL_PORT..."
+TUNNEL_SCRIPT="$BIN_DIR/netbird-proxy-tunnel.py"
 
-cat << EOF > /usr/local/bin/netbird-proxy-tunnel.py
+cat << EOF > "$TUNNEL_SCRIPT"
 import socket, threading, sys
 
 PROXY_HOST = "192.41.170.82"
@@ -205,17 +217,17 @@ while True:
     c, _ = s.accept()
     threading.Thread(target=handle, args=(c,), daemon=True).start()
 EOF
-chmod 755 /usr/local/bin/netbird-proxy-tunnel.py
+chmod 755 "$TUNNEL_SCRIPT"
 
-# Create and enable systemd service
-cat << 'EOF' > /etc/systemd/system/netbird-proxy-tunnel.service
+# Create and enable systemd service for proxy tunnel
+cat << EOF > /etc/systemd/system/netbird-proxy-tunnel.service
 [Unit]
 Description=NetBird CSIM Squid Proxy Tunnel
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /usr/local/bin/netbird-proxy-tunnel.py
+ExecStart=/usr/bin/python3 $TUNNEL_SCRIPT
 Restart=always
 RestartSec=3
 
@@ -247,11 +259,11 @@ echo "🚀 [6/6] Connecting to NetBird Mesh..."
 systemctl start netbird
 sleep 2
 
-netbird up \
+"$NETBIRD_BIN" up \
     --management-url "$NETBIRD_URL" \
     --setup-key "$SETUP_KEY"
 
 echo "=================================================================="
 echo "🎉 NetBird Node Bootstrap Complete!"
 echo "=================================================================="
-netbird status
+"$NETBIRD_BIN" status
