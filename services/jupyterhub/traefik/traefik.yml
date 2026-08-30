@@ -15,13 +15,18 @@ entryPoints:
   websecure:
     address: ":443"
 
+certificatesResolvers:
+  le:
+    acme:
+      email: brainlab@ait.asia
+      storage: /etc/traefik/acme.json
+      httpChallenge:
+        entryPoint: web
+
 providers:
   docker:
     exposedByDefault: false
     network: jupyterhub-net
-  file:
-    directory: /etc/traefik/dynamic
-    watch: true
 
 log:
   level: INFO

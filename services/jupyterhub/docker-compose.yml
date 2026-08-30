@@ -8,9 +8,8 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./traefik/acme.json:/etc/traefik/acme.json
     networks:
       - jupyterhub-net
 
@@ -31,6 +30,7 @@ services:
       - "traefik.http.routers.jupyterhub.rule=Host(`la.cs.ait.ac.th`) || Host(`hub.brain.cs.ait.ac.th`)"
       - "traefik.http.routers.jupyterhub.entrypoints=websecure"
       - "traefik.http.routers.jupyterhub.tls=true"
+      - "traefik.http.routers.jupyterhub.tls.certresolver=le"
       - "traefik.http.services.jupyterhub.loadbalancer.server.port=8000"
 
 volumes:

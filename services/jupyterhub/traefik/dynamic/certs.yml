@@ -1,4 +1,0 @@
-tls:
-  certificates:
-    - certFile: /etc/letsencrypt/live/la.cs.ait.ac.th/fullchain.pem
-      keyFile: /etc/letsencrypt/live/la.cs.ait.ac.th/privkey.pem
