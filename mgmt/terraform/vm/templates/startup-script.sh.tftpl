@@ -85,6 +85,11 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
     "URI": "${netbird_subdomain}.${domain}:443",
     "Proto": "https"
   },
+  "Relay": {
+    "Addresses": ["rels://${netbird_subdomain}.${domain}:443/relay"],
+    "CredentialsTTL": "24h0m0s",
+    "Secret": "${netbird_relay_secret}"
+  },
   "EmbeddedIdP": {
     "Enabled": false
   }
@@ -99,6 +104,7 @@ LLDAP_JWT_SECRET="${lldap_jwt_secret}"
 LLDAP_ADMIN_PASSWORD="${lldap_admin_password}"
 GOOGLE_OAUTH_CLIENT_ID="${google_oauth_client_id}"
 GOOGLE_OAUTH_CLIENT_SECRET="${google_oauth_client_secret}"
+NETBIRD_RELAY_SECRET="${netbird_relay_secret}"
 EOF
 chmod 600 /opt/brainlab/.env
 

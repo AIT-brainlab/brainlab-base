@@ -12,7 +12,7 @@ image_list = {
     "custom4": "custom4",
     "custom5": "custom5",
 }
-proxy_address = "http://192.41.170.23:3128"
+proxy_address = "http://192.41.170.82:3128"
 
 # Configuration file for jupyterhub.
 

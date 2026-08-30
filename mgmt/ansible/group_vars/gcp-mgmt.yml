@@ -1,0 +1,4 @@
+---
+# Variables for Cloud Management Plane hosts
+netbird_mode: container
+netbird_key_name: mgmt-vm-enrollment

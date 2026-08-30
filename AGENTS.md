@@ -35,8 +35,8 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 ### 3. Infrastructure Admin Domain (`infra/`)
 - **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `tokyo.cs.ait.ac.th`, `cairo`).
 - **NVIDIA CUDA & Runtime**: NVIDIA driver management and Container Toolkit (`runtime: nvidia`).
-- **TrueNAS Storage**: Central NFS home directory storage mounted at `/mnt/HDD/home`.
-- **Institutional Proxy**: CSIM forward proxy required for outbound traffic (`http://192.41.170.23:3128`).
+- **TrueNAS Storage**: Central NFS home directory storage mounted at `/mnt/pool-1/home`.
+- **Institutional Proxy**: CSIM forward proxy required for outbound traffic (`http://192.41.170.82:3128`, `squid.cs.ait.ac.th`).
 - **Research Cloud Workloads (`infra/cloud/`)**: Spot GPU templates, GCS buckets, and research grants ($5k Faculty / $1k PhD).
 - **Network & VPN (`infra/network/`)**: NetBird mesh VPN, CSIM proxy routing, and DNS topology.
 

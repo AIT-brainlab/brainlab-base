@@ -1,0 +1,178 @@
+---
+# ==========================================================
+# 📡 Role: NetBird Client (Unified Container & Host Package)
+# ==========================================================
+
+# ----------------------------------------------------------
+# 1. Docker Container Mode (Management VM / Container Nodes)
+# ----------------------------------------------------------
+- name: 🐳 Deploy NetBird via Docker Container
+  when: (netbird_mode | default('package')) == 'container'
+  block:
+    - name: Ensure NetBird client directory exists
+      ansible.builtin.file:
+        path: "{{ netbird_client_dir | default('/opt/brainlab/netbird/client') }}"
+        state: directory
+        mode: '0750'
+
+    - name: Deploy netbird-client Docker Container
+      ansible.builtin.shell: |
+        if [ ! "$(docker ps -q -f name=netbird-client)" ]; then
+          docker rm -f netbird-client 2>/dev/null || true
+          docker run -d \
+            --name netbird-client \
+            --restart unless-stopped \
+            --network host \
+            --cap-add NET_ADMIN \
+            --cap-add SYS_MODULE \
+            -v /dev/net/tun:/dev/net/tun \
+            -v {{ netbird_client_dir | default('/opt/brainlab/netbird/client') }}:/etc/netbird \
+            -e TZ=Asia/Bangkok \
+            -e NB_MANAGEMENT_URL="{{ netbird_management_url }}" \
+            -e NB_SETUP_KEY="{{ netbird_setup_key }}" \
+            netbirdio/netbird:{{ netbird_version | default('0.77.0') }}
+        fi
+      register: docker_run_cmd
+      changed_when: docker_run_cmd.stdout != ""
+
+    - name: Wait for wt0 WireGuard interface
+      ansible.builtin.command:
+        cmd: ip addr show wt0
+      register: wt0_check
+      until: wt0_check.rc == 0
+      retries: 15
+      delay: 2
+      changed_when: false
+
+    - name: Verify Container NetBird Status
+      ansible.builtin.command:
+        cmd: docker exec netbird-client netbird status
+      register: container_status
+      changed_when: false
+
+    - name: Print Container Status
+      ansible.builtin.debug:
+        var: container_status.stdout_lines
+
+# ----------------------------------------------------------
+# 2. Native Host Package Mode (TrueNAS, Ubuntu Compute Nodes)
+# ----------------------------------------------------------
+- name: 📦 Deploy NetBird via Native Host Package
+  when: (netbird_mode | default('package')) == 'package'
+  block:
+    - name: Check if NetBird is installed
+      ansible.builtin.command:
+        cmd: which netbird
+      register: netbird_installed
+      failed_when: false
+      changed_when: false
+
+    - name: Install NetBird Client (if missing)
+      ansible.builtin.shell:
+        cmd: curl -fsSL https://pkgs.netbird.io/install.sh | sh
+      when: netbird_installed.rc != 0
+
+    - name: 🔌 Configure CSIM Squid Proxy Tunnel (if behind CSIM firewall)
+      when: enable_csim_proxy_tunnel | default(false)
+      block:
+        - name: Deploy netbird-proxy-tunnel.py script
+          ansible.builtin.copy:
+            dest: /usr/local/bin/netbird-proxy-tunnel.py
+            mode: '0755'
+            content: |
+              import socket, threading, sys
+              PROXY_HOST = "192.41.170.82"
+              PROXY_PORT = 3128
+              TARGET_HOST = "netbird2.brain.cs.ait.ac.th"
+              TARGET_PORT = 443
+              LOCAL_PORT = 443
+
+              def pipe(src, dst):
+                  try:
+                      while True:
+                          data = src.recv(32768)
+                          if not data: break
+                          dst.sendall(data)
+                  except Exception: pass
+                  finally:
+                      try: src.close()
+                      except: pass
+                      try: dst.close()
+                      except: pass
+
+              def handle(client):
+                  try:
+                      p = socket.create_connection((PROXY_HOST, PROXY_PORT), timeout=15)
+                      p.sendall(f"CONNECT {TARGET_HOST}:{TARGET_PORT} HTTP/1.1\r\nHost: {TARGET_HOST}:{TARGET_PORT}\r\n\r\n".encode())
+                      resp = p.recv(4096)
+                      if b"200" not in resp:
+                          client.close()
+                          p.close()
+                          return
+                      p.settimeout(None)
+                      client.settimeout(None)
+                      p.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                      client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                      threading.Thread(target=pipe, args=(client, p), daemon=True).start()
+                      threading.Thread(target=pipe, args=(p, client), daemon=True).start()
+                  except Exception:
+                      try: client.close()
+                      except: pass
+
+              s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+              s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+              s.bind(("127.0.0.1", LOCAL_PORT))
+              s.listen(50)
+              while True:
+                  c, _ = s.accept()
+                  threading.Thread(target=handle, args=(c,), daemon=True).start()
+
+        - name: Deploy netbird-proxy-tunnel systemd service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/netbird-proxy-tunnel.service
+            mode: '0644'
+            content: |
+              [Unit]
+              Description=NetBird CSIM Squid Proxy Tunnel
+              After=network.target
+
+              [Service]
+              Type=simple
+              ExecStart=/usr/bin/python3 /usr/local/bin/netbird-proxy-tunnel.py
+              Restart=always
+              RestartSec=3
+
+              [Install]
+              WantedBy=multi-user.target
+
+        - name: Enable and start netbird-proxy-tunnel service
+          ansible.builtin.systemd:
+            name: netbird-proxy-tunnel
+            enabled: true
+            state: started
+            daemon_reload: true
+
+        - name: Route NetBird management domain to loopback in /etc/hosts
+          ansible.builtin.lineinfile:
+            path: /etc/hosts
+            line: "127.0.0.1 netbird2.brain.cs.ait.ac.th"
+            state: present
+
+    - name: Connect Host to NetBird Mesh
+      ansible.builtin.command:
+        cmd: >
+          netbird up
+          --management-url {{ netbird_management_url }}
+          --setup-key {{ netbird_setup_key }}
+      register: host_up
+      changed_when: "'Connected' in host_up.stdout or host_up.rc == 0"
+
+    - name: Verify Host NetBird Status
+      ansible.builtin.command:
+        cmd: netbird status
+      register: host_status
+      changed_when: false
+
+    - name: Print Host Status
+      ansible.builtin.debug:
+        var: host_status.stdout_lines

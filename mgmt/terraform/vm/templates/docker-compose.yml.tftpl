@@ -146,6 +146,28 @@ services:
     networks:
       - mgmt-network
 
+  # ==========================================================
+  # 📡 NetBird: Self-Hosted WireGuard Relay Service (WebSocket / TCP 443)
+  # ==========================================================
+  netbird-relay:
+    image: netbirdio/relay:${netbird_version}
+    container_name: netbird-relay
+    restart: unless-stopped
+    command:
+      - "relay"
+      - "--listen-address=:33080"
+      - "--exposed-address=rels://${netbird_subdomain}.${domain}:443/relay"
+      - "--auth-secret=$${NETBIRD_RELAY_SECRET}"
+      - "--log-level=info"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netbird-relay.rule=Host(`${netbird_subdomain}.${domain}`) && PathPrefix(`/relay`)"
+      - "traefik.http.routers.netbird-relay.entrypoints=websecure"
+      - "traefik.http.routers.netbird-relay.tls.certresolver=letsencrypt"
+      - "traefik.http.services.netbird-relay.loadbalancer.server.port=33080"
+    networks:
+      - mgmt-network
+
 networks:
   mgmt-network:
     name: brainlab-mgmt-net

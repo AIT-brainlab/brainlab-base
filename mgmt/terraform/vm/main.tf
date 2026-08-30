@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
   }
 
   backend "gcs" {
@@ -93,7 +97,7 @@ resource "google_compute_firewall" "allow_netbird" {
 
   allow {
     protocol = "udp"
-    ports    = ["33073"]
+    ports    = ["33073", "51820"]
   }
 
   source_ranges = ["0.0.0.0/0"]
@@ -120,6 +124,11 @@ resource "google_compute_firewall" "allow_iap_ssh" {
 # ----------------------------------------------------------
 # 🖥️ Disposable Compute VM Instance ("100% Cattle")
 # ----------------------------------------------------------
+resource "random_password" "netbird_relay_secret" {
+  length  = 64
+  special = false
+}
+
 locals {
   docker_compose_rendered = templatefile("${path.module}/templates/docker-compose.yml.tftpl", {
     domain            = var.domain
@@ -137,6 +146,7 @@ locals {
     lldap_admin_password       = data.google_secret_manager_secret_version.admin_password.secret_data
     google_oauth_client_id     = data.google_secret_manager_secret_version.google_oauth_client_id.secret_data
     google_oauth_client_secret = data.google_secret_manager_secret_version.google_oauth_client_secret.secret_data
+    netbird_relay_secret       = random_password.netbird_relay_secret.result
     domain                     = var.domain
     lldap_subdomain            = var.lldap_subdomain
     netbird_subdomain          = var.netbird_subdomain

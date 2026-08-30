@@ -33,22 +33,22 @@ timedatectl
 
 ---
 
-## 2. Institutional Proxy Setup (`192.41.170.23:3128`)
+## 2. Institutional Proxy Setup (`192.41.170.82:3128`)
 
 ### Step 1: User Environment (`~/.bashrc` & `/etc/environment`)
 Add proxy exports to `/etc/environment` or user `~/.bashrc`:
 ```bash
-export http_proxy=http://192.41.170.23:3128
-export https_proxy=http://192.41.170.23:3128
-export ftp_proxy=http://192.41.170.23:3128
+export http_proxy=http://192.41.170.82:3128
+export https_proxy=http://192.41.170.82:3128
+export ftp_proxy=http://192.41.170.82:3128
 export no_proxy="localhost,127.0.0.1,192.41.170.0/24,*.ait.ac.th,*.ait.asia,*.brainlab"
 ```
 
 ### Step 2: APT Package Manager Proxy
 Create `/etc/apt/apt.conf.d/proxy.conf`:
 ```text
-Acquire::http::Proxy "http://192.41.170.23:3128/";
-Acquire::https::Proxy "http://192.41.170.23:3128/";
+Acquire::http::Proxy "http://192.41.170.82:3128/";
+Acquire::https::Proxy "http://192.41.170.82:3128/";
 ```
 
 ### Step 3: Sudoers Environment Preservation

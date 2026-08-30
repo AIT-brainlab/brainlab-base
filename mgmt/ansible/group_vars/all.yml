@@ -1,0 +1,8 @@
+---
+# ==========================================================
+# 🌐 Global Variables (Inherited by all hosts)
+# ==========================================================
+ansible_user: root
+ansible_python_interpreter: /usr/bin/python3
+netbird_management_url: https://netbird2.brain.cs.ait.ac.th
+netbird_version: "0.77.0"

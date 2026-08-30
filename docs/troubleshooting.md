@@ -56,12 +56,12 @@ Quick reference for diagnosing and resolving the most frequent operational incid
 ### Resolution:
 1. Verify CSIM proxy reachability:
    ```bash
-   curl -I --proxy http://192.41.170.23:3128 https://www.google.com
+   curl -I --proxy http://192.41.170.82:3128 https://www.google.com
    ```
 2. Ensure proxy environment variables are exported in current subshell:
    ```bash
-   export http_proxy=http://192.41.170.23:3128
-   export https_proxy=http://192.41.170.23:3128
+   export http_proxy=http://192.41.170.82:3128
+   export https_proxy=http://192.41.170.82:3128
    ```
 
 ---

@@ -54,7 +54,7 @@ policies:
         protocol: all
         bidirectional: true
         sources: [tier-operators]
-        destinations: [tier-servers, tier-mgmt]
+        destinations: [tier-servers, tier-mgmt, tier-storage]
 
   - name: Student-Compute-Access
     description: "Grant students access to compute services while isolating student laptops"
@@ -78,13 +78,12 @@ policies:
     description: "Allow servers and TrueNAS storage to query Cloud LLDAP over encrypted WireGuard mesh"
     enabled: true
     rules:
-      - name: ldap-query-port
+      - name: ldap-all-traffic
         action: accept
-        protocol: tcp
-        bidirectional: false
+        protocol: all
+        bidirectional: true
         sources: [tier-servers, tier-storage]
         destinations: [tier-mgmt]
-        ports: ["3890"]
 
 # ----------------------------------------------------------
 # 3. Server Setup Keys (Day 1 Host Onboarding)

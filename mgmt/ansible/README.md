@@ -18,25 +18,29 @@ This directory contains the automated **Day 1 Configuration Management & Peer En
 ## 🚀 Running the Playbooks
 
 ### Prerequisites
-Ensure `ansible-core` is available:
+`ansible-core` is already managed as a project dependency in the repository virtual environment:
+
 ```bash
-uv tool install ansible-core
+# From the repository root, sync and activate the virtual environment:
+uv sync
+source .venv/bin/activate
 ```
+*(Or invoke directly with `uv run ansible-playbook ...` without activating)*
 
 ### 1. Enroll the Management VM (GCP Cloud)
 ```bash
-ansible-playbook -i inventory.ini enroll_netbird.yml --limit mgmt
+ansible-playbook -i inventory.ini enroll_netbird.yml --limit gcp-mgmt
 ```
 
 ### 2. Enroll TrueNAS Storage Node (`cairo`)
 ```bash
-ansible-playbook -i inventory.ini enroll_netbird.yml --limit storage
+ansible-playbook -i inventory.ini enroll_netbird.yml --limit onprem-truenas
 ```
-*(Or specify the TrueNAS host/IP directly: `ansible-playbook -i "192.41.170.x," enroll_netbird.yml --limit storage`)*
+*(Or specify the TrueNAS host/IP directly: `ansible-playbook -i "192.41.170.x," enroll_netbird.yml --limit onprem-truenas`)*
 
-### 3. Enroll Compute Nodes (`la`, `tokyo`)
+### 3. Enroll Ubuntu Compute Nodes (`la`, `tokyo`)
 ```bash
-ansible-playbook -i inventory.ini enroll_netbird.yml --limit servers
+ansible-playbook -i inventory.ini enroll_netbird.yml --limit onprem-ubuntu-server
 ```
 
 ### 4. Enroll All Hosts Concurrently
@@ -46,11 +50,24 @@ ansible-playbook -i inventory.ini enroll_netbird.yml
 
 ---
 
-## 📁 Directory Structure
+## 📁 Modular Directory Structure
 ```
 mgmt/ansible/
-├── ansible.cfg            # Global Ansible configuration & SSH pipelining
-├── inventory.ini          # Hosts inventory (mgmt, storage, servers)
-├── enroll_netbird.yml     # Automated NetBird peer enrollment playbook
-└── README.md              # Operational runbook (this file)
+├── ansible.cfg                # Global Ansible configuration & SSH pipelining
+├── inventory.ini              # Clean hosts list (no inline commands)
+├── enroll_netbird.yml         # Universal 30-line peer enrollment playbook
+├── README.md                  # Operational runbook (this file)
+│
+├── group_vars/                # Tier-specific variables
+│   ├── all.yml                # Global settings (NetBird URL, Python interpreter)
+│   ├── gcp-mgmt.yml           # Container mode & mgmt-vm-enrollment key
+│   ├── onprem-truenas.yml     # Package mode & truenas-storage-enrollment key
+│   └── onprem-ubuntu-server.yml # Package mode & onprem-csim-enrollment key
+│
+├── host_vars/                 # Host-specific connection overrides
+│   └── brainlab-mgmt-vm.yml   # GCP IAP Zero-Trust Tunnel & dynamic user resolution
+│
+└── roles/
+    └── netbird-client/tasks/
+        └── main.yml           # Unified role tasks (container & native package)
 ```

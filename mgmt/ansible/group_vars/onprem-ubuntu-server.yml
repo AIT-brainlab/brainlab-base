@@ -1,0 +1,5 @@
+---
+# Variables for Physical GPU Compute Servers
+netbird_mode: package
+netbird_key_name: onprem-csim-enrollment
+enable_csim_proxy_tunnel: true

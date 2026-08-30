@@ -28,8 +28,8 @@ sudo mkdir -p /etc/systemd/system/docker.service.d
 ### Step 2: Create `/etc/systemd/system/docker.service.d/http-proxy.conf`
 ```ini
 [Service]
-Environment="HTTP_PROXY=http://192.41.170.23:3128"
-Environment="HTTPS_PROXY=http://192.41.170.23:3128"
+Environment="HTTP_PROXY=http://192.41.170.82:3128"
+Environment="HTTPS_PROXY=http://192.41.170.82:3128"
 Environment="NO_PROXY=localhost,127.0.0.1,192.41.170.0/24,*.ait.ac.th,*.ait.asia"
 ```
 

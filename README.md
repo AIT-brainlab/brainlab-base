@@ -38,7 +38,7 @@ The decoupled, permanent control plane running under GCP project **`ait-brainlab
 ### 2. 🛠️ [Infrastructure Domain (`infra/`)](infra/README.md)
 - [**`infra/onprem/`**](infra/onprem/README.md): Ubuntu 22.04 installation, NVIDIA GPU drivers, TrueNAS NFS mounting (`/mnt/pool-1/home`), and Docker engine.
 - [**`infra/cloud/`**](infra/cloud/README.md): Research compute templates (Spot GPU VMs, GCS buckets) and Google Cloud research credit guides ($5k Faculty / $1k PhD).
-- [**`infra/network/`**](infra/network/README.md): NetBird mesh VPN setup, CSIM proxy configuration (`192.41.170.23:3128`), and DNS topology.
+- [**`infra/network/`**](infra/network/README.md): NetBird mesh VPN setup, CSIM proxy configuration (`192.41.170.82:3128`), and DNS topology.
 
 ### 3. 🚀 [Services Domain (`services/`)](services/README.md)
 - [**`services/jupyterhub/`**](services/jupyterhub/README.md): Multi-user GPU JupyterLab container environment (`nlp`, `cv`, `default` Dockerfiles) and systemd configuration.
@@ -79,5 +79,5 @@ uv run ansible-playbook -i mgmt/ansible/inventory.ini mgmt/ansible/enroll_netbir
 
 ## 🔒 Security & Safe Operating Protocols
 - **No Hardcoded Secrets**: Never commit passwords, private keys, or API tokens to version control.
-- **Proxy Aware**: Outbound traffic on CSIM network requires `http://192.41.170.23:3128`.
+- **Proxy Aware**: Outbound traffic on CSIM network requires `http://192.41.170.82:3128`.
 - **Persistent User Data**: Always stored on TrueNAS at `/mnt/pool-1/home/{username}`.

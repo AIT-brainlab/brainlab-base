@@ -1,0 +1,5 @@
+---
+# Variables for TrueNAS Storage Nodes
+netbird_mode: package
+netbird_key_name: truenas-storage-enrollment
+enable_csim_proxy_tunnel: true
