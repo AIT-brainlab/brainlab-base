@@ -30,8 +30,8 @@ set -euo pipefail
 # 1. Configuration & Defaults
 # ------------------------------------------------------------------------------
 CSIM_PROXY="http://192.41.170.82:3128"
-NETBIRD_URL="https://netbird2.brain.cs.ait.ac.th"
-NETBIRD_DOMAIN="netbird2.brain.cs.ait.ac.th"
+NETBIRD_URL="https://netbird.brain.cs.ait.ac.th"
+NETBIRD_DOMAIN="netbird.brain.cs.ait.ac.th"
 TUNNEL_PORT=33443
 DEFAULT_SETUP_KEY="947F2BE1-B7C6-4709-9A9B-F6680E9D70A9" # TrueNAS setup key
 
@@ -170,7 +170,7 @@ import socket, threading, sys
 
 PROXY_HOST = "192.41.170.82"
 PROXY_PORT = 3128
-TARGET_HOST = "netbird2.brain.cs.ait.ac.th"
+TARGET_HOST = "netbird.brain.cs.ait.ac.th"
 TARGET_PORT = 443
 LOCAL_PORT = $TUNNEL_PORT
 
@@ -220,7 +220,7 @@ chmod 755 "$TUNNEL_SCRIPT"
 IPTABLES_HELPER="$BIN_DIR/netbird-iptables.sh"
 cat << 'EOF' > "$IPTABLES_HELPER"
 #!/bin/sh
-NETBIRD_DOMAIN="netbird2.brain.cs.ait.ac.th"
+NETBIRD_DOMAIN="netbird.brain.cs.ait.ac.th"
 TUNNEL_PORT=33443
 
 ACTION="${1:-start}"

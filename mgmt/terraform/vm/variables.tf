@@ -37,7 +37,7 @@ variable "lldap_subdomain" {
 variable "netbird_subdomain" {
   description = "Subdomain for NetBird VPN Control Plane"
   type        = string
-  default     = "netbird2"
+  default     = "netbird"
 }
 
 variable "acme_email" {
