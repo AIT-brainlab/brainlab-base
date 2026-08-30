@@ -33,7 +33,7 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 - **Zero Internal TLS Overhead**: All internal LDAP communication across TrueNAS, Linux SSSD, and Ubuntu Desktops runs through the NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890` with `ldap_id_use_start_tls = false`). No self-signed certificates or Python `ldap3` package hacks.
 
 ### 3. Infrastructure Admin Domain (`infra/`)
-- **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `cairo`).
+- **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `tokyo.cs.ait.ac.th` [standby], `cairo`).
 - **NVIDIA CUDA & Runtime**: NVIDIA driver management and Container Toolkit (`runtime: nvidia`).
 - **TrueNAS Storage**: Central NFS home directory storage mounted at `/mnt/pool-1/home`.
 - **Institutional Proxy**: CSIM forward proxy required for outbound traffic (`http://192.41.170.82:3128`, `squid.cs.ait.ac.th`).

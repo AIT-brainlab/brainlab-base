@@ -18,10 +18,11 @@ Welcome to the **On-Premise Infrastructure** administration hub. These guides pr
 
 ## 🖥️ Physical Lab Server Inventory
 
-| Hostname | Role | IP Address | Primary Hardware |
-| :--- | :--- | :--- | :--- |
-| **`la.cs.ait.ac.th`** | Primary GPU Compute Node & JupyterHub | `192.41.170.85` | Multi-GPU Workstation |
-| **`cairo`** | TrueNAS Shared Storage (NFS) | `192.41.170.4` | High-Capacity NAS Arrays |
+| Hostname | Role | IP Address | Primary Hardware | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **`la.cs.ait.ac.th`** | Primary GPU Compute Node & JupyterHub | `192.41.170.85` | Multi-GPU Workstation | Active (Live in NetBird Mesh) |
+| **`cairo`** | TrueNAS Shared Storage (NFS) | `192.41.170.4` | High-Capacity NAS Arrays | Active (Live in NetBird Mesh) |
+| **`tokyo.cs.ait.ac.th`** | Secondary Server (APIs / Web Services) | `192.41.170.86` | Service Server | Standby / Dormant (No active workloads) |
 
 ---
 
