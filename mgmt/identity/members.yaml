@@ -2,8 +2,11 @@
 # 👥 AIT Brainlab Members (Identity-as-Code)
 # ==========================================================
 # UID Scheme (Sorted Ascending by UID):
-#   - 2xxx:   Faculty & Permanent Lab Staff (2001 bci, 2002 chaklams, 2003 pasitt)
-#   - 3xxx:   Alumni without Student ID (3001 aimanl, 3002 abhinavl)
+#   - 2xxx:   Faculty & Permanent Lab / Project Accounts
+#             (2001 bci, 2002 chaklams, 2003 slwp1)
+#   - 3xxx:   Alumni without Student ID
+#             (3001 pasitt, 3002 aimanl, 3003 abhinavl,
+#              3004 buddhabhushans, 3005 hamzak, 3006 jinayp, 3007 mokshs)
 #   - 5xxx:   External Collaborators / Temporary
 #   - 12xxxx: AIT Student IDs (Master / PhD)
 # GID Scheme:
@@ -38,10 +41,19 @@ members:
     login_shell: /bin/bash
     groups: [brainlab]
 
+  - username: slwp1
+    display_name: "SLWP1 Project"
+    primary_email: slwp1@ait.asia
+    uid: 2003
+    gid: 2008
+    home_directory: /mnt/pool-1/home/slwp1
+    login_shell: /bin/bash
+    groups: [brainlab]
+
   - username: pasitt
     display_name: "Pasit Tiwawongrut"
     primary_email: pasitt@ait.asia
-    uid: 2003
+    uid: 3001
     gid: 2008
     home_directory: /mnt/pool-1/home/pasitt
     login_shell: /bin/bash
@@ -50,7 +62,7 @@ members:
   - username: aimanl
     display_name: "Aiman Lameesa"
     primary_email: aiman.lameesa@gmail.com
-    uid: 3001
+    uid: 3002
     gid: 2008
     home_directory: /mnt/pool-1/home/aimanl
     login_shell: /bin/bash
@@ -59,9 +71,45 @@ members:
   - username: abhinavl
     display_name: "Abhinav Lugun"
     primary_email: abhinavlugun@yahoo.com
-    uid: 3002
+    uid: 3003
     gid: 2008
     home_directory: /mnt/pool-1/home/abhinavl
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: buddhabhushans
+    display_name: "Buddhabhushan Sarkate"
+    primary_email: buddhabhushans@ait.asia
+    uid: 3004
+    gid: 2008
+    home_directory: /mnt/pool-1/home/buddhabhushans
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: hamzak
+    display_name: "Hamza K"
+    primary_email: hamzak@ait.asia
+    uid: 3005
+    gid: 2008
+    home_directory: /mnt/pool-1/home/hamzak
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: jinayp
+    display_name: "Jinay P"
+    primary_email: jinayp@ait.asia
+    uid: 3006
+    gid: 2008
+    home_directory: /mnt/pool-1/home/jinayp
+    login_shell: /bin/bash
+    groups: [brainlab]
+
+  - username: mokshs
+    display_name: "Moksh S"
+    primary_email: mokshs@ait.asia
+    uid: 3007
+    gid: 2008
+    home_directory: /mnt/pool-1/home/mokshs
     login_shell: /bin/bash
     groups: [brainlab]
 
