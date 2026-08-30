@@ -106,3 +106,17 @@ setup_keys:
     expires_in_days: 365
     auto_groups: [loc-onprem-csim, tier-storage]
     usage_limit: 0
+
+# ----------------------------------------------------------
+# 4. Internal Split-Horizon DNS Zones
+# ----------------------------------------------------------
+dns_zones:
+  - name: "Brainlab Internal Zone"
+    domain: "brain.cs.ait.ac.th"
+    enabled: true
+    distribution_groups: [All]
+    records:
+      - name: "ldap.brain.cs.ait.ac.th"
+        type: A
+        content: "100.103.75.243"
+        ttl: 300

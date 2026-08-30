@@ -131,7 +131,7 @@ flowchart TD
 | `4.5` | Deploy GitHub Action ([`.github/workflows/netbird_pat_reminder.yml`](../.github/workflows/netbird_pat_reminder.yml)) for 365-day PAT reminder | Akraradet | 🔵 | Runs monthly; creates alert issue 30 days before expiration |
 | `4.6` | Deploy NetBird Client on Management VM (`brainlab-mgmt-vm`) | Akraradet | 🔵 | Live P2P WireGuard (`100.103.75.243`); `wt0` active; port 3890 verified |
 | `4.7` | Deploy NetBird Client on TrueNAS Storage Node (`cairo`) | Akraradet | 🔵 | Live over Relay (`100.103.219.141`); tags `loc-onprem-csim`, `tier-storage`; port 3890 verified |
-| `4.8` | Configure TrueNAS Directory Services LDAP using internal NetBird URL | Akraradet | 🔴 | `ldap://mgmt.netbird.selfhosted:3890` with service account `ldapservice` |
+| `4.8` | Configure TrueNAS Directory Services LDAP using internal NetBird URL | Akraradet | 🔵 | Successfully bound to `ldap://ldap.brain.cs.ait.ac.th:3890`; POSIX UID/GID 121413 verified |
 | `4.9` | Enroll physical GPU nodes (`la`, `tokyo`) via Ansible / Setup Key | Akraradet | 🔴 | Joins mesh with tags `loc-onprem-csim`, `tier-servers` |
 | `4.10` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔵 | 100% persistent across VM reboots; snapshot uploaded to GCS |
 
