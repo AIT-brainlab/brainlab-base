@@ -86,10 +86,21 @@ echo "✔ Discovered live Cloud Management IP: $CLOUD_MGMT_IP"
 echo "📦 [3/6] Installing NetBird & injecting self-hosted configuration..."
 if ! command -v netbird &> /dev/null; then
     echo "Downloading and installing NetBird client..."
-    export http_proxy="$CSIM_PROXY"
-    export https_proxy="$CSIM_PROXY"
-    curl -fsSL https://pkgs.netbird.io/install.sh | sh
-    unset http_proxy https_proxy
+    if command -v midclt &>/dev/null; then
+        echo "TrueNAS appliance detected (apt is locked). Installing official standalone binary..."
+        TMP_DIR=$(mktemp -d)
+        curl -x "$CSIM_PROXY" -fsSL "https://github.com/netbirdio/netbird/releases/download/v0.77.1/netbird_0.77.1_linux_amd64.tar.gz" -o "$TMP_DIR/netbird.tar.gz"
+        tar -xzf "$TMP_DIR/netbird.tar.gz" -C /usr/local/bin netbird
+        chmod 755 /usr/local/bin/netbird
+        ln -sf /usr/local/bin/netbird /usr/bin/netbird 2>/dev/null || true
+        rm -rf "$TMP_DIR"
+        /usr/local/bin/netbird service install 2>/dev/null || true
+    else
+        export http_proxy="$CSIM_PROXY"
+        export https_proxy="$CSIM_PROXY"
+        curl -fsSL https://pkgs.netbird.io/install.sh | sh
+        unset http_proxy https_proxy
+    fi
     echo "✔ NetBird client installed."
 else
     echo "✔ NetBird client is already installed."
