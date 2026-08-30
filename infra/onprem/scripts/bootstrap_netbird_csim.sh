@@ -33,7 +33,7 @@ CSIM_PROXY="http://192.41.170.82:3128"
 NETBIRD_URL="https://netbird.brain.cs.ait.ac.th"
 NETBIRD_DOMAIN="netbird.brain.cs.ait.ac.th"
 TUNNEL_PORT=33443
-DEFAULT_SETUP_KEY="947F2BE1-B7C6-4709-9A9B-F6680E9D70A9" # TrueNAS setup key
+DEFAULT_SETUP_KEY="6BAC3****" # TrueNAS setup key
 
 SETUP_KEY="${1:-$DEFAULT_SETUP_KEY}"
 
