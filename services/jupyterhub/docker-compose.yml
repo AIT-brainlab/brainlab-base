@@ -13,6 +13,7 @@ services:
     environment:
       - HTTP_PROXY=http://192.41.170.82:3128
       - HTTPS_PROXY=http://192.41.170.82:3128
+      - NO_PROXY=localhost,127.0.0.1,jupyterhub,172.16.0.0/12,10.0.0.0/8
     networks:
       - jupyterhub-net
 
