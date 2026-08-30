@@ -116,12 +116,10 @@ c.GoogleOAuthenticator.oauth_callback_url = os.environ.get(
     'https://la.cs.ait.ac.th/hub/oauth_callback'
 )
 
-# Admin users (POSIX usernames)
+# Admin users (POSIX usernames matching members.yaml)
 c.Authenticator.admin_users = {
     'bci',
-    'brainlab',
     'akraradets',
-    'st121413',
 }
 c.Authenticator.enable_auth_state = True
 
