@@ -118,7 +118,7 @@ dns_zones:
     records:
       - name: "ldap.brain.cs.ait.ac.th"
         type: A
-        content: "100.103.75.243"
+        content: "100.74.72.168"
         ttl: 300
       - name: "truenas.brain.cs.ait.ac.th"
         type: A
