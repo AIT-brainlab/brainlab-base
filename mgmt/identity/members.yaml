@@ -1,11 +1,11 @@
 # ==========================================================
 # 👥 AIT Brainlab Members (Identity-as-Code)
 # ==========================================================
-# UID Scheme:
-#   - 12xxxx: AIT Student IDs (Master / PhD)
+# UID Scheme (Sorted Ascending by UID):
 #   - 2xxx:   Faculty & Permanent Lab Staff (2001 bci, 2002 chaklams, 2003 pasitt)
 #   - 3xxx:   Alumni without Student ID (3001 aimanl, 3002 abhinavl)
 #   - 5xxx:   External Collaborators / Temporary
+#   - 12xxxx: AIT Student IDs (Master / PhD)
 # GID Scheme:
 #   - 2001: admin (bci service account)
 #   - 2008: brainlab (all researchers, faculty, students, alumni)
@@ -19,6 +19,7 @@ groups:
     gid: 2008
 
 members:
+
   - username: bci
     display_name: "brainlab"
     primary_email: brainlab@ait.asia
