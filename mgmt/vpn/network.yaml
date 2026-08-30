@@ -93,8 +93,8 @@ policies:
         sources: [tier-servers, tier-storage]
         destinations: [tier-mgmt]
 
-  - name: DLMS-Project-Interconnect
-    description: "Allow DLMS users and backend VM to access CCTV RTSP streams, and users to access backend VM"
+  - name: DLMS-Server-Access
+    description: "Allow DLMS project researchers to access backend VM"
     enabled: true
     rules:
       - name: dlms-backend-access
@@ -104,6 +104,10 @@ policies:
         sources: [prj-dlms-users, tier-operators]
         destinations: [prj-dlms-servers]
 
+  - name: DLMS-CCTV-Access
+    description: "Allow DLMS users and backend VM to access CCTV RTSP streams"
+    enabled: true
+    rules:
       - name: dlms-cctv-access
         action: accept
         protocol: all
