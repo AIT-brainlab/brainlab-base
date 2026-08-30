@@ -27,7 +27,7 @@ services:
       - jupyterhub-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.jupyterhub.rule=Host(`la.cs.ait.ac.th`) || Host(`hub.brain.cs.ait.ac.th`)"
+      - "traefik.http.routers.jupyterhub.rule=Host(`la.cs.ait.ac.th`)"
       - "traefik.http.routers.jupyterhub.entrypoints=websecure"
       - "traefik.http.routers.jupyterhub.tls=true"
       - "traefik.http.routers.jupyterhub.tls.certresolver=le"
