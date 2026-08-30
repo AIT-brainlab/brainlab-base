@@ -133,14 +133,15 @@ class BrainlabDockerSpawner(dockerspawner.DockerSpawner):
         auth_state = await user.get_auth_state()
         posix_info = auth_state.get('posix') if auth_state else None
 
-        if posix_info:
-            posix_user = posix_info['username']
-            posix_uid = posix_info['uid']
-            posix_gid = posix_info['gid']
-        else:
-            posix_user = user.name
-            posix_uid = 2000
-            posix_gid = 2008
+        if not posix_info:
+            raise web.HTTPError(
+                500,
+                f"Failed to spawn container: POSIX attributes for user '{user.name}' were not found in LLDAP."
+            )
+
+        posix_user = posix_info['username']
+        posix_uid = posix_info['uid']
+        posix_gid = posix_info['gid']
 
         # Inject POSIX UID & GID for accurate file permissions on TrueNAS
         spawner.environment['NB_USER'] = posix_user
