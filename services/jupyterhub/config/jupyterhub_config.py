@@ -129,42 +129,48 @@ c.Authenticator.enable_auth_state = True
 # ------------------------------------------------------------------------------
 CSIM_PROXY = "http://192.41.170.82:3128"
 
+async def custom_pre_spawn_hook(spawner):
+    auth_state = await spawner.user.get_auth_state()
+    posix_info = auth_state.get('posix') if auth_state else None
+
+    if not posix_info:
+        raise web.HTTPError(
+            500,
+            f"Failed to spawn container: POSIX attributes for user '{spawner.user.name}' were not found in LLDAP."
+        )
+
+    posix_user = posix_info['username']
+    posix_uid = posix_info['uid']
+    posix_gid = posix_info['gid']
+
+    # Inject POSIX UID & GID for accurate file permissions on TrueNAS
+    spawner.environment['NB_USER'] = posix_user
+    spawner.environment['NB_UID'] = str(posix_uid)
+    spawner.environment['NB_GID'] = str(posix_gid)
+    spawner.environment['CHOWN_HOME'] = 'yes'
+    spawner.environment['GRANT_SUDO'] = 'yes'
+    spawner.environment['HOME'] = f"/home/{posix_user}"
+
+    # CSIM proxy configuration for outbound internet inside student container
+    spawner.environment['http_proxy'] = CSIM_PROXY
+    spawner.environment['https_proxy'] = CSIM_PROXY
+    spawner.environment['HTTP_PROXY'] = CSIM_PROXY
+    spawner.environment['HTTPS_PROXY'] = CSIM_PROXY
+
+    # Set notebook directory to /home/{username}/work
+    spawner.notebook_dir = f"/home/{posix_user}/work"
+
+    # Mount TrueNAS NFS work directories and shared datasets
+    spawner.volumes = {
+        f"/mnt/pool-1/home/{posix_user}/work": f"/home/{posix_user}/work",
+        f"/mnt/pool-1/home/{posix_user}/.ssh": f"/home/{posix_user}/.ssh",
+        "/mnt/Dataset": f"/home/{posix_user}/Dataset",
+        "/mnt/dataset_arch": f"/home/{posix_user}/dataset_arch",
+    }
+
+c.Spawner.pre_spawn_hook = custom_pre_spawn_hook
+
 class BrainlabDockerSpawner(dockerspawner.DockerSpawner):
-    async def pre_spawn_start(self, user, spawner):
-        auth_state = await user.get_auth_state()
-        posix_info = auth_state.get('posix') if auth_state else None
-
-        if not posix_info:
-            raise web.HTTPError(
-                500,
-                f"Failed to spawn container: POSIX attributes for user '{user.name}' were not found in LLDAP."
-            )
-
-        posix_user = posix_info['username']
-        posix_uid = posix_info['uid']
-        posix_gid = posix_info['gid']
-
-        # Inject POSIX UID & GID for accurate file permissions on TrueNAS
-        spawner.environment['NB_USER'] = posix_user
-        spawner.environment['NB_UID'] = str(posix_uid)
-        spawner.environment['NB_GID'] = str(posix_gid)
-        spawner.environment['CHOWN_HOME'] = 'yes'
-        spawner.environment['GRANT_SUDO'] = 'yes'
-
-        # CSIM proxy configuration for outbound internet inside student container
-        spawner.environment['http_proxy'] = CSIM_PROXY
-        spawner.environment['https_proxy'] = CSIM_PROXY
-        spawner.environment['HTTP_PROXY'] = CSIM_PROXY
-        spawner.environment['HTTPS_PROXY'] = CSIM_PROXY
-
-        # Mount TrueNAS NFS work directories and shared datasets
-        spawner.volumes = {
-            f"/mnt/pool-1/home/{posix_user}/work": f"/home/{posix_user}/work",
-            f"/mnt/pool-1/home/{posix_user}/.ssh": f"/home/{posix_user}/.ssh",
-            "/mnt/Dataset": f"/home/{posix_user}/Dataset",
-            "/mnt/dataset_arch": f"/home/{posix_user}/dataset_arch",
-        }
-
     def create_object(self):
         # Pass dual NVIDIA RTX A6000 GPUs
         device_ids = ["0,1"]
