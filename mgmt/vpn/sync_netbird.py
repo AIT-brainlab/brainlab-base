@@ -37,7 +37,7 @@ CYAN = "\033[0;36m"
 BOLD = "\033[1m"
 NC = "\033[0m"
 
-DEFAULT_API_URL = "https://netbird2.brain.cs.ait.ac.th/api"
+DEFAULT_API_URL = "https://netbird.brain.cs.ait.ac.th/api"
 DEFAULT_SECRET_NAME = "netbird-mgmt-token"
 DEFAULT_PROJECT_ID = "ait-brainlab-mgmt"
 
@@ -98,7 +98,7 @@ def parse_yaml_file(filepath):
         pass
 
     import re
-    result = {"groups": [], "policies": [], "setup_keys": []}
+    result = {"groups": [], "policies": [], "setup_keys": [], "dns_zones": []}
     current_section = None
     current_item = None
     current_rule = None
@@ -120,6 +120,10 @@ def parse_yaml_file(filepath):
                 continue
             elif stripped == "setup_keys:":
                 current_section = "setup_keys"
+                current_item = None
+                continue
+            elif stripped == "dns_zones:":
+                current_section = "dns_zones"
                 current_item = None
                 continue
 
@@ -170,7 +174,7 @@ def parse_yaml_file(filepath):
 
             elif current_section == "setup_keys":
                 if stripped.startswith("- name:"):
-                    name = stripped.split(":", 1)[1].strip()
+                    name = stripped.split(":", 1)[1].strip().strip('\"\'')
                     current_item = {"name": name}
                     result["setup_keys"].append(current_item)
                 elif current_item:
@@ -184,6 +188,32 @@ def parse_yaml_file(filepath):
                         m = re.search(r"\[(.*)\]", stripped)
                         if m:
                             current_item["auto_groups"] = [g.strip() for g in m.group(1).split(",") if g.strip()]
+
+            elif current_section == "dns_zones":
+                if raw.startswith("  - name:"):
+                    name = stripped.split(":", 1)[1].strip().strip('\"\'')
+                    current_item = {"name": name, "records": []}
+                    result["dns_zones"].append(current_item)
+                elif current_item:
+                    if raw.startswith("      - name:"):
+                        rec_name = stripped.split(":", 1)[1].strip().strip('\"\'')
+                        current_rule = {"name": rec_name}
+                        current_item["records"].append(current_rule)
+                    elif stripped.startswith("domain:"):
+                        current_item["domain"] = stripped.split(":", 1)[1].strip().strip('\"\'')
+                    elif stripped.startswith("enabled:"):
+                        current_item["enabled"] = stripped.split(":", 1)[1].strip().lower() == "true"
+                    elif stripped.startswith("distribution_groups:"):
+                        m = re.search(r"\[(.*)\]", stripped)
+                        if m:
+                            current_item["distribution_groups"] = [g.strip() for g in m.group(1).split(",") if g.strip()]
+                    elif current_rule:
+                        if stripped.startswith("type:"):
+                            current_rule["type"] = stripped.split(":", 1)[1].strip()
+                        elif stripped.startswith("content:"):
+                            current_rule["content"] = stripped.split(":", 1)[1].strip().strip('\"\'')
+                        elif stripped.startswith("ttl:"):
+                            current_rule["ttl"] = int(stripped.split(":", 1)[1].strip())
 
     return result
 
@@ -314,6 +344,66 @@ def sync_setup_keys(base_url, token, declared_keys, group_name_to_id, dry_run=Tr
 
     return synced_count
 
+
+def sync_dns_zones(base_url, token, declared_zones, group_name_to_id, dry_run=True):
+    """Synchronize internal split-DNS zones and their records."""
+    print(f"\n{BLUE}--- 🌐 Synchronizing Internal DNS Zones ---{NC}")
+    existing_zones = api_request(base_url, "/dns/zones", token)
+    zone_map = {z["name"]: z for z in existing_zones}
+    synced_records = 0
+
+    for zone_cfg in declared_zones:
+        name = zone_cfg["name"]
+        domain = zone_cfg.get("domain", "brain.cs.ait.ac.th")
+        dist_groups = [group_name_to_id[g] for g in zone_cfg.get("distribution_groups", []) if g in group_name_to_id]
+
+        if name in zone_map:
+            zone = zone_map[name]
+            zone_id = zone["id"]
+            print(f"  {GREEN}✔ DNS Zone exists:{NC} {name} ({domain})")
+        else:
+            print(f"  {YELLOW}+ Creating DNS Zone:{NC} {name} ({domain})")
+            if not dry_run:
+                payload = {
+                    "name": name,
+                    "domain": domain,
+                    "enabled": zone_cfg.get("enabled", True),
+                    "distribution_groups": dist_groups
+                }
+                zone = api_request(base_url, "/dns/zones", token, method="POST", data=payload)
+                zone_id = zone["id"]
+            else:
+                zone_id = "dry-run-zone-id"
+
+        existing_records = []
+        if not dry_run and zone_id != "dry-run-zone-id":
+            existing_records = api_request(base_url, f"/dns/zones/{zone_id}/records", token)
+        rec_map = {r["name"]: r for r in existing_records}
+
+        for rec in zone_cfg.get("records", []):
+            rec_name = rec["name"]
+            rec_type = rec.get("type", "A")
+            content = rec["content"]
+            ttl = rec.get("ttl", 300)
+
+            if rec_name in rec_map:
+                print(f"    {GREEN}✔ DNS Record exists:{NC} {rec_name} -> {content}")
+            else:
+                print(f"    {YELLOW}+ Adding DNS Record:{NC} {rec_name} -> {content}")
+                if not dry_run and zone_id != "dry-run-zone-id":
+                    rec_payload = {
+                        "name": rec_name,
+                        "type": rec_type,
+                        "content": content,
+                        "ttl": ttl
+                    }
+                    api_request(base_url, f"/dns/zones/{zone_id}/records", token, method="POST", data=rec_payload)
+                    synced_records += 1
+                else:
+                    synced_records += 1
+
+    return synced_records
+
 def check_token_health(base_url, token):
     """Inspect active PAT expiration date and warn if expiring within 30 days."""
     try:
@@ -384,6 +474,10 @@ def main():
     # 3. Sync Setup Keys
     synced_keys = sync_setup_keys(args.api_url, token, declared_setup_keys, group_map, dry_run=not args.apply)
 
+    # 4. Sync DNS Zones
+    declared_dns_zones = network_spec.get("dns_zones", [])
+    synced_dns = sync_dns_zones(args.api_url, token, declared_dns_zones, group_map, dry_run=not args.apply)
+
     print(f"\n{BLUE}{'=' * 65}{NC}")
     if not args.apply:
         print(f"{YELLOW}🔎 DRY-RUN COMPLETE: No changes were made to live NetBird.{NC}")
@@ -392,8 +486,8 @@ def main():
     else:
         print(f"{GREEN}🎉 NETBIRD GITOPS SYNCHRONIZATION COMPLETE!{NC}")
         print(f"Groups created/checked: {len(declared_groups)}")
-        print(f"Policies synchronized:  {len(declared_policies)}")
         print(f"Setup keys managed:     {len(declared_setup_keys)}")
+        print(f"DNS records managed:    {synced_dns}")
         print(f"{BLUE}{'=' * 65}{NC}\n")
 
 if __name__ == "__main__":
