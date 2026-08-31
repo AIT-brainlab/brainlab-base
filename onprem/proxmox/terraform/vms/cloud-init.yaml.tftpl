@@ -40,17 +40,12 @@ write_files:
           image: traefik:v3.7
           container_name: traefik
           restart: unless-stopped
-          environment:
-            - DOCKER_API_VERSION=1.44
           command:
-            - "--providers.docker=true"
-            - "--providers.docker.endpoint=tcp://10.10.250.1:2375"
-            - "--providers.docker.useBindPortIP=true"
-            - "--providers.docker.exposedbydefault=false"
+            - "--providers.swarm=true"
+            - "--providers.swarm.network=brainlab-mesh"
+            - "--providers.swarm.exposedbydefault=false"
             - "--entrypoints.web.address=:80"
             - "--entrypoints.websecure.address=:443"
-            - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
             - "--certificatesresolvers.letsencrypt.acme.email=brainlab@ait.asia"
             - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
             - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
@@ -102,8 +97,7 @@ runcmd:
 %{ endif ~}
 
 %{ if vm_name == "brainlab-proxy" ~}
-  # 3. Add static route to Proxmox SDN subnets & Launch Traefik Edge Proxy service stack
-  - ip route add 10.10.0.0/16 via 192.41.170.19 || true
+  # 3. Launch Traefik Edge Proxy service stack
   - mkdir -p /opt/brainlab/proxy /opt/brainlab/traefik
   - touch /opt/brainlab/traefik/acme.json
   - chmod 600 /opt/brainlab/traefik/acme.json

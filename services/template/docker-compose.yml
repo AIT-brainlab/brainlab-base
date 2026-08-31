@@ -1,26 +1,13 @@
-services:
-  # 🔒 Read-Only Docker Socket Proxy for Remote Traefik Auto-Discovery
-  # Listens on port 2375 so brainlab-proxy (192.41.170.39) auto-discovers your container labels
-  docker-socket-proxy:
-    image: tecnativa/docker-socket-proxy:latest
-    container_name: docker-socket-proxy
-    restart: unless-stopped
-    environment:
-      - CONTAINERS=1
-      - SERVICES=1
-      - NETWORKS=1
-    ports:
-      - "2375:2375"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+# 🚀 Official AIT Brainlab Web Application Deployment Template (Docker Swarm Mode)
+# Deploy with: docker stack deploy -c docker-compose.yml my-app-stack
 
-  # 🚀 Your Application Service (Example: httpd / web server)
+version: '3.8'
+
+services:
   my-app:
     image: httpd:alpine
-    container_name: my-app
-    restart: unless-stopped
-    ports:
-      - "80:80"
+    networks:
+      - brainlab-mesh
     environment:
       - TZ=Asia/Bangkok
       - HTTP_PROXY=http://192.41.170.82:3128
@@ -28,16 +15,22 @@ services:
       - NO_PROXY=localhost,127.0.0.1,192.41.170.0/24,100.64.0.0/10,100.74.0.0/16,*.brain.cs.ait.ac.th
     command: >
       sh -c "echo 'welcome to my application' > /usr/local/apache2/htdocs/index.html && exec httpd-foreground"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.my-app-router.rule=Host(`my-app.brain.cs.ait.ac.th`)"
-      - "traefik.http.routers.my-app-router.entrypoints=websecure"
-      - "traefik.http.routers.my-app-router.tls=true"
-      - "traefik.http.routers.my-app-router.tls.certresolver=letsencrypt"
-      - "traefik.http.services.my-app-router.loadbalancer.server.port=80"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.my-app.rule=Host(`my-app.brain.cs.ait.ac.th`)"
+        - "traefik.http.routers.my-app.entrypoints=web"
+        - "traefik.http.services.my-app.loadbalancer.server.port=80"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 5s
+
+networks:
+  brainlab-mesh:
+    external: true

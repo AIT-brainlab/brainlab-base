@@ -135,11 +135,6 @@ dns_zones:
         content: "brainlab-mgmt-vm.netbird.selfhosted."
         ttl: 300
 
-      - name: "dlms-dev.brain.cs.ait.ac.th"
-        type: CNAME
-        content: "brainlab-proxy.netbird.selfhosted."
-        ttl: 300
-
 # ----------------------------------------------------------
 # 5. Software-Defined Networks (Modern NetBird v0.25+ Architecture)
 # ----------------------------------------------------------
