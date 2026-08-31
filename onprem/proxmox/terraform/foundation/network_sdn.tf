@@ -51,12 +51,7 @@ resource "terraform_data" "proxmox_sdn_provisioner" {
         -X POST "${var.proxmox_endpoint}api2/json/cluster/sdn/vnets" \
         -d "vnet=internet&zone=internet&alias=internet" || true
 
-      # 3. Create SDN VNet 'swarm' for Docker Swarm inter-container routing
-      curl -k -s -H "Authorization: PVEAPIToken=${var.proxmox_api_token}" \
-        -X POST "${var.proxmox_endpoint}api2/json/cluster/sdn/vnets" \
-        -d "vnet=swarm&zone=swarm&alias=swarm" || true
-
-      # 4. Trigger Proxmox SDN Reload (pvesdn reload)
+      # 3. Trigger Proxmox SDN Reload (pvesdn reload)
       curl -k -s -H "Authorization: PVEAPIToken=${var.proxmox_api_token}" \
         -X PUT "${var.proxmox_endpoint}api2/json/cluster/sdn" || true
     EOT
