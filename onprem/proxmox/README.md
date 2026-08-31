@@ -12,8 +12,8 @@
 | **Management IP** | **`192.41.170.19/24`** | Connected via physical management port `enp1s0f0` (Gateway: `192.41.170.23`) |
 | **CPU Capacity** | **128 vCPUs** | Multi-socket high-performance compute host |
 | **Memory Capacity** | **134.8 GB RAM** | High-density memory pool (~4.8 GB host usage) |
-| **Primary Datastore (`WDBlue`)** | **2.0 TB Total (~1.0 TB Free)** | Type: `lvm`. Primary storage pool for VM root disks (`images, rootdir`) |
-| **Secondary Datastore (`local-lvm`)** | **374.5 GB Total (~268.6 GB Free)** | Type: `lvmthin`. Secondary thin-provisioned storage pool |
+| **Primary Datastore (`WDBlue`)** | **2.0 TB Total (~1.36 TB Free)** | Type: `lvm`. Primary storage pool for VM root disks (`images, rootdir`) |
+| **Secondary Datastore (`local-lvm`)** | **374.5 GB Total (~290.4 GB Free)** | Type: `lvmthin`. Secondary thin-provisioned storage pool |
 | **Template Storage (`local`)** | **100.8 GB Total (~54.7 GB Free)** | Type: `dir`. Stores ISOs, Cloud-Init user-data snippets, and container templates (`iso, vztmpl, backup`) |
 
 ---
@@ -33,12 +33,8 @@
 | :---: | :--- | :---: | :---: | :---: | :--- | :---: | :--- |
 | **`100`** | `proxy` | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`) | Stopped | Lab 10G Edge Proxy (Confirmed `192.41.170.39`) |
 | **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr1` (`192.41.170.105/24`) | 🟢 **Live** | MLflow experiment tracking server (`ml.brain.cs.ait.ac.th`) |
-| **`102`** | `jupyterhub` | 8 | 16 GB | 60 GB | `net0`: `internet` (`BC:24:11:84:A8:DA`) | Stopped | Legacy JupyterHub instance |
-| **`103`** | `ubuntu-desktop` | 4 | 8 GB | 150 GB | `net0`: `internet` (`BC:24:11:20:33:89`) | Stopped | Operator GUI desktop environment |
-| **`104`** | `truenas` | 4 | 4 GB | 30 GB | `net0`: `internet` (`BC:24:11:64:DB:F0`) | Stopped | Local TrueNAS testing instance |
 | **`106`** | `aitgpt-dev` | 32 | 32 GB | 450 GB | `net0`: `vmbr1` (`192.41.170.17/24`) | Stopped | Large Model development VM |
 | **`119`** | **`brainlab-app-vm`** | 32 | 64 GB | 150 GB | `net0`: **`internet`** (SDN VNet / `dhcp`) | 🟡 Pending | Multi-Tenant App VM (Web Print & DLMS) |
-| **`200`** | `swarm01` | 4 | 8 GB | 150 GB | `net0`: `internet` (`BC:24:11:F1:70:56`) | Stopped | Docker Swarm cluster worker node |
 | **`900`** | `VM 900` | 8 | 64 GB | - | `net0`: `vmbr1` (`BC:24:11:2F:39:CC`) | Stopped | Base VM template |
 
 ---
