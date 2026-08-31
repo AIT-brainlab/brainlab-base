@@ -68,16 +68,16 @@ policies:
         sources: [brainlab-cluster]
         destinations: [mgmt-cluster]
 
-  # 4. DLMS project researchers access DLMS backend VM
+  # 4. DLMS project researchers & servers access DLMS backend VM and CCTV network resources
   - name: DLMS-Server-Access
-    description: "Allow DLMS project researchers to access backend VM"
+    description: "Allow DLMS project researchers and backend servers to access DLMS backend VM and routed CCTV network resources"
     enabled: true
     rules:
       - name: dlms-backend-access
         action: accept
         protocol: all
         bidirectional: true
-        sources: [prj-dlms-users]
+        sources: [prj-dlms-users, prj-dlms-servers]
         destinations: [prj-dlms-servers]
 
   # 5. Access to CSIM Department Printers
@@ -133,6 +133,11 @@ dns_zones:
       - name: "ldap.brain.cs.ait.ac.th"
         type: CNAME
         content: "brainlab-mgmt-vm.netbird.selfhosted."
+        ttl: 300
+
+      - name: "dlms-dev.brain.cs.ait.ac.th"
+        type: CNAME
+        content: "dlms-server.netbird.selfhosted"
         ttl: 300
 
 # ----------------------------------------------------------

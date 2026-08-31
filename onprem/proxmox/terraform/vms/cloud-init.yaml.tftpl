@@ -3,6 +3,35 @@ hostname: ${vm_name}
 timezone: Asia/Bangkok
 manage_etc_hosts: true
 
+# 1. Institutional Forward Proxy (CSIM Proxy 192.41.170.82:3128)
+apt:
+  proxy: "http://192.41.170.82:3128/"
+  http_proxy: "http://192.41.170.82:3128/"
+  https_proxy: "http://192.41.170.82:3128/"
+
+write_files:
+  - path: /etc/apt/apt.conf.d/99proxy
+    content: |
+      Acquire::http::Proxy "http://192.41.170.82:3128/";
+      Acquire::https::Proxy "http://192.41.170.82:3128/";
+
+  - path: /etc/environment
+    append: true
+    content: |
+      http_proxy="http://192.41.170.82:3128"
+      https_proxy="http://192.41.170.82:3128"
+      HTTP_PROXY="http://192.41.170.82:3128"
+      HTTPS_PROXY="http://192.41.170.82:3128"
+      no_proxy="localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
+      NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
+
+  - path: /etc/systemd/system/docker.service.d/http-proxy.conf
+    content: |
+      [Service]
+      Environment="HTTP_PROXY=http://192.41.170.82:3128"
+      Environment="HTTPS_PROXY=http://192.41.170.82:3128"
+      Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
+
 users:
   - name: ubuntu
     sudo: ALL=(ALL) NOPASSWD:ALL
@@ -20,14 +49,20 @@ packages:
   - curl
   - jq
   - git
+  - vim
+  - telnet
+  - dnsutils
+  - iputils-ping
   - ca-certificates
   - qemu-guest-agent
   - docker.io
   - docker-compose-v2
 
 runcmd:
-  # 1. Enable Docker & QEMU Guest Agent Services
+  # 1. Enable & restart Docker with proxy configuration & QEMU Guest Agent
+  - systemctl daemon-reload
   - systemctl enable --now docker
+  - systemctl restart docker
   - systemctl enable --now qemu-guest-agent
   
   # 2. Enroll into NetBird Mesh via CSIM Proxy Bootstrapper

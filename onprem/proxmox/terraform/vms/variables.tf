@@ -136,3 +136,34 @@ variable "netbird_services_setup_key" {
   sensitive   = true
   default     = ""
 }
+
+# On-Premise 10G Edge Proxy VM (VM 100) Specifications
+variable "proxy_cores" {
+  description = "CPU cores allocated for VM 100 (proxy)"
+  type        = number
+  default     = 4
+}
+
+variable "proxy_memory" {
+  description = "RAM allocated in Megabytes for VM 100 (8192 = 8GB)"
+  type        = number
+  default     = 8192
+}
+
+variable "proxy_disk_size" {
+  description = "Root disk size in Gigabytes for VM 100"
+  type        = number
+  default     = 50
+}
+
+variable "proxy_ip" {
+  description = "Static IP address for VM 100 on vmbr1 CSIM LAN"
+  type        = string
+  default     = "192.41.170.39/24"
+}
+
+variable "proxy_gateway" {
+  description = "Gateway for vmbr1 CSIM LAN"
+  type        = string
+  default     = "192.41.170.23"
+}

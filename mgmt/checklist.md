@@ -86,9 +86,9 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-1.1` | **Provision Application VM on Proxmox VE** | Akraradet | P1 | 🟡 | Created `onprem/proxmox/terraform/vms/` IaC module (`bpg/proxmox` provider) for Cloud-Init VM provisioning (32 vCPUs, 64GB RAM, 150GB disk, `vmbr0` NAT). |
-| `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🔴 | Enroll the VM into NetBird with tags **`prj-dlms-servers`** and **`brainlab-cluster`** using setup key `dlms-server-enrollment`. |
-| `NEXT-1.3` | **Enable DLMS Team Access & Container Runtime** | Akraradet | P1 | 🔴 | Install Docker Engine + Compose (or K3s). Ensure researchers in **`prj-dlms-users`** have SSH/deployment access to host DLMS apps. |
+| `NEXT-1.1` | **Provision Application VM on Proxmox VE** | Akraradet | P1 | 🟢 | Completed: Provisioned VM 100 (`proxy`), VM 119 (`dlms-server`), and VM 120 (`brainlab-services`) via `onprem/proxmox/terraform/vms/` IaC module. |
+| `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🟢 | Completed: Enrolled `dlms-server` (`100.74.18.96`), `brainlab-services` (`100.74.10.218`), and `proxy` into NetBird WireGuard overlay mesh under `prj-dlms-servers` / `brainlab-cluster`. |
+| `NEXT-1.3` | **Enable DLMS Team Access & Container Runtime** | Akraradet | P1 | 🟢 | Completed: Docker Engine + Compose installed with CSIM proxy; diagnostic packages active; RTSP camera stream (`192.168.1.2:554`) verified live via `ffprobe`. |
 | `NEXT-1.4` | **Configure Proxmox Google OIDC SSO Realm** | Akraradet | P2 | 🔴 | Register `https://192.41.170.19:8006/oauth2/callback` in GCP OAuth Console. Configure Google OpenID Connect (OIDC) realm in Proxmox VE (`pveum realm add google --type openid`), set default role `NoAccess`, and map SysAdmin `@ait.asia` accounts to `Administrator` / `PVEAdmin`. |
 
 ---
@@ -108,8 +108,8 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-3.1` | **Hand over Environment to DLMS Researchers** | Akraradet | P2 | 🔴 | Confirm members in `prj-dlms-users` (`oakaugustine@gmail.com`, `ppthwe99@gmail.com`, `ephoney1141@gmail.com`) can connect via NetBird. |
-| `NEXT-3.2` | **Deploy DLMS Application Containers** | DLMS Team | P2 | 🔴 | Deploy backend API, database, and RTSP stream ingest containers bridging to cameras `192.168.1.2` and `192.168.1.3`. |
+| `NEXT-3.1` | **Hand over Environment to DLMS Researchers** | Akraradet | P2 | 🟢 | Completed: Confirmed members in `prj-dlms-users` (`oakaugustine@gmail.com`, `ppthwe99@gmail.com`, `ephoney1141@gmail.com`) can connect via NetBird; CNAME `dlms-dev.brain.cs.ait.ac.th` active. |
+| `NEXT-3.2` | **Deploy DLMS Application Containers** | DLMS Team | P2 | 🟡 | Ready for DLMS team deployment: backend API, database, and RTSP stream ingest containers bridging to cameras `192.168.1.2` and `192.168.1.3`. |
 
 ---
 

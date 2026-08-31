@@ -22,6 +22,21 @@ output "brainlab_services_vm_name" {
   value       = proxmox_virtual_environment_vm.brainlab_services.name
 }
 
+output "proxy_vm_id" {
+  description = "Proxmox VM ID for On-Premise 10G Edge Proxy"
+  value       = proxmox_virtual_environment_vm.proxy.vm_id
+}
+
+output "proxy_vm_name" {
+  description = "Proxmox VM Name for On-Premise 10G Edge Proxy"
+  value       = proxmox_virtual_environment_vm.proxy.name
+}
+
+output "proxy_vm_ip" {
+  description = "Static IP Address for On-Premise 10G Edge Proxy"
+  value       = var.proxy_ip
+}
+
 output "discovered_datastores" {
   description = "Discovered Proxmox host storage pools (Option A Awareness)"
   value       = data.proxmox_virtual_environment_datastores.host_datastores.datastore_ids

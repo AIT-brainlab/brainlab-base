@@ -31,11 +31,11 @@
 
 | VM ID | Hostname / Purpose | vCPUs | RAM | Disk Size | Primary Network & MAC Address | Status | Notes / Assignment |
 | :---: | :--- | :---: | :---: | :---: | :--- | :---: | :--- |
-| **`100`** | `proxy` | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`) | Stopped | Lab 10G Edge Proxy (Confirmed `192.41.170.39`) |
+| **`100`** | **`proxy`** | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`) | 🟢 **Live** | On-Premise 10G Edge Proxy VM (Traefik SSL/HTTP Edge Proxy) |
 | **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr1` (`192.41.170.105/24`) | 🟢 **Live** | MLflow experiment tracking server (`ml.brain.cs.ait.ac.th`) |
 | **`106`** | `aitgpt-dev` | 32 | 32 GB | 450 GB | `net0`: `vmbr1` (`192.41.170.17/24`) | Stopped | Large Model development VM |
-| **`119`** | **`dlms-server`** | 16 | 32 GB | 200 GB | `net0`: **`internet`** (SDN VNet / `dhcp`) | 🟡 Pending | Dedicated DLMS Server (Ryzen 9950X & 32GB DDR5 Simulation / GPU-Ready) |
-| **`120`** | **`brainlab-services`** | 4 | 8 GB | 60 GB | `net0`: **`internet`** (SDN VNet / `dhcp`) | 🟡 Pending | General Lab Administrative Services (Web Printing Portal `print.brain.cs.ait.ac.th`) |
+| **`119`** | **`dlms-server`** | 16 | 32 GB | 200 GB | `net0`: **`internet`** (SDN VNet / `10.10.250.1` / `100.74.18.96`) | 🟢 **Live** | Dedicated DLMS Server (AI Vision & RTSP Ingest `192.168.1.2:554`) |
+| **`120`** | **`brainlab-services`** | 4 | 8 GB | 60 GB | `net0`: **`internet`** (SDN VNet / `100.74.10.218`) | 🟢 **Live** | General Lab Administrative Services (Web Printing Portal `print.brain.cs.ait.ac.th`) |
 | **`900`** | `VM 900` | 8 | 64 GB | - | `net0`: `vmbr1` (`BC:24:11:2F:39:CC`) | Stopped | Base VM template |
 
 ---

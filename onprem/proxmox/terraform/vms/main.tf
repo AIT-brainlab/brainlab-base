@@ -52,7 +52,75 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_services" {
   }
 }
 
-# 3. VM 119: Dedicated DLMS Server (AI Vision & Deep Learning Services)
+# 3. Cloud-Init Snippet for VM 100 (proxy)
+resource "proxmox_virtual_environment_file" "cloud_user_data_proxy" {
+  content_type = "snippets"
+  datastore_id = var.snippet_datastore_id
+  node_name    = var.target_node
+
+  source_raw {
+    data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
+      vm_name           = "proxy"
+      netbird_setup_key = var.netbird_setup_key
+      ssh_public_keys   = var.ssh_public_keys
+    })
+
+    file_name = "cloud-init-proxy.yaml"
+  }
+}
+
+# 4. VM 100: On-Premise 10G Edge Proxy (Traefik SSL/HTTP Edge Proxy)
+resource "proxmox_virtual_environment_vm" "proxy" {
+  name        = "proxy"
+  description = "AIT Brainlab On-Premise 10G Edge Proxy VM (Traefik SSL/HTTP Edge Proxy)"
+  node_name   = var.target_node
+  vm_id       = 100
+  tags        = ["brainlab", "onprem", "proxy", "edge"]
+
+  agent {
+    enabled = true
+    timeout = "1s"
+  }
+
+  cpu {
+    cores = var.proxy_cores
+    type  = "host"
+  }
+
+  memory {
+    dedicated = var.proxy_memory
+  }
+
+  disk {
+    datastore_id = var.datastore_id
+    file_id      = "local:iso/ubuntu-24.04-minimal-cloudimg-amd64.img"
+    interface    = "scsi0"
+    size         = var.proxy_disk_size
+  }
+
+  network_device {
+    bridge = "vmbr1"
+  }
+
+  initialization {
+    datastore_id = var.datastore_id
+
+    ip_config {
+      ipv4 {
+        address = var.proxy_ip
+        gateway = var.proxy_gateway
+      }
+    }
+
+    dns {
+      servers = ["192.41.170.15"]
+    }
+
+    user_data_file_id = proxmox_virtual_environment_file.cloud_user_data_proxy.id
+  }
+}
+
+# 5. VM 119: Dedicated DLMS Server (AI Vision & Deep Learning Services)
 resource "proxmox_virtual_environment_vm" "dlms_server" {
   name        = "dlms-server"
   description = "Dedicated DLMS Server VM (Deep Learning & AI Vision Services - Ryzen 9950X / 32GB Simulation)"
@@ -62,6 +130,7 @@ resource "proxmox_virtual_environment_vm" "dlms_server" {
 
   agent {
     enabled = true
+    timeout = "1s"
   }
 
   cpu {
@@ -107,6 +176,7 @@ resource "proxmox_virtual_environment_vm" "brainlab_services" {
 
   agent {
     enabled = true
+    timeout = "1s"
   }
 
   cpu {
