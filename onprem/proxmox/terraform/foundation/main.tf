@@ -26,3 +26,5 @@ resource "proxmox_virtual_environment_acl" "sysadmin_admins" {
   user_id   = "${each.value}@google"
   propagate = true
 }
+
+
