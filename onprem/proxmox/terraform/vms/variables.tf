@@ -45,21 +45,21 @@ variable "vm_description" {
 }
 
 variable "cores" {
-  description = "Number of CPU cores allocated"
+  description = "Number of CPU cores allocated (Simulates AMD Ryzen 9 9950X 16 vCPUs)"
   type        = number
-  default     = 32
+  default     = 16
 }
 
 variable "memory" {
-  description = "RAM allocated in Megabytes (65536 = 64GB)"
+  description = "RAM allocated in Megabytes (32768 = 32GB DDR5-5600)"
   type        = number
-  default     = 65536
+  default     = 32768
 }
 
 variable "disk_size" {
   description = "Root disk size in Gigabytes"
   type        = number
-  default     = 150
+  default     = 200
 }
 
 variable "datastore_id" {

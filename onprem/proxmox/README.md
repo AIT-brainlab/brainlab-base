@@ -34,7 +34,7 @@
 | **`100`** | `proxy` | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`) | Stopped | Lab 10G Edge Proxy (Confirmed `192.41.170.39`) |
 | **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr1` (`192.41.170.105/24`) | 🟢 **Live** | MLflow experiment tracking server (`ml.brain.cs.ait.ac.th`) |
 | **`106`** | `aitgpt-dev` | 32 | 32 GB | 450 GB | `net0`: `vmbr1` (`192.41.170.17/24`) | Stopped | Large Model development VM |
-| **`119`** | **`brainlab-app-vm`** | 32 | 64 GB | 150 GB | `net0`: **`internet`** (SDN VNet / `dhcp`) | 🟡 Pending | Multi-Tenant App VM (Web Print & DLMS) |
+| **`119`** | **`brainlab-app-vm`** | 16 | 32 GB | 200 GB | `net0`: **`internet`** (SDN VNet / `dhcp`) | 🟡 Pending | Multi-Tenant App VM (Ryzen 9950X & 32GB DDR5 Simulation) |
 | **`900`** | `VM 900` | 8 | 64 GB | - | `net0`: `vmbr1` (`BC:24:11:2F:39:CC`) | Stopped | Base VM template |
 
 ---
