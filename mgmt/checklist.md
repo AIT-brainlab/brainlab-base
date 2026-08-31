@@ -54,11 +54,30 @@ flowchart TD
         P4C["4.3 NetBird Annual PAT Rotation<br/>(Monitored by monthly GitHub Action)"]
     end
 
+    subgraph PHASE5 ["🔮 Milestone 5: Proxmox Cluster & Bare-Metal la Migration"]
+        P5A["5.1 Standardize Naming Taxonomy<br/>(pve1 & pve2.brain.cs.ait.ac.th)"]
+        P5B["5.2 Convert la Server to Proxmox VE<br/>(Standalone pve2 & enable IOMMU)"]
+        P5C["5.3 Provision la-gpu-vm (VM 200)<br/>(Dual RTX A6000 PCIe Passthrough)"]
+        P5D["5.4 Deploy K3s & NVIDIA MPS Time-Slicing<br/>(12-24 Student Slots + MLflow + Optuna)"]
+        P5A --> P5B --> P5C --> P5D
+    end
+
+    subgraph PHASE6 ["🌐 Milestone 6: Core Router & Private Subnet Hardening"]
+        P6A["6.1 Core Router Consolidation<br/>(1x CSIM Public WAN IP Address)"]
+        P6B["6.2 Private Host LAN Isolation<br/>(Hide pve1, pve2, & cairo behind NAT firewall)"]
+        P6C["6.3 Nested VM NAT Subnet<br/>(10.10.20.0/24 on vmbr0 NAT Bridge)"]
+        P6D["6.4 NetBird Double NAT Traversal Validation<br/>(Full P2P 100.103.x.x mesh & TrueNAS NFS speed)"]
+        P6A --> P6B --> P6C --> P6D
+    end
+
     PHASE1 --> PHASE2
     PHASE1 --> PHASE3
     PHASE2 --> PHASE4
     PHASE3 --> PHASE4
+    PHASE4 --> PHASE5
+    PHASE5 --> PHASE6
 ```
+
 ---
 
 ## 📋 Actionable Task Matrix
@@ -67,7 +86,7 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-1.1` | **Provision Application VM on Proxmox VE** | Akraradet | P1 | 🟡 | Created `onprem/terraform/proxmox/` IaC module (`bpg/proxmox` provider) for Cloud-Init VM provisioning on CSIM LAN (`192.41.170.19`). |
+| `NEXT-1.1` | **Provision Application VM on Proxmox VE** | Akraradet | P1 | 🟡 | Created `onprem/proxmox/terraform/vms/` IaC module (`bpg/proxmox` provider) for Cloud-Init VM provisioning (32 vCPUs, 64GB RAM, 150GB disk, `vmbr0` NAT). |
 | `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🔴 | Enroll the VM into NetBird with tags **`prj-dlms-servers`** and **`brainlab-cluster`** using setup key `dlms-server-enrollment`. |
 | `NEXT-1.3` | **Enable DLMS Team Access & Container Runtime** | Akraradet | P1 | 🔴 | Install Docker Engine + Compose (or K3s). Ensure researchers in **`prj-dlms-users`** have SSH/deployment access to host DLMS apps. |
 | `NEXT-1.4` | **Configure Proxmox Google OIDC SSO Realm** | Akraradet | P2 | 🔴 | Register `https://192.41.170.19:8006/oauth2/callback` in GCP OAuth Console. Configure Google OpenID Connect (OIDC) realm in Proxmox VE (`pveum realm add google --type openid`), set default role `NoAccess`, and map SysAdmin `@ait.asia` accounts to `Administrator` / `PVEAdmin`. |
@@ -101,3 +120,26 @@ flowchart TD
 | `NEXT-4.1` | **Complete Ansible Host Enrollment Playbooks** | Akraradet | P2 | 🟡 | Finalize `mgmt/ansible/enroll_netbird.yml` for automated zero-touch provisioning of Proxmox VMs and future nodes. |
 | `NEXT-4.2` | **Disaster Recovery GCS Restore Smoke Test** | Akraradet | P3 | 🔴 | Script a sandbox test that restores `users.db` and `store.db` from `gs://ait-brainlab-mgmt-tfstate/backups/`. |
 | `NEXT-4.3` | **Annual NetBird PAT Rotation Monitoring** | Whole Team | P3 | 🟢 | Monitored by `.github/workflows/netbird_pat_reminder.yml` (runs 1st of every month; triggers alert 30 days before expiration). |
+
+---
+
+### 🔮 5. On-Premise Proxmox Cluster & Bare-Metal `la` GPU Migration Roadmap
+
+| Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| `NEXT-5.1` | **Standardize Proxmox Naming Taxonomy (`pve1`/`pve2`)** | Akraradet | P2 | 🟢 | Standardized taxonomy: `pve1.brain.cs.ait.ac.th` (`192.41.170.19`), `pve2.brain.cs.ait.ac.th` (`192.41.170.85`) as independent standalone hypervisor hosts, with K3s clustering at the VM layer. |
+| `NEXT-5.2` | **Convert Server `la` to Standalone Proxmox VE (`pve2`)** | Akraradet | P3 | 🔴 | Install Proxmox VE on `192.41.170.85` (`pve2`) as an independent standalone hypervisor host for GPU workloads. |
+| `NEXT-5.3` | **Enable PCIe GPU Passthrough on `pve2`** | Akraradet | P3 | 🔴 | Enable IOMMU (`intel_iommu=on`) and bind Dual NVIDIA RTX A6000 GPUs to `vfio-pci`. |
+| `NEXT-5.4` | **Provision `la-gpu-vm` (VM 200) for JupyterHub** | Akraradet | P3 | 🔴 | Provision VM 200 with dual RTX A6000 passthrough, running DockerSpawner JupyterHub (`la.cs.ait.ac.th`) and TrueNAS NFS mounts. |
+| `NEXT-5.5` | **Deploy Multi-Node K3s GPU Cluster & MPS Time-Slicing** | Akraradet | P3 | 🔴 | Join VMs across `pve1` and `pve2` into a single K3s Kubernetes cluster, configuring NVIDIA MPS Time-Slicing (12–24 student slots) with Optuna HPO & MLflow (`ml.brain.cs.ait.ac.th`). |
+
+---
+
+### 🌐 6. Brainlab Core Router & Private Network Hardening (1x CSIM Public IP)
+
+| Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| `NEXT-6.1` | **Provision Brainlab Core Router Gateway** | Akraradet | P3 | 🔴 | Consolidate entire lab physical infrastructure behind a single CSIM Public WAN IP address (pfSense / MikroTik / UDM-Pro). |
+| `NEXT-6.2` | **Isolate Physical Host LAN (`10.0.1.0/24`)** | Akraradet | P3 | 🔴 | Hide `pve1`, `pve2`, and `cairo` TrueNAS behind router NAT firewall, removing all raw management exposure to CSIM campus network. |
+| `NEXT-6.3` | **Configure Nested VM NAT Subnet (`10.10.20.0/24`)** | Akraradet | P3 | 🔴 | Ensure all Proxmox VMs route outbound traffic via nested NAT bridge (`vmbr0`) with zero public IP consumption. |
+| `NEXT-6.4` | **Validate NetBird Hole Punching Across Double NAT** | Akraradet | P3 | 🔴 | Verify ICE/STUN WireGuard NAT hole punching for full P2P throughput (`100.103.x.x`) and full hardware wire speed to TrueNAS NFS (`cairo`). |

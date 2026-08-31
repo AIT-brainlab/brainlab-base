@@ -1,8 +1,8 @@
 # ==========================================================
-# 🖥️ AIT Brainlab - Proxmox VE Terraform Provider Config
+# 🛡️ AIT Brainlab - Proxmox Host Foundation Provider Config
 # ==========================================================
-# Manages On-Premise Proxmox VE Virtual Machines & LXC Containers
-# Uses official modern provider: bpg/proxmox
+# Manages On-Premise Proxmox VE Host Governance & SSO Realms
+# Remote State: GCS Bucket gs://ait-brainlab-mgmt-tfstate/onprem/foundation
 # ==========================================================
 
 terraform {
@@ -14,10 +14,9 @@ terraform {
     }
   }
 
-  # Local or remote GCS backend prefix for on-premise state
   backend "gcs" {
     bucket = "ait-brainlab-mgmt-tfstate"
-    prefix = "onprem/proxmox"
+    prefix = "onprem/proxmox/foundation"
   }
 }
 

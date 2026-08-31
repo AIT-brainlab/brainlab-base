@@ -23,7 +23,7 @@ variable "proxmox_insecure" {
 variable "target_node" {
   description = "Target Proxmox VE node name"
   type        = string
-  default     = "pve"
+  default     = "proxmox"
 }
 
 variable "vm_id" {
@@ -47,25 +47,25 @@ variable "vm_description" {
 variable "cores" {
   description = "Number of CPU cores allocated"
   type        = number
-  default     = 4
+  default     = 32
 }
 
 variable "memory" {
-  description = "RAM allocated in Megabytes (4096 = 4GB)"
+  description = "RAM allocated in Megabytes (65536 = 64GB)"
   type        = number
-  default     = 4096
+  default     = 65536
 }
 
 variable "disk_size" {
   description = "Root disk size in Gigabytes"
   type        = number
-  default     = 30
+  default     = 150
 }
 
 variable "datastore_id" {
   description = "Proxmox datastore pool ID for VM disk storage"
   type        = string
-  default     = "local-lvm"
+  default     = "WDBlue"
 }
 
 variable "snippet_datastore_id" {
@@ -75,21 +75,21 @@ variable "snippet_datastore_id" {
 }
 
 variable "bridge" {
-  description = "Network bridge interface on Proxmox node"
+  description = "Network bridge interface on Proxmox node (NAT Bridge)"
   type        = string
   default     = "vmbr0"
 }
 
 variable "ip_address" {
-  description = "Static IP address for the VM on CSIM LAN (CIDR notation)"
+  description = "IP address configuration for the VM (CIDR notation or 'dhcp' for NAT)"
   type        = string
-  default     = "192.41.170.19/24"
+  default     = "10.10.20.119/24"
 }
 
 variable "gateway" {
-  description = "Default network gateway for CSIM LAN"
+  description = "Default network gateway for Proxmox NAT bridge (vmbr0)"
   type        = string
-  default     = "192.41.170.1"
+  default     = "10.10.20.1"
 }
 
 variable "nameserver" {

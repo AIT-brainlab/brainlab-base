@@ -1,36 +1,41 @@
 # 🏢 AIT Brainlab On-Premise Infrastructure (`onprem/`)
 
-## 📌 Domain Scope & Architecture Boundaries
+## 📌 Architecture Vision & Host Separation
 
-This directory manages **100% of On-Premise Physical Infrastructure** located at the AIT Brainlab physical office (CSIM / Room 212).
+This directory manages **100% of On-Premise Physical Hardware** located at the AIT Brainlab office (CSIM LAN `192.41.170.0/24`).
 
-Unlike the cloud management plane (`mgmt/`), which operates as a stateless GCP control plane (`ait-brainlab-mgmt`), the `onprem/` domain manages local hypervisors, compute nodes (`la`), SAN/NAS storage (`cairo` TrueNAS SCALE), network topology (CSIM LAN `192.41.170.0/24`), and local container/VM workloads.
-
----
-
-## 🏗 Sub-Directory Architecture
+To maintain clean separation between physical host targets and cloud infrastructure (`mgmt/`), the `onprem/` domain is partitioned by **Host Architecture**:
 
 ```text
 onprem/
-├── README.md                  # Central On-Premise Infrastructure landing page
-└── terraform/                 # On-Premise Terraform IaC
-    └── proxmox/               # Proxmox VE Hypervisor IaC (bpg/proxmox provider)
-        ├── README.md          # API Token & Cloud-Init Template Setup SOP
-        ├── providers.tf       # bpg/proxmox provider configuration
-        ├── main.tf            # Application VM resource definition
-        ├── variables.tf       # Configurable VM compute, disk & network variables
-        ├── outputs.tf         # VM status, IP, and hardware outputs
-        └── cloud-init.yaml.tftpl # Cloud-Init bootstrap template (Docker + NetBird)
+├── README.md                           # Master On-Premise Architecture Guide (this file)
+│
+├── proxmox/                            # 🖥️ Physical Proxmox VE Hypervisor Host (192.41.170.19)
+│   ├── README.md                       # Proxmox architecture & hardware inventory
+│   │
+│   ├── terraform/                      # Proxmox IaC (bpg/proxmox provider)
+│   │   ├── foundation/                 # 🛡️ Layer 1: Host Foundation (DNS, Timezone, Storage, NAT, IAM)
+│   │   └── vms/                        # 🚀 Layer 2: VM Provisioner (App VM 119, DLMS VMs, Project VMs)
+│   │
+│   └── ansible/                        # Day-1 Host Provisioning & Maintenance Playbooks
+│
+└── la/                                 # ⚡ Bare-Metal GPU Server la.cs.ait.ac.th (192.41.170.85)
+    ├── README.md                       # Dual RTX A6000 GPU setup, JupyterHub, TrueNAS NFS mounts
+    ├── terraform/                      # Bare-Metal OS/hardware state management (if applicable)
+    └── ansible/                        # CUDA drivers, SSSD POSIX integration, Docker runtime
 ```
 
 ---
 
-## 🔑 Key Differences: Cloud (`mgmt/`) vs. On-Premise (`onprem/`)
+## 🔑 Proxmox VE IaC Lifecycle & GCS Remote State
 
-| Metric | Cloud Control Plane (`mgmt/`) | On-Premise Infrastructure (`onprem/`) |
-| :--- | :--- | :--- |
-| **Location** | GCP `asia-southeast1` (`ait-brainlab-mgmt`) | AIT CSIM Office (`192.41.170.0/24`) |
-| **Cost Boundary** | Permanent stateless VM ($0.45-$7.45/mo) | Physical Hardware (Zero cloud compute billing) |
-| **Storage Backend** | GCP Cloud Storage (`ait-brainlab-mgmt-tfstate`) | TrueNAS SCALE ZFS Pools (`/mnt/pool-1`) |
-| **IaC Provider** | `hashicorp/google` | `bpg/proxmox` |
-| **Primary Goal** | Identity, DNS, NetBird Mesh VPN Signal | Heavy GPU compute, multi-tenant app hosting, local printing |
+Proxmox VE infrastructure uses a **Decoupled 2-Layer Model** mirroring GCP:
+
+1. **Host Foundation (`onprem/proxmox/terraform/foundation/`)**:
+   - **Scope**: Manages host search domains (`brain.cs.ait.ac.th`), host timezone (`Asia/Bangkok`), Google OIDC SSO realm, and SysAdmin administrator ACL permissions (`Administrator`).
+   - **GCS Remote State**: `gs://ait-brainlab-mgmt-tfstate` with prefix `onprem/proxmox/foundation`.
+
+2. **VM Provisioner (`onprem/proxmox/terraform/vms/`)**:
+   - **Scope**: Provisions virtual machines (`brainlab-app-vm`, ID 119) attached to **NAT Bridge `vmbr0`** (`10.10.20.0/24`) on storage datastore `WDBlue`.
+   - **Bootstrap**: Uploads Cloud-Init user-data snippets (`local`) for automated Docker Engine + NetBird WireGuard mesh enrollment.
+   - **GCS Remote State**: `gs://ait-brainlab-mgmt-tfstate` with prefix `onprem/proxmox/vms`.

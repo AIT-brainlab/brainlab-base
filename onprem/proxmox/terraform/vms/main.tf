@@ -59,14 +59,14 @@ resource "proxmox_virtual_environment_vm" "app_vm" {
     bridge = var.bridge
   }
 
-  # Cloud-Init Drive & Static IP Initialization
+  # Cloud-Init Drive & Network Initialization (NAT / DHCP)
   initialization {
     datastore_id = var.datastore_id
     
     ip_config {
       ipv4 {
-        address = var.ip_address
-        gateway = var.gateway
+        address = var.ip_address == "dhcp" ? "dhcp" : var.ip_address
+        gateway = var.ip_address == "dhcp" ? null : var.gateway
       }
     }
 

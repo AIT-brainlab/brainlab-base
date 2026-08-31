@@ -14,6 +14,7 @@ Welcome to the **On-Premise Infrastructure** administration hub. These guides pr
 | [**4. TrueNAS Storage**](truenas_nfs.md) | Central NFS home directory mount (`/mnt/pool-1/home`) | `/etc/fstab` (`cairo:/mnt/pool-1/home`) |
 | [**5. Docker Engine**](docker_setup.md) | Docker daemon installation, proxying, and storage root | `/etc/systemd/system/docker.service.d/` |
 | [**6. Linux SSSD Client**](sssd/README.md) | Central POSIX authentication & LDAP query integration | `/etc/sssd/sssd.conf` |
+| [**7. Proxmox VE Hypervisor**](proxmox_setup.md) | Proxmox hardware, NAT topology, Google OIDC SSO, and IaC | `https://192.41.170.19:8006`, `bpg/proxmox` |
 
 ---
 
@@ -21,6 +22,7 @@ Welcome to the **On-Premise Infrastructure** administration hub. These guides pr
 
 | Hostname | Role | IP Address | Primary Hardware | Status |
 | :--- | :--- | :--- | :--- | :--- |
+| **`proxmox`** | Physical Hypervisor (VM & Container Host) | `192.41.170.19` | 128 vCPUs, 134.8 GB RAM, 2TB LVM | Active (Live in NetBird Mesh) |
 | **`la.cs.ait.ac.th`** | Primary GPU Compute Node & JupyterHub | `192.41.170.85` | Multi-GPU Workstation | Active (Live in NetBird Mesh) |
 | **`cairo`** | TrueNAS Shared Storage (NFS) | `192.41.170.4` | High-Capacity NAS Arrays | Active (Live in NetBird Mesh) |
 | **`tokyo.cs.ait.ac.th`** | Secondary Server (APIs / Web Services) | `192.41.170.86` | Service Server | Standby / Dormant (No active workloads) |
