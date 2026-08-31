@@ -17,15 +17,16 @@ AIT Brainlab operates across institutional subdomains routed through GCP Cloud D
 | **`ml.brain.cs.ait.ac.th`** | A | `192.41.170.105` (CSIM On-prem) | MLflow & AI Demonstration Applications |
 | **`*.ml.brain.cs.ait.ac.th`** | A | `192.41.170.105` (CSIM On-prem) | Subdomain routing for deployed machine learning APIs |
 
-### B. Internal Split-Horizon Mesh Zone (`NetBird WireGuard DNS`)
+### B. Internal Mesh Resolution (`NetBird MagicDNS`)
 
-Peers enrolled in the NetBird mesh resolve internal services directly to their encrypted WireGuard overlay IPs:
+Peers enrolled in the NetBird mesh resolve internal services directly via peer hostnames (zero split-horizon DNS overhead):
 
-| Internal FQDN | Record Type | NetBird Overlay IP | Target Host |
+| Hostname / Service | Port / Protocol | Target Host | Description |
 | :--- | :---: | :--- | :--- |
-| **`ldap.brain.cs.ait.ac.th`** | A | `100.74.72.168` | `brainlab-mgmt-vm` (Port 3890 POSIX LDAP queries) |
-| **`truenas.brain.cs.ait.ac.th`** | A | `100.74.68.117` | `cairo` (TrueNAS Web Administration) |
-| **`cairo.brain.cs.ait.ac.th`** | A | `100.74.68.117` | `cairo` (Storage Node) |
+| **`ldap.brain.cs.ait.ac.th`** | `:443` (HTTPS) | `brainlab-mgmt-vm.netbird.selfhosted` (CNAME) | LLDAP Web Admin UI (Mesh-only with Let's Encrypt SSL) |
+| **`brainlab-mgmt-vm`** | `:3890` (LDAP) | `brainlab-mgmt-vm` | Internal POSIX directory queries for Linux SSSD & TrueNAS |
+| **`cairo`** | `:80` (HTTP) | `cairo` | TrueNAS SCALE Web Administration |
+| **`la`** | `:2222` (SSH) | `la` | GPU compute node container SSH gateway |
 
 ---
 

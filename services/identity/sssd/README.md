@@ -25,7 +25,7 @@ SSSD integrates local Linux PAM/NSS authentication with our central **LLDAP** co
               ▼
           Linux SSSD 
               │
-              ▼ (Encrypted WireGuard Mesh: ldap://ldap.brain.cs.ait.ac.th:3890)
+              ▼ (Encrypted WireGuard Mesh: ldap://brainlab-mgmt-vm:3890)
         LLDAP Directory (ait-brainlab-mgmt)
               │
               ├─► Verifies User Password / Credentials

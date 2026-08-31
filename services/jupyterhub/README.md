@@ -9,8 +9,8 @@ AIT Brainlab operates a multi-user JupyterHub environment providing containerize
 - **Hub URL**: `https://la.cs.ait.ac.th`
 - **Spawner**: Custom `DockerSpawner` dynamically mapping user UIDs/GIDs and allocating GPUs (e.g. dual NVIDIA RTX A6000) per user.
 - **Storage**: User working directory lands at `/home/{username}`, mounting TrueNAS NFS `/mnt/pool-1/home/{username}` as `work`, plus FastSSD datasets.
-- **Authentication**: Google OAuth2 SSO (`@ait.asia`) dynamically querying Cloud LLDAP (`ldap.brain.cs.ait.ac.th:3890`) for numeric POSIX UID/GID (`2002:brainlab`).
-- **Service Management**: Controlled by systemd unit (`jupyterhub.service`).
+- **Authentication**: Google OAuth2 SSO (`@ait.asia`) dynamically querying Cloud LLDAP (`brainlab-mgmt-vm:3890`) for numeric POSIX UID/GID (`2002:brainlab`).
+- **Service Management**: Controlled via Docker Compose (`docker compose up -d`).
 
 ---
 
@@ -18,14 +18,13 @@ AIT Brainlab operates a multi-user JupyterHub environment providing containerize
 ```
 services/jupyterhub/
 ├── config/
-│   ├── jupyterhub_config.py       # Main JupyterHub Spawner & LDAP configuration
-│   └── systemd/
-│       └── jupyterhub.service     # Systemd service unit for auto-boot
+│   └── jupyterhub_config.py       # Main JupyterHub Spawner & LDAP configuration
 ├── dockerfiles/
 │   ├── default.Dockerfile         # Base data science environment
 │   ├── nlp.Dockerfile             # PyTorch, Transformers, spaCy, Thai NLP
 │   ├── cv.Dockerfile              # OpenCV, torchvision, Albumentations
 │   └── akraradets.Dockerfile      # Customized researcher image
+├── docker-compose.yml             # Traefik v3 + JupyterHub stack
 └── README.md                      # Service documentation (this file)
 ```
 
@@ -39,10 +38,12 @@ cd services/jupyterhub/dockerfiles
 docker build -f nlp.Dockerfile -t nlp:latest .
 ```
 
-### 2. Restarting JupyterHub Service
+### 2. Managing JupyterHub Service
 ```bash
-sudo systemctl restart jupyterhub.service
-sudo journalctl -u jupyterhub.service -f
+cd services/jupyterhub
+docker compose ps
+docker compose restart jupyterhub
+docker compose logs -f jupyterhub
 ```
 
 ### 3. Adding New User Image to Menu

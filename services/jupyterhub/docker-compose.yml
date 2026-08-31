@@ -33,7 +33,7 @@ services:
     environment:
       - HTTP_PROXY=http://192.41.170.82:3128
       - HTTPS_PROXY=http://192.41.170.82:3128
-      - NO_PROXY=localhost,127.0.0.1,jupyterhub,ldap.brain.cs.ait.ac.th,100.103.0.0/16,172.16.0.0/12,10.0.0.0/8
+      - NO_PROXY=localhost,127.0.0.1,jupyterhub,brainlab-mgmt-vm,100.64.0.0/10,100.103.0.0/16,172.16.0.0/12,10.0.0.0/8
     networks:
       - jupyterhub-net
     labels:

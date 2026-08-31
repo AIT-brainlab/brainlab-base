@@ -5,94 +5,66 @@
 # Synchronized via ./mgmt/vpn/sync_netbird.py [--dry-run | --apply]
 
 # ----------------------------------------------------------
-# 1. Device Groups (Composable 2-Tag Model: loc-* and tier-*)
+# 1. Device Groups (Clean Cluster & Role Model)
 # ----------------------------------------------------------
 groups:
-  # Location Tags
-  - name: loc-onprem-csim
-    description: "CSIM Server Room physical hardware (10GbE LAN)"
-  - name: loc-onprem-lab
-    description: "Physical workstations in Brainlab student room"
-  - name: loc-cloud-gcp
-    description: "Google Cloud Platform compute instances"
-  - name: loc-cloud-aws
-    description: "Amazon Web Services compute instances"
+  - name: sysadmin
+    description: "SysAdmin personal laptops & workstations (full operator access)"
 
-  # Role / Tier Tags
-  - name: tier-servers
-    description: "All GPU compute and NAS servers across all locations"
-  - name: tier-storage
-    description: "Central network-attached storage (TrueNAS cairo)"
-  - name: tier-mgmt
-    description: "Management control plane VM"
-  - name: tier-operators
-    description: "SysAdmin personal laptops (full god-mode access)"
-  - name: tier-students
-    description: "General researcher & student personal laptops"
+  - name: brainlab-cluster
+    description: "On-premise CSIM compute and storage cluster (la, cairo)"
+
+  - name: mgmt-cluster
+    description: "Cloud management control plane VM (LLDAP & NetBird)"
 
   # Project Tags: DLMS (Driving License Management System)
   - name: prj-dlms-users
     description: "DLMS project researchers and operators"
+
   - name: prj-dlms-servers
     description: "DLMS application, database, and backend Docker host VM"
-  - name: prj-dlms-cctv
-    description: "DLMS on-prem local CCTV RTSP camera edge peer"
 
 # ----------------------------------------------------------
 # 2. Zero-Trust Access Control Policies
 # ----------------------------------------------------------
 policies:
-  - name: Servers-Cluster-Mesh
-    description: "Allow full interconnectivity between servers for distributed training & NFS"
+  # 1. SysAdmin administrative access to core lab infrastructure and clusters
+  - name: SysAdmin-Infra-Access
+    description: "Administrative access to CSIM on-prem cluster, management plane, and routed LAN resources"
+    enabled: true
+    rules:
+      - name: sysadmin-infra-rules
+        action: accept
+        protocol: all
+        bidirectional: true
+        sources: [sysadmin]
+        destinations: [brainlab-cluster, mgmt-cluster, sysadmin]
+
+  # 2. Local / on-prem CSIM Brainlab cluster nodes interconnectivity
+  - name: Brainlab-Cluster-Mesh
+    description: "Full interconnectivity between local/on-prem CSIM Brainlab resources (la & cairo)"
     enabled: true
     rules:
       - name: cluster-all-traffic
         action: accept
         protocol: all
         bidirectional: true
-        sources: [tier-servers]
-        destinations: [tier-servers]
+        sources: [brainlab-cluster]
+        destinations: [brainlab-cluster]
 
-  - name: SysAdmin-God-Mode
-    description: "Full remote administrative access for SysAdmin operators"
-    enabled: true
-    rules:
-      - name: sysadmin-to-all
-        action: accept
-        protocol: all
-        bidirectional: true
-        sources: [tier-operators]
-        destinations: [tier-servers, tier-mgmt, tier-storage]
-
-  - name: Student-Compute-Access
-    description: "Grant students access to compute services while isolating student laptops"
-    enabled: true
-    rules:
-      - name: student-to-compute-ports
-        action: accept
-        protocol: tcp
-        bidirectional: false
-        sources: [tier-students]
-        destinations: [tier-servers]
-        ports: ["2222", "8888", "8000", "5000", "631"]
-      - name: student-ping
-        action: accept
-        protocol: icmp
-        bidirectional: false
-        sources: [tier-students]
-        destinations: [tier-servers]
-
+  # 3. Brainlab cluster queries cloud LLDAP directory over encrypted WireGuard
   - name: LDAP-Directory-Access
-    description: "Allow servers and TrueNAS storage to query Cloud LLDAP over encrypted WireGuard mesh"
+    description: "Allow brainlab cluster to query Cloud LLDAP over encrypted WireGuard mesh"
     enabled: true
     rules:
       - name: ldap-all-traffic
         action: accept
         protocol: all
         bidirectional: true
-        sources: [tier-servers, tier-storage]
-        destinations: [tier-mgmt]
+        sources: [brainlab-cluster]
+        destinations: [mgmt-cluster]
 
+  # 4. DLMS project researchers access DLMS backend VM
   - name: DLMS-Server-Access
     description: "Allow DLMS project researchers to access backend VM"
     enabled: true
@@ -101,46 +73,29 @@ policies:
         action: accept
         protocol: all
         bidirectional: true
-        sources: [prj-dlms-users, tier-operators]
+        sources: [prj-dlms-users]
         destinations: [prj-dlms-servers]
-
-  - name: DLMS-CCTV-Access
-    description: "Allow DLMS users and backend VM to access CCTV RTSP streams"
-    enabled: true
-    rules:
-      - name: dlms-cctv-access
-        action: accept
-        protocol: all
-        bidirectional: true
-        sources: [prj-dlms-servers, prj-dlms-users, tier-operators]
-        destinations: [prj-dlms-cctv]
 
 # ----------------------------------------------------------
 # 3. Server Setup Keys (Day 1 Host Onboarding)
 # ----------------------------------------------------------
 setup_keys:
-  - name: onprem-csim-enrollment
+  - name: brainlab-cluster-enrollment
     type: reusable
-    expires_in_days: 30
-    auto_groups: [loc-onprem-csim, tier-servers]
+    expires_in_days: 365
+    auto_groups: [brainlab-cluster]
     usage_limit: 0
 
   - name: mgmt-vm-enrollment
     type: reusable
     expires_in_days: 365
-    auto_groups: [tier-mgmt]
+    auto_groups: [mgmt-cluster]
     usage_limit: 0
 
-  - name: truenas-storage-enrollment
+  - name: dlms-edge-enrollment
     type: reusable
     expires_in_days: 365
-    auto_groups: [loc-onprem-csim, tier-storage]
-    usage_limit: 0
-
-  - name: dlms-cctv-enrollment
-    type: reusable
-    expires_in_days: 365
-    auto_groups: [prj-dlms-cctv]
+    auto_groups: [prj-dlms-servers]
     usage_limit: 0
 
   - name: dlms-server-enrollment
@@ -150,7 +105,7 @@ setup_keys:
     usage_limit: 0
 
 # ----------------------------------------------------------
-# 4. Internal Split-Horizon DNS Zones
+# 4. Internal Mesh DNS Overrides (CNAME to MagicDNS)
 # ----------------------------------------------------------
 dns_zones:
   - name: "Brainlab Internal Zone"
@@ -158,35 +113,60 @@ dns_zones:
     enabled: true
     distribution_groups: [All]
     records:
+      # Dynamic CNAME: points to NetBird MagicDNS hostname (immune to WireGuard IP rotation)
       - name: "ldap.brain.cs.ait.ac.th"
-        type: A
-        content: "100.74.72.168"
-        ttl: 300
-      - name: "truenas.brain.cs.ait.ac.th"
-        type: A
-        content: "100.74.68.117"
-        ttl: 300
-      - name: "cairo.brain.cs.ait.ac.th"
-        type: A
-        content: "100.74.68.117"
+        type: CNAME
+        content: "brainlab-mgmt-vm.netbird.selfhosted."
         ttl: 300
 
 # ----------------------------------------------------------
-# 5. Network Subnet Routes (Routing Peers)
+# 5. Software-Defined Networks (Modern NetBird v0.25+ Architecture)
 # ----------------------------------------------------------
-network_routes:
-  - network_id: cctv-cam-1
-    network: "192.168.1.2/32"
-    description: "DLMS CCTV Camera 1"
-    peer_name: dsai2
-    masquerade: true
-    enabled: true
-    distribution_groups: [prj-dlms-users, prj-dlms-servers, tier-operators]
+networks:
+  - name: csim-infrastructure
+    description: "CSIM Server Room hypervisors and appliances"
+    routers:
+      - peer_name: cairo
+        masquerade: true
+        metric: 9999
+      - peer_name: la
+        masquerade: true
+        metric: 9999
+    resources:
+      - name: proxmox-ve
+        description: "CSIM Proxmox VE Web Console"
+        address: "192.41.170.19/32"
+        enabled: true
+        groups: [sysadmin]
 
-  - network_id: cctv-cam-2
-    network: "192.168.1.3/32"
-    description: "DLMS CCTV Camera 2"
-    peer_name: dsai2
-    masquerade: true
-    enabled: true
-    distribution_groups: [prj-dlms-users, prj-dlms-servers, tier-operators]
+      - name: cairo-lan
+        description: "CSIM TrueNAS Storage Node (Direct LAN IP)"
+        address: "192.41.170.4/32"
+        enabled: true
+        groups: [sysadmin]
+
+      - name: la-lan
+        description: "CSIM GPU Compute Node (Direct LAN IP)"
+        address: "192.41.170.85/32"
+        enabled: true
+        groups: [sysadmin]
+
+  - name: dlms-cctv
+    description: "On-premise RTSP camera streams for DLMS project"
+    routers:
+      - peer_name: dsai2
+        masquerade: true
+        metric: 9999
+    resources:
+      - name: cctv-cam-1
+        description: "DLMS CCTV Camera 1"
+        address: "192.168.1.2/32"
+        enabled: true
+        groups: [prj-dlms-users, prj-dlms-servers]
+      - name: cctv-cam-2
+        description: "DLMS CCTV Camera 2"
+        address: "192.168.1.3/32"
+        enabled: true
+        groups: [prj-dlms-users, prj-dlms-servers]
+
+

@@ -79,10 +79,10 @@ flowchart TD
 ---
 
 ### 🚀 Production Endpoints (Active Post-Cutover)
-| Service | Production URL | Target Host |
-| :--- | :--- | :--- |
-| **👤 LLDAP Web Portal** | `https://authen.brain.cs.ait.ac.th` | Management Control Plane (Post-Cutover) |
-| **📡 NetBird Dashboard** | `https://netbird.brain.cs.ait.ac.th` | Management Control Plane (Post-Cutover) |
+| Service | Production URL | Target Host | Access Policy |
+| :--- | :--- | :--- | :--- |
+| **👤 LLDAP Web Portal** | `https://ldap.brain.cs.ait.ac.th` | Management Control Plane | 🔒 **NetBird Mesh Only (`100.64.0.0/10`)** |
+| **📡 NetBird Dashboard** | `https://netbird.brain.cs.ait.ac.th` | Management Control Plane | 🌐 Public (Google OAuth2 SSO) |
 
 ---
 

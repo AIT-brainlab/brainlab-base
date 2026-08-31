@@ -21,8 +21,8 @@ auth_provider = ldap
 chpass_provider = ldap
 sudo_provider = ldap
 
-# Connect over private NetBird WireGuard mesh tunnel
-ldap_uri = ldap://ldap.brain.cs.ait.ac.th:3890
+# Connect over private NetBird WireGuard mesh tunnel via MagicDNS
+ldap_uri = ldap://brainlab-mgmt-vm:3890
 ldap_search_base = dc=brain,dc=cs,dc=ait,dc=ac,dc=th
 ldap_user_search_base = ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
 ldap_group_search_base = ou=groups,dc=brain,dc=cs,dc=ait,dc=ac,dc=th

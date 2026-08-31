@@ -102,6 +102,22 @@ resource "google_dns_record_set" "dpi_sandbox_ns" {
   ]
 }
 
+# Observation Cluster Subdelegation: obs.dpi.ait.ac.th (NS)
+# Awaiting zone creation in dedicated observation GCP project.
+# Replace placeholders with the 4 nameservers provided by the observation project's Cloud DNS.
+resource "google_dns_record_set" "obs_dpi_ns" {
+  name         = "obs.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "NS"
+  ttl          = 300
+  rrdatas = [
+    "ns-cloud-c1.googledomains.com.",
+    "ns-cloud-c2.googledomains.com.",
+    "ns-cloud-c3.googledomains.com.",
+    "ns-cloud-c4.googledomains.com."
+  ]
+}
+
 # DPI Web Server (A Record)
 resource "google_dns_record_set" "dpi_www" {
   name         = "www.dpi.ait.ac.th."

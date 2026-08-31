@@ -108,16 +108,23 @@ A vital performance rule for physical lab infrastructure:
 
 ---
 
-## 🔒 Access Control Policies (Zero-Trust)
+## 🔒 Access Control Policies & Software-Defined Networks (Zero-Trust)
 
-In NetBird Dashboard (**Access Control** $\rightarrow$ **Policies**), define 4 clean policies:
+Managed declaratively via [`mgmt/vpn/network.yaml`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/mgmt/vpn/network.yaml) and synchronized via [`mgmt/vpn/sync_netbird.py`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/mgmt/vpn/sync_netbird.py):
 
+### A. Access Policies (Peer-to-Peer Zero-Trust)
 | Policy Name | Source Group | Destination Group | Direction | Allowed Ports | Purpose |
 | :--- | :--- | :--- | :---: | :--- | :--- |
-| **`Cluster-Interconnect`** | `onprem-bkk` | `onprem-bkk` | `<->` | ALL | Server-to-server distributed training (MPI, PyTorch DDP). |
-| **`Cloud-LDAP-Queries`** | `onprem-bkk` | `cloud-mgmt` | `->` | `TCP 3890` | On-prem SSSD and JupyterHub query LLDAP over encrypted tunnel. |
-| **`SysAdmin-God-Mode`** | `sysadmin-devices` | `onprem-bkk` + `cloud-mgmt` | `<->` | ALL | Full SSH (22), TrueNAS Web UI (443), IPMI/iDRAC, container logs. |
-| **`Student-Compute-Access`** | `students` | `onprem-bkk` | `->` | `TCP 2222`<br>`TCP 8888`<br>`TCP 5000`<br>`TCP 631`<br>`ICMP` | Grants access to Jupyter SSH gateway, JupyterHub, and MLflow while **isolating student laptops from one another**. |
+| **`SysAdmin-Infra-Access`** | `sysadmin` | `brainlab-cluster`<br>`mgmt-cluster`<br>`sysadmin` | `<->` | ALL | Full SSH, Web GUIs, TrueNAS, container gateways, and routed LAN resources. |
+| **`Brainlab-Cluster-Mesh`** | `brainlab-cluster` | `brainlab-cluster` | `<->` | ALL | Server-to-server interconnectivity between on-prem nodes (`la` & `cairo`). |
+| **`LDAP-Directory-Access`** | `brainlab-cluster` | `mgmt-cluster` | `->` | ALL (`:3890`) | Linux SSSD and TrueNAS query Cloud LLDAP over encrypted WireGuard. |
+| **`DLMS-Server-Access`** | `prj-dlms-users` | `prj-dlms-servers` | `<->` | ALL | Research team access to DLMS application server. |
+
+### B. Software-Defined Networks (Subnet Gateways & LAN Resources)
+| Network Name | Routing Peers (HA) | Resources / Targets | Authorized Groups | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **`csim-infrastructure`** | `cairo`, `la` (HA Pair) | `192.41.170.19/32` (Proxmox)<br>`192.41.170.4/32` (Cairo LAN)<br>`192.41.170.85/32` (LA LAN) | `sysadmin` | Access to CSIM hypervisors and direct server LAN IPs without exposing publicly. |
+| **`dlms-cctv`** | `dsai2` | `192.168.1.2/32` (Camera 1)<br>`192.168.1.3/32` (Camera 2) | `prj-dlms-users`<br>`prj-dlms-servers` | Pull RTSP video camera streams over encrypted WireGuard tunnel. |
 
 ---
 

@@ -33,7 +33,7 @@ c.JupyterHub.db_url = 'sqlite:////data/jupyterhub.sqlite'
 # ------------------------------------------------------------------------------
 # 2. Cloud LLDAP Directory Query Helper (AuthZ)
 # ------------------------------------------------------------------------------
-LLDAP_URL = os.environ.get('LLDAP_URL', 'ldap://ldap.brain.cs.ait.ac.th:3890')
+LLDAP_URL = os.environ.get('LLDAP_URL', 'ldap://brainlab-mgmt-vm:3890')
 LLDAP_BIND_DN = os.environ.get('LLDAP_BIND_DN', 'uid=ldapservice,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th')
 LLDAP_PASSWORD = os.environ.get('LLDAP_PASSWORD', '')
 LLDAP_BASE_DN = 'dc=brain,dc=cs,dc=ait,dc=ac,dc=th'

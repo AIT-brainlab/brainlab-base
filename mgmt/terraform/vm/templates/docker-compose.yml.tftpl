@@ -60,6 +60,8 @@ services:
       - "traefik.http.routers.lldap.rule=Host(`${lldap_subdomain}.${domain}`)"
       - "traefik.http.routers.lldap.entrypoints=websecure"
       - "traefik.http.routers.lldap.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.lldap.middlewares=lldap-mesh-only"
+      - "traefik.http.middlewares.lldap-mesh-only.ipallowlist.sourcerange=100.64.0.0/10,127.0.0.1/32,172.16.0.0/12"
       - "traefik.http.services.lldap.loadbalancer.server.port=17170"
     networks:
       - mgmt-network

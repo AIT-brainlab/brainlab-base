@@ -66,31 +66,26 @@ By default, NetBird creates an "All-to-All" rule. Replace it with **least-privil
 - **Protocol**: ALL (TCP/UDP/ICMP)
 - *Rationale*: Allows GPU nodes to communicate for distributed PyTorch/MPI training and mount TrueNAS NFS.
 
-#### Policy 2: SysAdmin Full Management
-- **Name**: `SysAdmin-God-Mode`
-- **Sources**: `tier-operators`
-- **Destinations**: `tier-servers`, `tier-mgmt`
+#### Policy 2: SysAdmin Infrastructure Access
+- **Name**: `SysAdmin-Infra-Access`
+- **Sources**: `sysadmin`
+- **Destinations**: `brainlab-cluster`, `mgmt-cluster`, `sysadmin`
 - **Direction**: Bidirectional (`<->`)
 - **Protocol**: ALL
-- *Rationale*: Grants sysadmins unrestricted root SSH (port 22), TrueNAS Web Admin, IPMI/iDRAC, and remote management.
+- *Rationale*: Grants sysadmins unrestricted root SSH (port 22), TrueNAS Web Admin, Proxmox VE, IPMI/iDRAC, and remote management.
 
-#### Policy 3: Student & Researcher Compute Access
-- **Name**: `Student-Compute-Access`
-- **Sources**: `tier-students`
-- **Destinations**: `tier-servers`
-- **Direction**: One-way (`->`)
-- **Protocol / Ports Allowed**:
-  - `TCP 2222` (Single-Port Container SSH Gateway)
-  - `TCP 8888` / `8000` (JupyterHub Web Portal)
-  - `TCP 5000` (MLflow Experiment Tracking)
-  - `TCP 631` (Web Printing Portal)
-  - `ICMP` (Ping diagnostics)
-- *Rationale*: Allows students to train models and connect to Jupyter containers while **completely isolating student laptops from one another**.
+#### Policy 3: Cluster Mesh
+- **Name**: `Brainlab-Cluster-Mesh`
+- **Sources**: `brainlab-cluster`
+- **Destinations**: `brainlab-cluster`
+- **Direction**: Bidirectional (`<->`)
+- **Protocol**: ALL
+- *Rationale*: Allows on-prem GPU and storage nodes (`la` & `cairo`) to communicate for distributed PyTorch/MPI training and mount TrueNAS NFS.
 
 #### Policy 4: LDAP Directory Queries
 - **Name**: `LDAP-Directory-Access`
-- **Sources**: `tier-servers`
-- **Destinations**: `tier-mgmt`
+- **Sources**: `brainlab-cluster`
+- **Destinations**: `mgmt-cluster`
 - **Direction**: One-way (`->`)
 - **Protocol / Ports**: `TCP 3890` (LDAP)
 - *Rationale*: Allows physical Linux SSSD and JupyterHub on compute servers to query LLDAP securely over WireGuard.
