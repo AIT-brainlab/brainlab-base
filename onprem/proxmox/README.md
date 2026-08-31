@@ -35,7 +35,7 @@
 | VM ID | Hostname / Purpose | vCPUs | RAM | Disk Size | Primary Network & MAC Address | Status | Notes / Assignment |
 | :---: | :--- | :---: | :---: | :---: | :--- | :---: | :--- |
 | **`100`** | **`proxy`** | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`)<br/>`net1`: `vmbr2` (`16:77:9C:9B:BD:68`) | 🟢 **Live** | Lab 10G Edge Proxy (Traefik / HTTP 308 redirect live) |
-| **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr0` (`BC:24:11:B7:8F:31`)<br/>`net1`: `vmbr1` (`BC:24:11:F4:0A:36`) | 🟢 **Live** | MLflow experiment tracking server |
+| **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr0` (`BC:24:11:B7:8F:31`)<br/>`net1`: `vmbr1` (`192.41.170.105/24`) | 🟢 **Live** | MLflow experiment tracking server (`ml.brain.cs.ait.ac.th`) |
 | **`102`** | `jupyterhub` | 8 | 16 GB | 60 GB | `net0`: `vmbr0` (`BC:24:11:84:A8:DA`) | Stopped | Legacy JupyterHub instance |
 | **`103`** | `ubuntu-desktop` | 4 | 8 GB | 150 GB | `net0`: `vmbr0` (`BC:24:11:20:33:89`)<br/>`net1`: `vmbr2` (`BC:24:11:80:90:F6`) | Stopped | Operator GUI desktop environment |
 | **`104`** | `truenas` | 4 | 4 GB | 30 GB | `net0`: `vmbr2` (`BC:24:11:64:DB:F0`) | Stopped | Local TrueNAS testing instance |
