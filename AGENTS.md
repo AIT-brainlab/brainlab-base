@@ -136,6 +136,10 @@ brainlab-base/
     - When internal web interfaces (such as LLDAP Web Admin) require valid Let's Encrypt SSL while being restricted to WireGuard peers via Traefik IP allowlisting (`100.64.0.0/10`), the domain MUST NOT be overridden with hardcoded WireGuard IPs.
     - Instead, declare a NetBird internal DNS zone with a dynamic `CNAME` targeting the host peer's MagicDNS FQDN (e.g. `ldap.brain.cs.ait.ac.th` $\rightarrow$ `brainlab-mgmt-vm.netbird.selfhosted.`). This ensures valid TLS handshakes while remaining 100% immune to WireGuard IP rotations or VM reprovisioning.
 
+35. **Proxmox systemd-boot ESP Maintenance**:
+    - Proxmox hypervisors running `systemd-boot` store kernel images and initramfs directly within `/boot/efi/<machine-id>/<version>/`.
+    - Automated kernel updates that encounter `No space left on device` on `/boot/efi` MUST NOT delete the currently active running kernel (`uname -r`). Safely remove 2-3 older non-running versions directly from `/boot/efi/<machine-id>/`, resume with `dpkg --configure -a`, and finalize with `apt autoremove --purge -y`.
+
 ---
 
 ## 📝 Code & Documentation Standards

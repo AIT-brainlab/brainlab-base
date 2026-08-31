@@ -104,7 +104,7 @@ Quick reference for diagnosing and resolving the most frequent operational incid
    ```
 3. Test LDAP reachability over NetBird WireGuard mesh:
    ```bash
-   ldapsearch -x -H ldap://ldap.brain.cs.ait.ac.th:3890 -D "uid=ldapservice,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th" -W -b "dc=brain,dc=cs,dc=ait,dc=ac,dc=th" "(uid=<username>)"
+   ldapsearch -x -H ldap://brainlab-mgmt-vm:3890 -D "uid=ldapservice,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th" -W -b "dc=brain,dc=cs,dc=ait,dc=ac,dc=th" "(uid=<username>)"
    ```
 
 ---
@@ -142,4 +142,40 @@ Quick reference for diagnosing and resolving the most frequent operational incid
    sudo iscsiadm -m node -T iqn.2005-10.org.freenas.ctl:docker-root -p 192.41.170.4:3260 --login
    sudo mount -a
    df -h /mnt/docker-root
+   ```
+
+---
+
+## 8. Issue: Proxmox VE Kernel Upgrade Failure (`/boot/efi` No space left on device)
+### Symptoms:
+- `apt upgrade` fails with:
+  `Failed to make directory '/boot/efi/...': No space left on device`
+- `dpkg: error processing package initramfs-tools (--configure)`
+- `/boot/efi` shows 100% usage under `df -h /boot/efi`.
+
+### Root Cause:
+Proxmox nodes booted via UEFI `systemd-boot` store kernel binaries and initramfs images directly inside the EFI System Partition (`/boot/efi/<machine-id>/<version>/`). Over time, accumulated old kernels fill the 1GB ESP partition, blocking `update-initramfs`.
+
+### Resolution:
+1. Verify currently active running kernel (**NEVER delete this version!**):
+   ```bash
+   uname -r
+   ```
+2. List kernel folders in the EFI partition:
+   ```bash
+   ls -lh /boot/efi/<machine-id>/
+   ```
+3. Safely prune several older, non-running kernel directories:
+   ```bash
+   rm -rf /boot/efi/<machine-id>/<OLD-KERNEL-VERSION>
+   ```
+4. Complete the interrupted package configuration:
+   ```bash
+   dpkg --configure -a
+   ```
+5. Clean up old Debian kernel packages and refresh systemd-boot:
+   ```bash
+   apt autoremove --purge -y
+   proxmox-boot-tool clean 2>/dev/null || true
+   proxmox-boot-tool refresh 2>/dev/null || true
    ```
