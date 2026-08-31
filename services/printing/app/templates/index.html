@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIT Brainlab - Web Print Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Top Navigation -->
+    <header class="border-b border-slate-800 bg-slate-950/70 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🖨️</span>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight">AIT Brainlab Print Portal</h1>
+                    <p class="text-xs text-slate-400">CSIM Physical Printer Bridge &bull; NetBird Mesh</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                {% if user %}
+                <div class="flex items-center gap-3 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+                    {% if user.picture %}
+                    <img src="{{ user.picture }}" class="w-6 h-6 rounded-full" alt="avatar">
+                    {% endif %}
+                    <div class="text-xs">
+                        <span class="font-semibold text-slate-200">{{ user.name }}</span>
+                        <span class="text-indigo-400 font-mono">({{ user.username }})</span>
+                    </div>
+                    <a href="/logout" class="text-xs text-rose-400 hover:text-rose-300 ml-2 font-medium">Sign out</a>
+                </div>
+                {% else %}
+                <a href="/login" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-lg shadow-indigo-600/20">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35 11.1h-9.17v2.73h5.51c-.33 2.1-2.14 3.63-4.34 3.63-2.61 0-4.73-2.12-4.73-4.73s2.12-4.73 4.73-4.73c1.19 0 2.27.44 3.1 1.23l2.06-2.06C16.89 5.74 14.73 5 12.18 5 8.1 5 4.78 8.32 4.78 12.4s3.32 7.4 7.4 7.4c4.27 0 7.1-3 7.1-7.23 0-.52-.05-1.02-.13-1.47z"/></svg>
+                    Sign in with Google
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
+
+        {% if error %}
+        <div class="mb-6 bg-rose-950/60 border border-rose-800/80 rounded-xl p-4 text-rose-200 text-sm flex items-center gap-3">
+            <span class="text-xl">⚠️</span>
+            <div>
+                {% if error == 'unauthorized_domain' %}
+                Only verified members with <strong>@ait.asia</strong>, <strong>@ait.ac.th</strong>, or authorized lab alumni accounts can use the Web Print service.
+                {% else %}
+                Authentication error occurred ({{ error }}). Please try again.
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not user %}
+        <!-- Welcome Hero for Logged-Out Users -->
+        <div class="border border-slate-800 bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl p-10 text-center shadow-2xl mt-8">
+            <div class="inline-flex p-4 bg-indigo-950/60 border border-indigo-800/50 rounded-2xl mb-4 text-indigo-400 text-3xl">🖨️</div>
+            <h2 class="text-3xl font-extrabold text-white tracking-tight mb-3">Print to CSIM Lab from Anywhere</h2>
+            <p class="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed mb-8">
+                Submit print jobs directly to the CSIM ground-floor <strong>Ricoh IM C2000</strong> or room 212 <strong>HP LaserJet P4015x</strong> printers from your laptop or phone. Authenticates with your Google account and automatically attributes printing quota.
+            </p>
+            <a href="/login" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition shadow-xl shadow-indigo-600/30">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35 11.1h-9.17v2.73h5.51c-.33 2.1-2.14 3.63-4.34 3.63-2.61 0-4.73-2.12-4.73-4.73s2.12-4.73 4.73-4.73c1.19 0 2.27.44 3.1 1.23l2.06-2.06C16.89 5.74 14.73 5 12.18 5 8.1 5 4.78 8.32 4.78 12.4s3.32 7.4 7.4 7.4c4.27 0 7.1-3 7.1-7.23 0-.52-.05-1.02-.13-1.47z"/></svg>
+                Sign in with AIT Google Account
+            </a>
+        </div>
+        {% else %}
+
+        <!-- Interactive Print Studio -->
+        <div class="grid md:grid-cols-3 gap-6">
+
+            <!-- Left 2 Cols: Drag & Drop + Options -->
+            <div class="md:col-span-2 space-y-6">
+                
+                <form id="printForm" class="space-y-6">
+                    <!-- Drop Zone -->
+                    <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-8 text-center transition cursor-pointer bg-slate-950/40 relative">
+                        <input type="file" id="fileInput" accept=".pdf" class="hidden">
+                        <div id="dropContent">
+                            <span class="text-4xl block mb-2">📄</span>
+                            <h3 class="font-semibold text-slate-200">Drag & drop your PDF file here</h3>
+                            <p class="text-xs text-slate-400 mt-1">or click to browse from device (up to 25 MB)</p>
+                        </div>
+                        <div id="fileInfo" class="hidden text-left bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <span class="text-2xl text-rose-400">📑</span>
+                                <div class="truncate">
+                                    <div id="fileName" class="text-sm font-semibold text-slate-200 truncate">document.pdf</div>
+                                    <div id="fileSize" class="text-xs text-slate-400">0 KB</div>
+                                </div>
+                            </div>
+                            <button type="button" id="removeFileBtn" class="text-slate-400 hover:text-rose-400 text-xs px-2 py-1">Change</button>
+                        </div>
+                    </div>
+
+                    <!-- Options Card -->
+                    <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-6 space-y-5">
+                        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+                            <span>⚙️</span> Print Settings
+                        </h3>
+
+                        <!-- Printer Destination -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Target Printer</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="border border-slate-800 bg-slate-900/90 rounded-xl p-3 cursor-pointer hover:border-slate-700 flex items-start gap-2.5">
+                                    <input type="radio" name="printer" value="ricoh" checked class="mt-0.5 text-indigo-600 focus:ring-0">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-200">Ricoh IM C2000</div>
+                                        <div class="text-[11px] text-slate-400">CSIM Lobby Ground Floor</div>
+                                        <span class="inline-block mt-1 text-[10px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded">Duplex &bull; Color</span>
+                                    </div>
+                                </label>
+                                <label class="border border-slate-800 bg-slate-900/90 rounded-xl p-3 cursor-pointer hover:border-slate-700 flex items-start gap-2.5">
+                                    <input type="radio" name="printer" value="magnum" class="mt-0.5 text-indigo-600 focus:ring-0">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-200">HP LaserJet P4015x</div>
+                                        <div class="text-[11px] text-slate-400">CSIM Room #212</div>
+                                        <span class="inline-block mt-1 text-[10px] bg-sky-950 text-sky-300 px-1.5 py-0.5 rounded">60 ppm &bull; B&W</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Color Mode (with Guardrail Warning) -->
+                        <div id="colorSection">
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Color Option</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="border border-slate-800 bg-slate-900/90 rounded-xl p-3 cursor-pointer hover:border-slate-700 flex items-center gap-2.5">
+                                    <input type="radio" name="color_mode" value="monochrome" checked class="text-indigo-600 focus:ring-0">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-200">Black & White</div>
+                                        <div class="text-[11px] text-slate-400">1× Standard Quota</div>
+                                    </div>
+                                </label>
+                                <label class="border border-slate-800 bg-slate-900/90 rounded-xl p-3 cursor-pointer hover:border-slate-700 flex items-center gap-2.5">
+                                    <input type="radio" name="color_mode" value="color" class="text-indigo-600 focus:ring-0">
+                                    <div>
+                                        <div class="text-xs font-bold text-amber-400">Color (10× Quota)</div>
+                                        <div class="text-[11px] text-slate-400">Ricoh Printer only</div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Color Warning Banner -->
+                            <div id="colorWarning" class="hidden mt-3 bg-amber-950/50 border border-amber-800/80 rounded-xl p-4 text-xs text-amber-200 space-y-2">
+                                <div class="flex items-center gap-2 font-semibold">
+                                    <span>⚠️</span> CSIM Printing Quota Warning
+                                </div>
+                                <p class="text-amber-300/80">
+                                    Per CSIM policy, printing in color costs <strong>10 times more quota</strong> than black & white. For example, a 5-page document will deduct <strong>50 pages</strong> from your printing quota.
+                                </p>
+                                <label class="flex items-center gap-2 pt-1 cursor-pointer font-medium">
+                                    <input type="checkbox" id="colorConfirmed" class="rounded text-amber-600 focus:ring-0 bg-slate-900 border-amber-700">
+                                    <span>I understand and confirm charging 10× quota</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Duplex & Copies Row -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Two-Sided (Duplex)</label>
+                                <select id="duplexSelect" name="duplex" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+                                    <option value="two-sided-long-edge" selected>Duplex (Long Edge - Standard)</option>
+                                    <option value="two-sided-short-edge">Duplex (Short Edge - Flip)</option>
+                                    <option value="one-sided">Single-Sided (Simplex)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Copies (1 - 10)</label>
+                                <input type="number" id="copiesInput" name="copies" min="1" max="10" value="1" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Page Range -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Page Range (Optional)</label>
+                            <input type="text" id="pageRangeInput" name="page_range" placeholder="e.g. 1-5 (leave empty for all pages)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:border-indigo-500 focus:outline-none">
+                        </div>
+
+                    </div>
+
+                    <!-- Submit Action Button -->
+                    <button type="submit" id="submitBtn" disabled class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2">
+                        <span id="btnIcon">🖨️</span>
+                        <span id="btnText">Select PDF to Print</span>
+                    </button>
+                </form>
+
+            </div>
+
+            <!-- Right Col: Information & Live Queue Monitor -->
+            <div class="space-y-6">
+
+                <!-- Account & Quota Badge -->
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 text-xs space-y-3">
+                    <h4 class="font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>👤</span> Quota Attribution
+                    </h4>
+                    <div class="space-y-1.5 text-slate-400">
+                        <div class="flex justify-between py-1 border-b border-slate-800/60">
+                            <span>Google Account:</span>
+                            <span class="font-mono text-slate-200">{{ user.email }}</span>
+                        </div>
+                        <div class="flex justify-between py-1 border-b border-slate-800/60">
+                            <span>CSIM Student ID:</span>
+                            <span class="font-mono text-indigo-400 font-semibold">{{ user.username }}</span>
+                        </div>
+                        <div class="flex justify-between py-1">
+                            <span>Accounting Host:</span>
+                            <span class="font-mono text-slate-300">banyan (515)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Queue Status Monitor -->
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 text-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-slate-200 flex items-center gap-1.5">
+                            <span>📡</span> CSIM Live Queues
+                        </h4>
+                        <button id="refreshQueueBtn" class="text-indigo-400 hover:text-indigo-300 text-[11px] font-medium">Refresh</button>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                            <div class="flex justify-between font-semibold text-slate-200 mb-1">
+                                <span>Ricoh IM C2000:</span>
+                                <span class="text-emerald-400 font-mono">Ready</span>
+                            </div>
+                            <pre id="ricohQueueText" class="text-[10px] text-slate-500 font-mono whitespace-pre-wrap">Querying...</pre>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500">
+        AIT Brainlab Base &bull; Asian Institute of Technology &bull; CSIM Infrastructure
+    </footer>
+
+    {% if user %}
+    <script src="/static/app.js"></script>
+    {% endif %}
+</body>
+</html>

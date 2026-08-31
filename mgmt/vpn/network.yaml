@@ -24,6 +24,10 @@ groups:
   - name: prj-dlms-servers
     description: "DLMS application, database, and backend Docker host VM"
 
+  # External Infrastructure Tags: CSIM Printers
+  - name: csim-printers
+    description: "CSIM Department printers and print server resources"
+
 # ----------------------------------------------------------
 # 2. Zero-Trust Access Control Policies
 # ----------------------------------------------------------
@@ -75,6 +79,18 @@ policies:
         bidirectional: true
         sources: [prj-dlms-users]
         destinations: [prj-dlms-servers]
+
+  # 5. Access to CSIM Department Printers
+  - name: CSIM-Printer-Access
+    description: "Access to CSIM print server (banyan) and physical printers"
+    enabled: true
+    rules:
+      - name: csim-printer-rules
+        action: accept
+        protocol: all
+        bidirectional: true
+        sources: [sysadmin, brainlab-cluster]
+        destinations: [csim-printers, sysadmin]
 
 # ----------------------------------------------------------
 # 3. Server Setup Keys (Day 1 Host Onboarding)
@@ -150,6 +166,24 @@ networks:
         address: "192.41.170.85/32"
         enabled: true
         groups: [sysadmin]
+
+      - name: banyan-print-server
+        description: "CSIM Print Server & Domain Controller (banyan.cs.ait.ac.th)"
+        address: "192.41.170.5/32"
+        enabled: true
+        groups: [csim-printers, sysadmin]
+
+      - name: magnum-printer
+        description: "CSIM HP LaserJet P4015x Printer Room 212 (magnum.cs.ait.ac.th)"
+        address: "192.41.170.42/32"
+        enabled: true
+        groups: [csim-printers, sysadmin]
+
+      - name: ricoh-printer
+        description: "CSIM Ricoh IM C2000 Lobby Printer (ricoh.cs.ait.ac.th)"
+        address: "192.41.170.9/32"
+        enabled: true
+        groups: [csim-printers, sysadmin]
 
   - name: dlms-cctv
     description: "On-premise RTSP camera streams for DLMS project"

@@ -1,0 +1,41 @@
+services:
+  web-print:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aitbrainlab/web-print:1.0.0
+    container_name: web-print
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Bangkok
+      - HTTP_PROXY=http://192.41.170.82:3128
+      - HTTPS_PROXY=http://192.41.170.82:3128
+      - NO_PROXY=localhost,127.0.0.1,192.41.170.0/24,100.64.0.0/10,100.74.0.0/16,100.103.0.0/16,*.brain.cs.ait.ac.th
+    ports:
+      - "8080:8080"
+    volumes:
+      - print_spool:/tmp/spool
+      - ./members.yaml:/app/members.yaml:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web-print.rule=Host(`print.brain.cs.ait.ac.th`)"
+      - "traefik.http.routers.web-print.entrypoints=websecure"
+      - "traefik.http.routers.web-print.tls.certresolver=letsencrypt"
+      - "traefik.http.services.web-print.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  print_spool:
+    driver: local
