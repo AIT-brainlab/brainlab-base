@@ -42,10 +42,7 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 
 ### 4. Service Admin Domain (`services/`)
 - **JupyterHub (`services/jupyterhub/`)**: Multi-user hub using `DockerSpawner` mapping user UIDs/GIDs and allocating GPUs with environments (`default`, `nlp`, `cv`).
-- **Identity & Access (`services/identity/`)**: `lldap` user directory, Google OAuth2 SSO, and Linux SSSD client configurations.
-- **MLflow Platform (`services/mlflow/`)**: Experiment tracking server on `tokyo.cs.ait.ac.th:5000` with TrueNAS artifact storage.
 - **Web Printing Service (`services/printing/` or `print.brain.cs.ait.ac.th`)**: Remote web print portal (`docker-cups`) bridging cloud uploads to on-prem CSIM printer over NetBird WireGuard mesh.
-- **Web APIs & Gateway (`services/api/`)**: Traefik reverse proxy and deployed FastAPI / AI demonstration applications.
 
 ### 5. Operational Runbooks (`docs/`)
 - **Onboarding (`docs/onboarding.md`)**: New member onboarding SOP.
@@ -67,18 +64,18 @@ brainlab-base/
 │   ├── README.md                  # Control plane architecture & governance
 │   ├── checklist.md               # Master migration & implementation checklist
 │   ├── migration_plan.md          # Zero-downtime on-prem to cloud migration SOP
-│   └── terraform/                 # Modular Terraform IaC (iam, dns, secrets, vm, identity, vpn)
+│   ├── identity/                  # Declarative members.yaml & GraphQL user sync
+│   ├── vpn/                       # Declarative network.yaml & NetBird GitOps sync
+│   └── terraform/                 # Modular Terraform IaC (foundation, vm)
 │
 ├── infra/                         # 🛠️ Infrastructure Admin Domain
-│   ├── onprem/                    # Physical nodes, OS install, GPU, TrueNAS NFS
+│   ├── onprem/                    # Physical nodes, OS install, GPU, TrueNAS NFS/iSCSI, SSSD
 │   ├── cloud/                     # Research workload templates (Spot GPUs, GCS, credits)
-│   └── network/                   # Network routing, CSIM proxy, DNS topology
+│   └── network/                   # Network routing, CSIM proxy, DNS topology, NetBird VPN
 │
 ├── services/                      # 🚀 Service Admin Domain
 │   ├── jupyterhub/                # Spawner config, Dockerfiles (default, nlp, cv)
-│   ├── identity/                  # SSO, Google OAuth, SSSD templates
-│   ├── mlflow/                    # MLflow experiment tracking server setup
-│   └── api/                       # Traefik reverse proxy & deployed apps
+│   └── printing/                  # Web Print portal (docker-cups)
 │
 ├── docs/                          # 📋 Operational SOPs & Handover Runbooks
 │   ├── onboarding.md              # Member onboarding checklist

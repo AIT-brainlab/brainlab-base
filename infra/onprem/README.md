@@ -13,6 +13,7 @@ Welcome to the **On-Premise Infrastructure** administration hub. These guides pr
 | [**3. NVIDIA GPUs**](nvidia_gpu.md) | CUDA drivers & NVIDIA Container Toolkit runtime | `nvidia-smi`, `/etc/docker/daemon.json` |
 | [**4. TrueNAS Storage**](truenas_nfs.md) | Central NFS home directory mount (`/mnt/pool-1/home`) | `/etc/fstab` (`cairo:/mnt/pool-1/home`) |
 | [**5. Docker Engine**](docker_setup.md) | Docker daemon installation, proxying, and storage root | `/etc/systemd/system/docker.service.d/` |
+| [**6. Linux SSSD Client**](sssd/README.md) | Central POSIX authentication & LDAP query integration | `/etc/sssd/sssd.conf` |
 
 ---
 
