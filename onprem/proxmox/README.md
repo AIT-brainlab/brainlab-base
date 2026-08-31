@@ -22,11 +22,8 @@
 
 | VNet / Bridge Name | Zone Type | IPAM / DHCP Engine | Subnet / Purpose |
 | :--- | :---: | :---: | :--- |
-| **`vmbr0`** | Physical Bridge | Proxmox NAT | `10.10.20.1/24` NAT Bridge (`"NAT to management port"`) |
-| **`vmbr1`** | Physical Bridge | Manual / CSIM | Frontend Physical CSIM LAN (`enp2s0`) |
-| **`vmbr2`** | Physical Bridge | Manual | `10.10.30.1/24` Inter-VM Backend Private Subnet |
-| **`internet`** | SDN `simple` | **`dnsmasq`** | Proxmox SDN NAT VNet with automated DHCP |
-| **`swarm`** | SDN `simple` | `pve` IPAM | Internal Docker Swarm VNet |
+| **`vmbr1`** | Physical Bridge | Manual / CSIM | Frontend Physical 10G High-Speed LAN (`enp2s0`) |
+| **`internet`** | SDN `simple` | **`dnsmasq`** | Proxmox SDN NAT VNet with automated DHCP (`10.10.20.0/24`) |
 
 ---
 
@@ -34,14 +31,14 @@
 
 | VM ID | Hostname / Purpose | vCPUs | RAM | Disk Size | Primary Network & MAC Address | Status | Notes / Assignment |
 | :---: | :--- | :---: | :---: | :---: | :--- | :---: | :--- |
-| **`100`** | `proxy` | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`)<br/>`net1`: `vmbr2` (`16:77:9C:9B:BD:68`) | Stopped | Lab 10G Edge Proxy (Confirmed `192.41.170.39`) |
-| **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr0` (`BC:24:11:B7:8F:31`)<br/>`net1`: `vmbr1` (`192.41.170.105/24`) | 🟢 **Live** | MLflow experiment tracking server (`ml.brain.cs.ait.ac.th`) |
-| **`102`** | `jupyterhub` | 8 | 16 GB | 60 GB | `net0`: `vmbr0` (`BC:24:11:84:A8:DA`) | Stopped | Legacy JupyterHub instance |
-| **`103`** | `ubuntu-desktop` | 4 | 8 GB | 150 GB | `net0`: `vmbr0` (`BC:24:11:20:33:89`)<br/>`net1`: `vmbr2` (`BC:24:11:80:90:F6`) | Stopped | Operator GUI desktop environment |
-| **`104`** | `truenas` | 4 | 4 GB | 30 GB | `net0`: `vmbr2` (`BC:24:11:64:DB:F0`) | Stopped | Local TrueNAS testing instance |
+| **`100`** | `proxy` | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`) | Stopped | Lab 10G Edge Proxy (Confirmed `192.41.170.39`) |
+| **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr1` (`192.41.170.105/24`) | 🟢 **Live** | MLflow experiment tracking server (`ml.brain.cs.ait.ac.th`) |
+| **`102`** | `jupyterhub` | 8 | 16 GB | 60 GB | `net0`: `internet` (`BC:24:11:84:A8:DA`) | Stopped | Legacy JupyterHub instance |
+| **`103`** | `ubuntu-desktop` | 4 | 8 GB | 150 GB | `net0`: `internet` (`BC:24:11:20:33:89`) | Stopped | Operator GUI desktop environment |
+| **`104`** | `truenas` | 4 | 4 GB | 30 GB | `net0`: `internet` (`BC:24:11:64:DB:F0`) | Stopped | Local TrueNAS testing instance |
 | **`106`** | `aitgpt-dev` | 32 | 32 GB | 450 GB | `net0`: `vmbr1` (`192.41.170.17/24`) | Stopped | Large Model development VM |
 | **`119`** | **`brainlab-app-vm`** | 32 | 64 GB | 150 GB | `net0`: **`internet`** (SDN VNet / `dhcp`) | 🟡 Pending | Multi-Tenant App VM (Web Print & DLMS) |
-| **`200`** | `swarm01` | 4 | 8 GB | 150 GB | `net0`: `internet` (`BC:24:11:F1:70:56`)<br/>`net1`: `swarm` (`BC:24:11:DF:A0:CE`) | Stopped | Docker Swarm cluster worker node |
+| **`200`** | `swarm01` | 4 | 8 GB | 150 GB | `net0`: `internet` (`BC:24:11:F1:70:56`) | Stopped | Docker Swarm cluster worker node |
 | **`900`** | `VM 900` | 8 | 64 GB | - | `net0`: `vmbr1` (`BC:24:11:2F:39:CC`) | Stopped | Base VM template |
 
 ---
