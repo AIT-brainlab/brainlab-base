@@ -1,0 +1,39 @@
+#cloud-config
+hostname: ${vm_name}
+timezone: Asia/Bangkok
+manage_etc_hosts: true
+
+users:
+  - name: sysadmin
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    groups: docker, sudo
+    ssh_authorized_keys:
+%{ for key in ssh_public_keys ~}
+      - ${key}
+%{ endfor ~}
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - curl
+  - jq
+  - git
+  - ca-certificates
+  - docker.io
+  - docker-compose-v2
+
+runcmd:
+  # 1. Enable Docker Service
+  - systemctl enable --now docker
+  
+  # 2. Install NetBird Client
+  - curl -fsSL https://pkgs.netbird.io/install.sh | sh
+  
+  # 3. Enroll into NetBird Mesh if setup key is provided
+%{ if netbird_setup_key != "" ~}
+  - netbird up --management-url https://netbird.brain.cs.ait.ac.th --setup-key ${netbird_setup_key}
+%{ endif ~}
+
+final_message: "AIT Brainlab Proxmox Application VM initialization complete after $UPTIME seconds"
