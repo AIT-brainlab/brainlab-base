@@ -139,6 +139,16 @@ brainlab-base/
 35. **Proxmox systemd-boot ESP Maintenance**:
     - Proxmox hypervisors running `systemd-boot` store kernel images and initramfs directly within `/boot/efi/<machine-id>/<version>/`.
     - Automated kernel updates that encounter `No space left on device` on `/boot/efi` MUST NOT delete the currently active running kernel (`uname -r`). Safely remove 2-3 older non-running versions directly from `/boot/efi/<machine-id>/`, resume with `dpkg --configure -a`, and finalize with `apt autoremove --purge -y`.
+36. **Proxmox `bpg/proxmox` Provider SSH Node Mapping & Agent Timeout Invariant**:
+    - When configuring the `bpg/proxmox` Terraform provider, if the target node hostname (e.g. `proxmox`) is not resolvable via DNS, the `provider "proxmox"` block MUST explicitly declare `ssh { node { name = var.target_node, address = "192.41.170.19" } }`.
+    - All `proxmox_virtual_environment_vm` resources MUST set `agent { enabled = true, timeout = "1s" }` to prevent state refresh execution hangs when `qemu-guest-agent` is uninitialized.
+37. **On-Premise Traefik Remote Docker Socket Proxy & TLS Auto-Discovery Invariant**:
+    - On-premise edge proxies (`brainlab-proxy` at `192.41.170.39`) auto-discover container workloads running across separate virtual machines (`dlms-server`, `ml`, `tokyo`) by querying a read-only Docker socket proxy (`tecnativa/docker-socket-proxy`) on TCP port `2375` (`--providers.docker.endpoint=tcp://<vm_ip>:2375`).
+    - Application containers MUST declare `entrypoints=websecure`, `tls=true`, and `tls.certresolver=letsencrypt` labels for automated Let's Encrypt SSL.
+38. **Proxmox Out-of-Band Purge & Terraform State Synchronization Invariant**:
+    - If a Proxmox virtual machine is purged or destroyed out-of-band via `qm destroy <vmid>`, `terraform state rm proxmox_virtual_environment_vm.<name>` MUST be executed before re-running `terraform apply` to prevent HTTP 500 state drift errors (`unable to create VM <vmid> - VM <vmid> already exists`).
+39. **On-Premise GCS Remote State Partitioning Invariant**:
+    - On-premise Proxmox Terraform modules MUST persist remote state in `gs://ait-brainlab-mgmt-tfstate` under dedicated `onprem/proxmox/` prefixes (`onprem/proxmox/foundation` for host governance and `onprem/proxmox/vms` for tenant application VMs).
 
 ---
 
