@@ -32,6 +32,34 @@ write_files:
       Environment="HTTPS_PROXY=http://192.41.170.82:3128"
       Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
 
+%{ if vm_name == "brainlab-proxy" ~}
+  - path: /opt/brainlab/proxy/docker-compose.yml
+    content: |
+      services:
+        traefik:
+          image: traefik:v3.7
+          container_name: traefik
+          restart: unless-stopped
+          command:
+            - "--providers.docker=true"
+            - "--providers.docker.endpoint=tcp://10.10.250.1:2375"
+            - "--providers.docker.exposedbydefault=false"
+            - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+            - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+            - "--certificatesresolvers.letsencrypt.acme.email=brainlab@ait.asia"
+            - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
+            - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+            - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+          ports:
+            - "80:80"
+            - "443:443"
+          volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock:ro"
+            - "/opt/brainlab/traefik/acme.json:/etc/traefik/acme.json"
+%{ endif ~}
+
 users:
   - name: ubuntu
     sudo: ALL=(ALL) NOPASSWD:ALL
@@ -68,6 +96,14 @@ runcmd:
   # 2. Enroll into NetBird Mesh via CSIM Proxy Bootstrapper
 %{ if netbird_setup_key != "" ~}
   - curl -fsSL -x http://192.41.170.82:3128 https://raw.githubusercontent.com/AIT-brainlab/brainlab-base/main/docs/infra/onprem/scripts/bootstrap_netbird_csim.sh | bash -s -- ${netbird_setup_key}
+%{ endif ~}
+
+%{ if vm_name == "brainlab-proxy" ~}
+  # 3. Launch Traefik Edge Proxy service stack
+  - mkdir -p /opt/brainlab/proxy /opt/brainlab/traefik
+  - touch /opt/brainlab/traefik/acme.json
+  - chmod 600 /opt/brainlab/traefik/acme.json
+  - docker compose -f /opt/brainlab/proxy/docker-compose.yml up -d
 %{ endif ~}
 
 final_message: "AIT Brainlab Proxmox Application VM initialization complete after $UPTIME seconds"
