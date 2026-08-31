@@ -14,7 +14,7 @@ resource "proxmox_virtual_environment_time" "host_time" {
 resource "proxmox_virtual_environment_dns" "host_dns" {
   node_name = var.target_node
   domain    = "brain.cs.ait.ac.th"
-  servers   = ["192.41.170.1", "8.8.8.8"]
+  servers   = ["192.41.170.15", "8.8.8.8"]
 }
 
 # 3. User ACL Assignment for SysAdmin Administrators

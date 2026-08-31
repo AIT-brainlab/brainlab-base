@@ -93,9 +93,9 @@ variable "gateway" {
 }
 
 variable "nameserver" {
-  description = "DNS nameserver"
+  description = "DNS nameserver (CSIM DNS)"
   type        = string
-  default     = "192.41.170.1"
+  default     = "192.41.170.15"
 }
 
 variable "netbird_setup_key" {
