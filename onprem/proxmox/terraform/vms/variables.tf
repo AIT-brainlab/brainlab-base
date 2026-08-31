@@ -75,19 +75,19 @@ variable "snippet_datastore_id" {
 }
 
 variable "bridge" {
-  description = "Network bridge interface on Proxmox node (NAT Bridge)"
+  description = "Network bridge interface on Proxmox node (Proxmox SDN VNet)"
   type        = string
-  default     = "vmbr0"
+  default     = "internet"
 }
 
 variable "ip_address" {
-  description = "IP address configuration for the VM (CIDR notation or 'dhcp' for NAT)"
+  description = "IP address configuration for the VM (CIDR notation or 'dhcp' for automated SDN DHCP)"
   type        = string
-  default     = "10.10.20.119/24"
+  default     = "dhcp"
 }
 
 variable "gateway" {
-  description = "Default network gateway for Proxmox NAT bridge (vmbr0)"
+  description = "Default network gateway for Proxmox SDN bridge (internet)"
   type        = string
   default     = "10.10.20.1"
 }
