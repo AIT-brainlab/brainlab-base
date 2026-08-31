@@ -101,7 +101,7 @@ Creating service accounts in Terraform introduces a circular dependency (Terrafo
   [domain/brainlab]
   id_provider = ldap
   auth_provider = none
-  ldap_uri = ldap://ldap.brain.cs.ait.ac.th:3890
+  ldap_uri = ldap://brainlab-mgmt-vm:3890
   ldap_search_base = dc=brain,dc=cs,dc=ait,dc=ac,dc=th
   ldap_default_bind_dn = uid=ldapservice,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th
   ldap_default_authtok = <fetched-from-secret-manager>
@@ -112,7 +112,7 @@ Creating service accounts in Terraform introduces a circular dependency (Terrafo
   SERVICE_PW=$(gcloud secrets versions access latest --secret=lldap-readonly-password --project=ait-brainlab-mgmt)
 
   ldapsearch -x \
-    -H ldap://ldap.brain.cs.ait.ac.th:3890 \
+    -H ldap://brainlab-mgmt-vm:3890 \
     -D "uid=ldapservice,ou=people,dc=brain,dc=cs,dc=ait,dc=ac,dc=th" \
     -w "$SERVICE_PW" \
     -b "dc=brain,dc=cs,dc=ait,dc=ac,dc=th" \
