@@ -39,7 +39,7 @@
 | **`102`** | `jupyterhub` | 8 | 16 GB | 60 GB | `net0`: `vmbr0` (`BC:24:11:84:A8:DA`) | Stopped | Legacy JupyterHub instance |
 | **`103`** | `ubuntu-desktop` | 4 | 8 GB | 150 GB | `net0`: `vmbr0` (`BC:24:11:20:33:89`)<br/>`net1`: `vmbr2` (`BC:24:11:80:90:F6`) | Stopped | Operator GUI desktop environment |
 | **`104`** | `truenas` | 4 | 4 GB | 30 GB | `net0`: `vmbr2` (`BC:24:11:64:DB:F0`) | Stopped | Local TrueNAS testing instance |
-| **`106`** | `aitgpt-dev` | 32 | 32 GB | 450 GB | `net0`: `vmbr1` (`BC:24:11:3C:36:D9`) | Stopped | Large Model development VM |
+| **`106`** | `aitgpt-dev` | 32 | 32 GB | 450 GB | `net0`: `vmbr1` (`192.41.170.17/24`) | Stopped | Large Model development VM |
 | **`119`** | **`brainlab-app-vm`** | 32 | 64 GB | 150 GB | `net0`: `vmbr0` / `internet` (`10.10.20.119/24`) | 🟡 Pending | Multi-Tenant App VM (Web Print & DLMS) |
 | **`200`** | `swarm01` | 4 | 8 GB | 150 GB | `net0`: `internet` (`BC:24:11:F1:70:56`)<br/>`net1`: `swarm` (`BC:24:11:DF:A0:CE`) | Stopped | Docker Swarm cluster worker node |
 | **`900`** | `VM 900` | 8 | 64 GB | - | `net0`: `vmbr1` (`BC:24:11:2F:39:CC`) | Stopped | Base VM template |
