@@ -98,8 +98,15 @@ variable "nameserver" {
   default     = "192.41.170.15"
 }
 
-variable "netbird_setup_key" {
-  description = "Ephemeral single-use NetBird setup key for automated peer enrollment"
+variable "netbird_brainlab_cluster_key" {
+  description = "NetBird setup key for nodes joining group brainlab-cluster (e.g. brainlab-proxy, brainlab-services)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "netbird_dlms_servers_key" {
+  description = "NetBird setup key for nodes joining group prj-dlms-servers (e.g. dlms-server)"
   type        = string
   sensitive   = true
   default     = ""
@@ -128,13 +135,6 @@ variable "services_disk_size" {
   description = "Root disk size in Gigabytes for VM 120"
   type        = number
   default     = 60
-}
-
-variable "netbird_services_setup_key" {
-  description = "Ephemeral single-use NetBird setup key for VM 120 (brainlab-services)"
-  type        = string
-  sensitive   = true
-  default     = ""
 }
 
 # On-Premise 10G Edge Proxy VM (VM 100) Specifications
