@@ -37,3 +37,8 @@ output "existing_vms_count" {
   value       = length(data.proxmox_virtual_environment_vms.host_vms.vms)
 }
 
+output "host_dns_domain" {
+  description = "Discovered Proxmox host search domain"
+  value       = data.proxmox_virtual_environment_dns.host_dns.domain
+}
+
