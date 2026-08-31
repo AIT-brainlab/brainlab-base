@@ -128,13 +128,15 @@ flowchart TD
 | `4.1` | Initial Google SSO login to NetBird (`https://netbird.brain.cs.ait.ac.th`) as `brainlab@ait.asia` to claim Ownership | Akraradet | 🔵 | Claimed live: `brainlab@ait.asia` is master Account Owner |
 | `4.2` | Generate 365-day PAT `gitops-sync` and store in GCP Secret Manager `netbird-mgmt-token` | Akraradet | 🔵 | Successfully stored version 4 in Secret Manager |
 | `4.3` | Build Declarative Network-as-Code ([`network.yaml`](vpn/network.yaml)) and Sync Engine ([`sync_netbird.py`](vpn/sync_netbird.py)) | Akraradet | 🔵 | Supports Composable 2-Tag Model, policies, and setup keys |
-| `4.4` | Execute `./mgmt/vpn/sync_netbird.py --apply` to reconcile groups, policies, and keys | Akraradet | 🔵 | Applied live: 9 groups, 4 zero-trust policies, and enrollment setup keys |
+| `4.4` | Execute `./mgmt/vpn/sync_netbird.py --apply` to reconcile groups, policies, and keys | Akraradet | 🔵 | Applied live: Simplified clean cluster model (`sysadmin`, `brainlab-cluster`, `mgmt-cluster`), zero-trust policies, and enrollment setup keys |
 | `4.5` | Deploy GitHub Action ([`.github/workflows/netbird_pat_reminder.yml`](../.github/workflows/netbird_pat_reminder.yml)) for 365-day PAT reminder | Akraradet | 🔵 | Runs monthly; creates alert issue 30 days before expiration |
 | `4.6` | Deploy NetBird Client on Management VM (`brainlab-mgmt-vm`) | Akraradet | 🔵 | Live P2P WireGuard (`100.103.75.243`); `wt0` active; port 3890 verified |
-| `4.7` | Deploy NetBird Client on TrueNAS Storage Node (`cairo`) in 25.04 | Akraradet | 🔵 | Enrolled via reusable key (`0B610C4A...`); tags `loc-onprem-csim`, `tier-storage` |
-| `4.8` | Configure TrueNAS Directory Services LDAP using internal NetBird URL | Akraradet | 🔵 | Successfully bound to `ldap://ldap.brain.cs.ait.ac.th:3890`; POSIX UID/GID resolution verified |
-| `4.9` | Cutover physical GPU compute node (`la`) to Production NetBird | Akraradet | 🔵 | Enrolled via reusable key (`E97E01F0...`); CSIM proxy tunnel and iptables active |
+| `4.7` | Deploy NetBird Client on TrueNAS Storage Node (`cairo`) in 25.04 | Akraradet | 🔵 | Enrolled; tagged `brainlab-cluster`; binds directly to `ldap://brainlab-mgmt-vm:3890` over MagicDNS |
+| `4.8` | Configure TrueNAS Directory Services LDAP using internal NetBird URL | Akraradet | 🔵 | Successfully bound to `ldap://brainlab-mgmt-vm:3890`; POSIX UID/GID resolution verified |
+| `4.9` | Cutover physical GPU compute node (`la`) to Production NetBird | Akraradet | 🔵 | Enrolled; tagged `brainlab-cluster`; CSIM proxy tunnel and SSSD over MagicDNS active |
 | `4.10` | Verify GCS snapshot captures fresh NetBird configuration in `gs://.../backups/netbird/store.db` | Akraradet | 🔵 | 100% persistent across VM reboots; snapshot uploaded to GCS |
+| `4.11` | **Migrate to Modern NetBird Networks (v0.25+)**: Deploy HA Subnet Gateways for CSIM and DLMS | Akraradet | 🔵 | `csim-infrastructure` (Proxmox, Cairo, LA LAN) with HA failover across `cairo` + `la`; `dlms-cctv` via `dsai2` |
+| `4.12` | **Mesh-Only Web Administration via Dynamic MagicDNS CNAME**: Lock down LLDAP Web UI | Akraradet | 🔵 | `ldap.brain.cs.ait.ac.th` restricted to `100.64.0.0/10`; mesh clients resolve via CNAME to `brainlab-mgmt-vm` with valid SSL |
 
 ---
 
