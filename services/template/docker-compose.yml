@@ -1,5 +1,5 @@
 # 🚀 Official AIT Brainlab Web Application Deployment Template (Docker Swarm Mode)
-# Deploy with: docker stack deploy -c docker-compose.yml my-app-stack
+# Deploy from Swarm Manager (brainlab-proxy) with: docker stack deploy -c docker-compose.yml my-app-stack
 
 version: '3.8'
 
@@ -17,6 +17,9 @@ services:
       sh -c "echo 'welcome to my application' > /usr/local/apache2/htdocs/index.html && exec httpd-foreground"
     deploy:
       replicas: 1
+      placement:
+        constraints:
+          - node.role == worker  # Enforces execution on worker nodes (e.g., dlms-server)
       restart_policy:
         condition: on-failure
       labels:
