@@ -32,23 +32,13 @@ This repository serves as the central knowledge base (Obsidian markdown vault), 
 - **Multi-Email Binding**: A single POSIX user record (`username`, numeric `UID`, `GID`, home path `/mnt/pool-1/home/<username>`) can bind multiple authorized emails (e.g. `stXXXXXX@ait.asia` + `user@gmail.com`) for seamless alumni/graduate continuation without data copying or `chown`.
 - **Zero Internal TLS Overhead**: All internal LDAP communication across TrueNAS, Linux SSSD, and Ubuntu Desktops runs through the NetBird WireGuard encrypted mesh tunnel (`ldap://` on port `:3890` with `ldap_id_use_start_tls = false`). No self-signed certificates or Python `ldap3` package hacks.
 
-### 3. Infrastructure Admin Domain (`infra/`)
-- **On-Premise Servers (`infra/onprem/`)**: Ubuntu 22.04 LTS servers (`la.cs.ait.ac.th`, `tokyo.cs.ait.ac.th` [standby], `cairo`).
-- **NVIDIA CUDA & Runtime**: NVIDIA driver management and Container Toolkit (`runtime: nvidia`).
-- **TrueNAS Storage**: Central NFS home directory storage mounted at `/mnt/pool-1/home`.
-- **Institutional Proxy**: CSIM forward proxy required for outbound traffic (`http://192.41.170.82:3128`, `squid.cs.ait.ac.th`).
-- **Research Cloud Workloads (`infra/cloud/`)**: Spot GPU templates, GCS buckets, and research grants ($5k Faculty / $1k PhD).
-- **Network & VPN (`infra/network/`)**: NetBird mesh VPN, CSIM proxy routing, and DNS topology.
-
-### 4. Service Admin Domain (`services/`)
+### 3. Service Admin Domain (`services/`)
 - **JupyterHub (`services/jupyterhub/`)**: Multi-user hub using `DockerSpawner` mapping user UIDs/GIDs and allocating GPUs with environments (`default`, `nlp`, `cv`).
 - **Web Printing Service (`services/printing/` or `print.brain.cs.ait.ac.th`)**: Remote web print portal (`docker-cups`) bridging cloud uploads to on-prem CSIM printer over NetBird WireGuard mesh.
 
-### 5. Operational Runbooks (`docs/`)
-- **Onboarding (`docs/onboarding.md`)**: New member onboarding SOP.
-- **Offboarding (`docs/offboarding.md`)**: Data preservation and account archiving SOP.
-- **Troubleshooting (`docs/troubleshooting.md`)**: Incident troubleshooting guide.
-- **Roles Matrix (`docs/roles_and_responsibilities.md`)**: Division of tasks between Infrastructure Admin and Service Admin.
+### 4. Operational Runbooks & Infrastructure Knowledge Base (`docs/`)
+- **Infrastructure & Server Runbooks (`docs/infra/`)**: Physical server installation (`onprem/`), GPU drivers, TrueNAS NFS/iSCSI, SSSD, network topology (`network/`), and cloud templates (`cloud/`).
+- **Operational SOPs (`docs/`)**: Member onboarding (`onboarding.md`), offboarding (`offboarding.md`), troubleshooting (`troubleshooting.md`), and roles matrix (`roles_and_responsibilities.md`).
 
 ---
 
@@ -68,16 +58,15 @@ brainlab-base/
 │   ├── vpn/                       # Declarative network.yaml & NetBird GitOps sync
 │   └── terraform/                 # Modular Terraform IaC (foundation, vm)
 │
-├── infra/                         # 🛠️ Infrastructure Admin Domain
-│   ├── onprem/                    # Physical nodes, OS install, GPU, TrueNAS NFS/iSCSI, SSSD
-│   ├── cloud/                     # Research workload templates (Spot GPUs, GCS, credits)
-│   └── network/                   # Network routing, CSIM proxy, DNS topology, NetBird VPN
-│
 ├── services/                      # 🚀 Service Admin Domain
 │   ├── jupyterhub/                # Spawner config, Dockerfiles (default, nlp, cv)
 │   └── printing/                  # Web Print portal (docker-cups)
 │
-├── docs/                          # 📋 Operational SOPs & Handover Runbooks
+├── docs/                          # 📋 Operational SOPs & Infrastructure Runbooks
+│   ├── infra/                     # Hardware, OS, GPU, TrueNAS, SSSD, and Network runbooks
+│   │   ├── onprem/                # Ubuntu OS, CUDA, NFS, iSCSI, SSSD, and bootstrap script
+│   │   ├── network/               # CSIM proxy, NetBird VPN, and DNS topology
+│   │   └── cloud/                 # Research workload templates (Spot GPUs, GCS)
 │   ├── onboarding.md              # Member onboarding checklist
 │   ├── offboarding.md             # Account archiving SOP
 │   ├── troubleshooting.md         # Incident troubleshooting guide
