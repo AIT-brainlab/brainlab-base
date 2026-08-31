@@ -110,3 +110,29 @@ variable "ssh_public_keys" {
   type        = list(string)
   default     = []
 }
+
+# General Lab Services VM (VM 120) Specifications
+variable "services_cores" {
+  description = "CPU cores allocated for VM 120 (brainlab-services)"
+  type        = number
+  default     = 4
+}
+
+variable "services_memory" {
+  description = "RAM allocated in Megabytes for VM 120 (8192 = 8GB)"
+  type        = number
+  default     = 8192
+}
+
+variable "services_disk_size" {
+  description = "Root disk size in Gigabytes for VM 120"
+  type        = number
+  default     = 60
+}
+
+variable "netbird_services_setup_key" {
+  description = "Ephemeral single-use NetBird setup key for VM 120 (brainlab-services)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
