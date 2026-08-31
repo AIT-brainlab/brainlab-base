@@ -52,8 +52,8 @@ brainlab-base/
 │
 ├── mgmt/                          # 🛡️ Core Management Plane (ait-brainlab-mgmt)
 │   ├── README.md                  # Control plane architecture & governance
-│   ├── checklist.md               # Master migration & implementation checklist
-│   ├── migration_plan.md          # Zero-downtime on-prem to cloud migration SOP
+│   ├── checklist.md               # Master next steps & deliverables checklist
+│   ├── oauth_setup.md             # Google OAuth2 & OIDC console setup SOP
 │   ├── identity/                  # Declarative members.yaml & GraphQL user sync
 │   ├── vpn/                       # Declarative network.yaml & NetBird GitOps sync
 │   └── terraform/                 # Modular Terraform IaC (foundation, vm)

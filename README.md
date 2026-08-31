@@ -31,7 +31,7 @@ The central knowledge base, equipment inventory, service documentation, and infr
 
 ### 1. 🛡️ [Core Management Plane (`mgmt/`)](mgmt/README.md)
 The decoupled, permanent control plane running under GCP project **`ait-brainlab-mgmt`** (~$0.45 to $7.45/month):
-- [**Master Task Checklist**](mgmt/checklist.md): 8-phase roadmap (Phases 1–6 Verified: Foundation, VM Engine, Identity, NetBird Networks, Cutover).
+- [**Master Roadmap & Next Steps**](mgmt/checklist.md): Core management operations tracker and upcoming service deliverables.
 - [**Identity-as-Code**](mgmt/identity/): Declarative `members.yaml` and GraphQL user synchronizer.
 - [**Network-as-Code**](mgmt/vpn/): Declarative NetBird Software-Defined Networks (`network.yaml`).
 - [**Modular Terraform IaC**](mgmt/terraform/): Consolidated 2-layer Terraform (`foundation/`, `vm/`).

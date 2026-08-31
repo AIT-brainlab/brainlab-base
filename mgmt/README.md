@@ -105,13 +105,11 @@ In compliance with NetBird's security model, Personal Access Tokens (PATs) are g
 
 ## 📁 Repository Layout
 
-* [`checklist.md`](checklist.md): Master 8-phase implementation checklist with live verification statuses.
+* [`checklist.md`](checklist.md): Master next steps and operations roadmap.
 * [`oauth_setup.md`](oauth_setup.md): Google OAuth2 & OIDC Single Sign-On setup SOP for NetBird, JupyterHub, and Web Print.
-* [`migration_plan.md`](migration_plan.md): Zero-downtime on-prem to cloud migration and cutover SOP.
-* [`terraform/`](terraform/): Modular Terraform IaC (`iam/`, `dns/`, `secrets/`, `vm/`, `identity/`, `vpn/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
-* [`terraform/vm/`](terraform/vm/): Management VM, Traefik v3.7, LLDAP, NetBird v0.77.0, and monitoring scripts.
-* [`terraform/identity/`](terraform/identity/): Identity-as-Code directory & multi-email bindings.
-* [`terraform/vpn/`](terraform/vpn/): NetBird-as-Code zero-trust ACLs & server setup keys.
+* [`identity/`](identity/): Identity-as-Code directory (`members.yaml`) & multi-email bindings.
+* [`vpn/`](vpn/): Network-as-Code declarative NetBird groups, policies, and keys (`network.yaml`).
+* [`terraform/`](terraform/): Modular Terraform IaC (`foundation/`, `vm/`) backed by GCS remote state (`gs://ait-brainlab-mgmt-tfstate`).
 
 ---
 
