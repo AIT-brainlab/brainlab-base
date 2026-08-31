@@ -86,10 +86,11 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-1.1` | **Provision Application VM on Proxmox VE** | Akraradet | P1 | 🟢 | Completed: Provisioned VM 100 (`proxy`), VM 119 (`dlms-server`), and VM 120 (`brainlab-services`) via `onprem/proxmox/terraform/vms/` IaC module. |
-| `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🟢 | Completed: Enrolled `dlms-server` (`100.74.18.96`), `brainlab-services` (`100.74.10.218`), and `proxy` into NetBird WireGuard overlay mesh under `prj-dlms-servers` / `brainlab-cluster`. |
-| `NEXT-1.3` | **Enable DLMS Team Access & Container Runtime** | Akraradet | P1 | 🟢 | Completed: Docker Engine + Compose installed with CSIM proxy; diagnostic packages active; RTSP camera stream (`192.168.1.2:554`) verified live via `ffprobe`. |
+| `NEXT-1.1` | **Provision Application VM on Proxmox VE** | Akraradet | P1 | 🟢 | Completed: Provisioned `brainlab-proxy` (VM 100), `dlms-server` (VM 119), and `brainlab-services` (VM 120) via `onprem/proxmox/terraform/vms/` IaC module with GCS remote state persistence (`gs://ait-brainlab-mgmt-tfstate/onprem/proxmox/vms`). |
+| `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🟢 | Completed: Enrolled `brainlab-proxy` (`192.41.170.39`) & `brainlab-services` (`100.74.10.218`) into `brainlab-cluster`, and `dlms-server` (`100.74.18.96`) into `prj-dlms-servers`. |
+| `NEXT-1.3` | **Deploy On-Premise Edge Proxy & Auto-Discovery** | Akraradet | P1 | 🟢 | Completed: Configured Traefik v3.7 on `brainlab-proxy` with Let's Encrypt SSL and remote Docker Socket Proxy auto-discovery (`tcp://10.10.250.1:2375`); verified `http://dlms-dev.brain.cs.ait.ac.th` $\rightarrow$ `welcome to DLMS APP`. |
 | `NEXT-1.4` | **Configure Proxmox Google OIDC SSO Realm** | Akraradet | P2 | 🔴 | Register `https://192.41.170.19:8006/oauth2/callback` in GCP OAuth Console. Configure Google OpenID Connect (OIDC) realm in Proxmox VE (`pveum realm add google --type openid`), set default role `NoAccess`, and map SysAdmin `@ait.asia` accounts to `Administrator` / `PVEAdmin`. |
+| `NEXT-1.5` | **Lab Web Service Deployment Template** | Akraradet | P1 | 🟢 | Completed: Created `services/template/` boilerplate (`docker-compose.yml` & `README.md`) for researchers to deploy web apps with zero-touch Traefik auto-discovery labels. |
 
 ---
 
