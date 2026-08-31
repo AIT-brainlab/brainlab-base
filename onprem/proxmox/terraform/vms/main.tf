@@ -52,7 +52,7 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_services" {
   }
 }
 
-# 3. Cloud-Init Snippet for VM 100 (proxy)
+# 3. Cloud-Init Snippet for VM 100 (brainlab-proxy)
 resource "proxmox_virtual_environment_file" "cloud_user_data_proxy" {
   content_type = "snippets"
   datastore_id = var.snippet_datastore_id
@@ -60,18 +60,18 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_proxy" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      vm_name           = "proxy"
+      vm_name           = "brainlab-proxy"
       netbird_setup_key = var.netbird_setup_key
       ssh_public_keys   = var.ssh_public_keys
     })
 
-    file_name = "cloud-init-proxy.yaml"
+    file_name = "cloud-init-brainlab-proxy.yaml"
   }
 }
 
 # 4. VM 100: On-Premise 10G Edge Proxy (Traefik SSL/HTTP Edge Proxy)
 resource "proxmox_virtual_environment_vm" "proxy" {
-  name        = "proxy"
+  name        = "brainlab-proxy"
   description = "AIT Brainlab On-Premise 10G Edge Proxy VM (Traefik SSL/HTTP Edge Proxy)"
   node_name   = var.target_node
   vm_id       = 100
