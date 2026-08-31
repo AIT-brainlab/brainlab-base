@@ -26,3 +26,14 @@ output "mac_address" {
   description = "Network interface MAC address"
   value       = proxmox_virtual_environment_vm.app_vm.network_device[0].mac_address
 }
+
+output "discovered_datastores" {
+  description = "Discovered Proxmox host storage pools (Option A Awareness)"
+  value       = data.proxmox_virtual_environment_datastores.host_datastores.datastore_ids
+}
+
+output "existing_vms_count" {
+  description = "Total number of pre-existing VMs discovered on Proxmox node"
+  value       = length(data.proxmox_virtual_environment_vms.host_vms.vms)
+}
+

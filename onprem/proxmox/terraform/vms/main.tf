@@ -5,6 +5,15 @@
 # Provider: bpg/proxmox
 # ==========================================================
 
+# 0. Data Sources (Option A: Dynamic Read-Only Proxmox Awareness)
+data "proxmox_virtual_environment_datastores" "host_datastores" {
+  node_name = var.target_node
+}
+
+data "proxmox_virtual_environment_vms" "host_vms" {
+  node_name = var.target_node
+}
+
 # 1. Render and Upload Cloud-Init User-Data Snippet to Proxmox
 resource "proxmox_virtual_environment_file" "cloud_user_data" {
   content_type = "snippets"
