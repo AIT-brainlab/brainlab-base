@@ -137,7 +137,7 @@ dns_zones:
 
       - name: "dlms-dev.brain.cs.ait.ac.th"
         type: CNAME
-        content: "dlms-server.netbird.selfhosted"
+        content: "brainlab-proxy.netbird.selfhosted."
         ttl: 300
 
 # ----------------------------------------------------------
