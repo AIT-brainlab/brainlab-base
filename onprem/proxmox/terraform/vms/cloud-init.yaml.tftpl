@@ -45,6 +45,7 @@ write_files:
           command:
             - "--providers.docker=true"
             - "--providers.docker.endpoint=tcp://10.10.250.1:2375"
+            - "--providers.docker.useBindPortIP=true"
             - "--providers.docker.exposedbydefault=false"
             - "--entrypoints.web.address=:80"
             - "--entrypoints.websecure.address=:443"
