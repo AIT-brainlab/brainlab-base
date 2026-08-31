@@ -51,7 +51,12 @@ resource "terraform_data" "proxmox_sdn_provisioner" {
         -X POST "${var.proxmox_endpoint}api2/json/cluster/sdn/vnets" \
         -d "vnet=internet&zone=internet&alias=internet" || true
 
-      # 3. Trigger Proxmox SDN Reload (pvesdn reload)
+      # 3. Configure Subnet 10.10.20.0/24 with 10G Egress SNAT to 192.41.170.39
+      curl -k -s -H "Authorization: PVEAPIToken=${var.proxmox_api_token}" \
+        -X POST "${var.proxmox_endpoint}api2/json/cluster/sdn/vnets/internet/subnets" \
+        -d "type=subnet&subnet=internet-10.10.20.0-24&vnet=internet&network=10.10.20.0/24&gateway=10.10.20.1&snat=1" || true
+
+      # 4. Trigger Proxmox SDN Reload (pvesdn reload)
       curl -k -s -H "Authorization: PVEAPIToken=${var.proxmox_api_token}" \
         -X PUT "${var.proxmox_endpoint}api2/json/cluster/sdn" || true
     EOT
