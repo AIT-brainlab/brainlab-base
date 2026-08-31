@@ -32,6 +32,7 @@ locals {
     "wildcard_ml" = { name = "*.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
     "mlflow_ml"   = { name = "mlflow.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
     "traefik_ml"  = { name = "traefik.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
+    "dlms_dev"    = { name = "dlms-dev.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
   }
 }
 
