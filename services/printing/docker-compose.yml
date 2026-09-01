@@ -6,6 +6,8 @@ services:
     image: ghcr.io/ait-brainlab/web-print:latest
     container_name: web-print
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - TZ=Asia/Bangkok
       - HTTP_PROXY=http://192.41.170.82:3128
