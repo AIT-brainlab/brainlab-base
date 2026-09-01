@@ -1,39 +1,51 @@
-# 🚀 Official AIT Brainlab Web Application Deployment Template (Docker Swarm Mode)
-# Deploy from Swarm Manager (brainlab-proxy) with: docker stack deploy -c docker-compose.yml my-app-stack
+# 🚀 Official AIT Brainlab Web Application Deployment Template
+# Deploy directly on tenant VMs (e.g. dlms-server, tokyo) with: docker compose up -d
 
 version: '3.8'
 
 services:
+  # 1. Project-Level Traefik (HTTP Port 80 Ingress only — SSL offloaded by brainlab-proxy)
+  traefik:
+    image: traefik:v3.7
+    container_name: app-traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - app-net
+
+  # 2. Main Web Application (Frontend / API)
   my-app:
     image: httpd:alpine
-    networks:
-      - brainlab-mesh
+    container_name: my-app
+    restart: unless-stopped
     environment:
       - TZ=Asia/Bangkok
       - HTTP_PROXY=http://192.41.170.82:3128
       - HTTPS_PROXY=http://192.41.170.82:3128
-      - NO_PROXY=localhost,127.0.0.1,192.41.170.0/24,100.64.0.0/10,100.74.0.0/16,*.brain.cs.ait.ac.th
+      - NO_PROXY=localhost,127.0.0.1,192.41.170.0/24,100.64.0.0/10,10.0.0.0/8,*.brain.cs.ait.ac.th
     command: >
       sh -c "echo 'welcome to my application' > /usr/local/apache2/htdocs/index.html && exec httpd-foreground"
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == worker  # Enforces execution on worker nodes (e.g., dlms-server)
-      restart_policy:
-        condition: on-failure
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.my-app.rule=Host(`my-app.brain.cs.ait.ac.th`)"
-        - "traefik.http.routers.my-app.entrypoints=web"
-        - "traefik.http.services.my-app.loadbalancer.server.port=80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.my-app.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.my-app.entrypoints=web"
+      - "traefik.http.services.my-app.loadbalancer.server.port=80"
+    networks:
+      - app-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 5s
 
 networks:
-  brainlab-mesh:
-    external: true
+  app-net:
+    driver: bridge

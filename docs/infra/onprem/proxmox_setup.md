@@ -18,28 +18,34 @@
 
 ---
 
-## 🌐 Network Interface & NAT Subnet Topology
+## 🌐 Network Interface & Topology
 
 ```mermaid
 flowchart TD
     subgraph PhysicalInterfaces ["🔌 Physical Network Ports"]
         P1["enp1s0f0 (Management: 192.41.170.19/24)"]
-        P2["enp2s0 (Frontend CSIM LAN Interface)"]
+        P2["enp2s0 (Frontend 10G CSIM LAN Interface)"]
     end
 
-    subgraph ProxmoxBridges ["🌉 Proxmox VE Network Bridges"]
-        VMBR0["vmbr0: NAT Bridge (10.10.20.1/24)<br/>• Outbound NAT to Management Port<br/>• Assigned to Tenant Application VMs"]
-        VMBR1["vmbr1: Frontend Bridge<br/>• Direct Port Mapping to enp2s0"]
-        VMBR2["vmbr2: Backend Private Subnet<br/>• Inter-VM Traffic (10.10.30.1/24)"]
+    subgraph ProxmoxBridges ["🌉 Proxmox VE Network Bridges & SDN"]
+        VMBR1["vmbr1: Physical Bridge (10G CSIM LAN)<br/>• Directly attached to enp2s0"]
+        SDN_INT["internet: SDN NAT VNet (10.10.20.0/24 / 10.10.250.0/16)<br/>• Outbound NAT to Management Port<br/>• Automated DHCP Engine (dnsmasq)"]
     end
 
     subgraph TenantVMs ["🖥️ Tenant Virtual Machines"]
-        AppVM["brainlab-app-vm (VM ID 119)<br/>• 32 vCPUs, 64 GB RAM, 150 GB Disk<br/>• IP: 10.10.20.119/24 (via vmbr0 NAT)<br/>• Hosts Web Print & DLMS Containers"]
+        ProxyVM["brainlab-proxy (VM ID 100)<br/>• net0: vmbr1 (192.41.170.39)<br/>• net1: internet SDN (10.10.250.x)<br/>• Edge Traefik + SSL Offloading"]
+        DLMSVM["dlms-server (VM ID 119)<br/>• net0: internet SDN (10.10.250.1)<br/>• NetBird: 100.74.18.96<br/>• Project-Level Traefik (Port 80)"]
+        ServicesVM["brainlab-services (VM ID 120)<br/>• net0: internet SDN (10.10.250.2)<br/>• NetBird: 100.74.10.218<br/>• Web Print & Lab Services"]
     end
 
-    P1 --> VMBR0
     P2 --> VMBR1
-    VMBR0 --> AppVM
+    P1 --> SDN_INT
+    VMBR1 --> ProxyVM
+    SDN_INT --> ProxyVM
+    SDN_INT --> DLMSVM
+    SDN_INT --> ServicesVM
+    ProxyVM -.->|"Reverse Proxy :80"| DLMSVM
+    ProxyVM -.->|"Reverse Proxy :80"| ServicesVM
 ```
 
 ---
@@ -49,18 +55,22 @@ flowchart TD
 Just like the Cloud Management Plane (`mgmt/`), On-Premise Proxmox infrastructure follows a **Decoupled 2-Layer Terraform Architecture**:
 
 ```text
-onprem/terraform/
-├── foundation/               # 🛡️ Layer 1: Proxmox Host Governance & Identity
-│   ├── main.tf               # Google OIDC Realm, API Token permissions, Network tags
-│   ├── variables.tf          # Proxmox endpoint & authentication variables
-│   └── outputs.tf            # OIDC realm ID & host status
+onprem/proxmox/
+├── README.md                           # Master Host & VM Inventory Guide
 │
-└── proxmox/                  # 🚀 Layer 2: Virtual Machines & Workload Provisioner
-    ├── main.tf               # Application VM (ID 119) & Cloud-Init snippet upload
-    ├── variables.tf          # 32 vCPU, 64GB RAM, 150GB disk, vmbr0 NAT variables
-    ├── outputs.tf            # VM IP, MAC address, and node outputs
-    ├── secrets.auto.tfvars   # Git-ignored local API credentials
-    └── cloud-init.yaml.tftpl # Automated Docker Engine + NetBird Mesh enrollment
+└── terraform/
+    ├── foundation/                     # 🛡️ Layer 1: Host Foundation & Governance
+    │   ├── main.tf                     # Host DNS (brain.cs.ait.ac.th), Timezone, & SysAdmin ACLs
+    │   ├── network_sdn.tf              # Proxmox SDN Zone & VNet 'internet' (dnsmasq)
+    │   ├── variables.tf                # Node name, endpoint, credentials
+    │   └── secrets.auto.tfvars         # Git-ignored API token configuration
+    │
+    └── vms/                            # 🚀 Layer 2: Virtual Machines Provisioner
+        ├── main.tf                     # VMs (VM 100 proxy, VM 119 dlms-server, VM 120 services)
+        ├── routes.tf                   # Declarative Traefik dynamic routes generator (routes.yaml)
+        ├── variables.tf                # Hardware specs, proxy_routes map, and cloud-init parameters
+        ├── outputs.tf                  # VM IDs, IPs, and configured routes
+        └── cloud-init.yaml.tftpl       # Automated Docker Engine + Traefik file provider + NetBird
 ```
 
 ---

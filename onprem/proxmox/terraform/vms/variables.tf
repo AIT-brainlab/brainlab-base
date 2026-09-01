@@ -167,3 +167,29 @@ variable "proxy_gateway" {
   type        = string
   default     = "192.41.170.23"
 }
+
+variable "proxy_routes" {
+  description = "Declarative map of reverse proxy routes managed by brainlab-proxy (domain -> upstream target URL)"
+  type = map(object({
+    domain     = string
+    target_url = string
+    aliases    = optional(list(string), [])
+  }))
+  default = {
+    dlms = {
+      domain     = "dlms.brain.cs.ait.ac.th"
+      target_url = "http://10.10.250.1:80"
+      aliases    = ["dlms-dev.brain.cs.ait.ac.th"]
+    }
+    services = {
+      domain     = "print.brain.cs.ait.ac.th"
+      target_url = "http://10.10.250.2:80"
+      aliases    = []
+    }
+    example = {
+      domain     = "example.brain.cs.ait.ac.th"
+      target_url = "http://10.10.250.2:80"
+      aliases    = []
+    }
+  }
+}

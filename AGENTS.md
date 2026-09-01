@@ -142,9 +142,10 @@ brainlab-base/
 36. **Proxmox `bpg/proxmox` Provider SSH Node Mapping & Agent Timeout Invariant**:
     - When configuring the `bpg/proxmox` Terraform provider, if the target node hostname (e.g. `proxmox`) is not resolvable via DNS, the `provider "proxmox"` block MUST explicitly declare `ssh { node { name = var.target_node, address = "192.41.170.19" } }`.
     - All `proxmox_virtual_environment_vm` resources MUST set `agent { enabled = true, timeout = "1s" }` to prevent state refresh execution hangs when `qemu-guest-agent` is uninitialized.
-37. **On-Premise Traefik Remote Docker Socket Proxy & TLS Auto-Discovery Invariant**:
-    - On-premise edge proxies (`brainlab-proxy` at `192.41.170.39`) auto-discover container workloads running across separate virtual machines (`dlms-server`, `ml`, `tokyo`) by querying a read-only Docker socket proxy (`tecnativa/docker-socket-proxy`) on TCP port `2375` (`--providers.docker.endpoint=tcp://<vm_ip>:2375`).
-    - Application containers MUST declare `entrypoints=websecure`, `tls=true`, and `tls.certresolver=letsencrypt` labels for automated Let's Encrypt SSL.
+37. **On-Premise Traefik Dynamic File Provider & Edge SSL Offloading Invariant**:
+    - On-premise edge proxy (`brainlab-proxy` at `192.41.170.39`) terminates public Let's Encrypt SSL/TLS on port 443 and auto-reloads upstream reverse proxy routing using Traefik's dynamic file provider (`--providers.file.directory=/etc/traefik/dynamic` with `watch=true`).
+    - Routes are declared in Terraform via `var.proxy_routes` (`onprem/proxmox/terraform/vms/routes.tf`), forwarding plain HTTP traffic directly to tenant VM internal SDN IPs (`10.10.250.x:80` / `10.10.20.x:80`) or NetBird IPs (`100.x.x.x:80`).
+    - Tenant application containers running on separate VMs (`dlms-server`, `brainlab-services`, `tokyo`) run project-level Traefik or web services listening **strictly on plain HTTP port 80** (`entrypoints=web`), eliminating insecure remote TCP Docker sockets (`:2375`), Docker Swarm overlay overhead, and duplicate internal TLS certificates.
 38. **Proxmox Out-of-Band Purge & Terraform State Synchronization Invariant**:
     - If a Proxmox virtual machine is purged or destroyed out-of-band via `qm destroy <vmid>`, `terraform state rm proxmox_virtual_environment_vm.<name>` MUST be executed before re-running `terraform apply` to prevent HTTP 500 state drift errors (`unable to create VM <vmid> - VM <vmid> already exists`).
 39. **On-Premise GCS Remote State Partitioning Invariant**:

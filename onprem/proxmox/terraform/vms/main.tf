@@ -26,9 +26,10 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_dlms" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      vm_name           = "dlms-server"
-      netbird_setup_key = var.netbird_dlms_servers_key
-      ssh_public_keys   = var.ssh_public_keys
+      vm_name             = "dlms-server"
+      netbird_setup_key   = var.netbird_dlms_servers_key
+      ssh_public_keys     = var.ssh_public_keys
+      dynamic_routes_yaml = ""
     })
 
     file_name = "cloud-init-dlms-server.yaml"
@@ -43,9 +44,10 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_services" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      vm_name           = "brainlab-services"
-      netbird_setup_key = var.netbird_brainlab_cluster_key
-      ssh_public_keys   = var.ssh_public_keys
+      vm_name             = "brainlab-services"
+      netbird_setup_key   = var.netbird_brainlab_cluster_key
+      ssh_public_keys     = var.ssh_public_keys
+      dynamic_routes_yaml = ""
     })
 
     file_name = "cloud-init-brainlab-services.yaml"
@@ -60,9 +62,10 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_proxy" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      vm_name           = "brainlab-proxy"
-      netbird_setup_key = var.netbird_brainlab_cluster_key
-      ssh_public_keys   = var.ssh_public_keys
+      vm_name             = "brainlab-proxy"
+      netbird_setup_key   = var.netbird_brainlab_cluster_key
+      ssh_public_keys     = var.ssh_public_keys
+      dynamic_routes_yaml = local.traefik_dynamic_routes_yaml
     })
 
     file_name = "cloud-init-brainlab-proxy.yaml"
@@ -98,8 +101,14 @@ resource "proxmox_virtual_environment_vm" "proxy" {
     size         = var.proxy_disk_size
   }
 
+  # net0: Frontend Physical 10G CSIM LAN
   network_device {
     bridge = "vmbr1"
+  }
+
+  # net1: Internal Proxmox SDN NAT VNet (direct L2 access to tenant VMs)
+  network_device {
+    bridge = var.bridge
   }
 
   initialization {
@@ -109,6 +118,12 @@ resource "proxmox_virtual_environment_vm" "proxy" {
       ipv4 {
         address = var.proxy_ip
         gateway = var.proxy_gateway
+      }
+    }
+
+    ip_config {
+      ipv4 {
+        address = "dhcp"
       }
     }
 

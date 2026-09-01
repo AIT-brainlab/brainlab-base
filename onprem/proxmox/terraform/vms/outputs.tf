@@ -52,3 +52,8 @@ output "host_dns_domain" {
   value       = data.proxmox_virtual_environment_dns.host_dns.domain
 }
 
+output "proxy_routes" {
+  description = "Configured dynamic reverse proxy routes on brainlab-proxy"
+  value       = var.proxy_routes
+}
+

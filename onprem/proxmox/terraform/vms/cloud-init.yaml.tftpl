@@ -33,6 +33,10 @@ write_files:
       Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
 
 %{ if vm_name == "brainlab-proxy" ~}
+  - path: /opt/brainlab/traefik/dynamic/routes.yaml
+    content: |
+${indent(6, dynamic_routes_yaml)}
+
   - path: /opt/brainlab/proxy/docker-compose.yml
     content: |
       services:
@@ -40,22 +44,28 @@ write_files:
           image: traefik:v3.7
           container_name: traefik
           restart: unless-stopped
+          environment:
+            - HTTP_PROXY=http://192.41.170.82:3128
+            - HTTPS_PROXY=http://192.41.170.82:3128
+            - NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th
           command:
-            - "--providers.swarm=true"
-            - "--providers.swarm.network=brainlab-mesh"
-            - "--providers.swarm.exposedbydefault=false"
             - "--entrypoints.web.address=:80"
+            - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
             - "--entrypoints.websecure.address=:443"
             - "--certificatesresolvers.letsencrypt.acme.email=brainlab@ait.asia"
             - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
             - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
             - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+            - "--providers.file.directory=/etc/traefik/dynamic"
+            - "--providers.file.watch=true"
           ports:
             - "80:80"
             - "443:443"
           volumes:
             - "/var/run/docker.sock:/var/run/docker.sock:ro"
             - "/opt/brainlab/traefik/acme.json:/etc/traefik/acme.json"
+            - "/opt/brainlab/traefik/dynamic:/etc/traefik/dynamic:ro"
 %{ endif ~}
 
 users:

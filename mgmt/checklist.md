@@ -86,11 +86,11 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-1.1` | **Provision Application VM on Proxmox VE** | Akraradet | P1 | 🟢 | Completed: Provisioned `brainlab-proxy` (VM 100), `dlms-server` (VM 119), and `brainlab-services` (VM 120) via `onprem/proxmox/terraform/vms/` IaC module with GCS remote state persistence (`gs://ait-brainlab-mgmt-tfstate/onprem/proxmox/vms`). |
+| `NEXT-1.1` | **Provision Application VMs on Proxmox VE** | Akraradet | P1 | 🟢 | Completed: Provisioned `brainlab-proxy` (VM 100), `dlms-server` (VM 119), and `brainlab-services` (VM 120) via `onprem/proxmox/terraform/vms/` IaC module with GCS remote state persistence (`gs://ait-brainlab-mgmt-tfstate/onprem/proxmox/vms`). |
 | `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🟢 | Completed: Enrolled `brainlab-proxy` (`192.41.170.39`) & `brainlab-services` (`100.74.10.218`) into `brainlab-cluster`, and `dlms-server` (`100.74.18.96`) into `prj-dlms-servers`. |
-| `NEXT-1.3` | **Deploy On-Premise Edge Proxy & Auto-Discovery** | Akraradet | P1 | 🟢 | Completed: Configured Traefik v3.7 on `brainlab-proxy` with Let's Encrypt SSL and remote Docker Socket Proxy auto-discovery (`tcp://10.10.250.1:2375`); verified `http://dlms-dev.brain.cs.ait.ac.th` $\rightarrow$ `welcome to DLMS APP`. |
+| `NEXT-1.3` | **Deploy Edge Proxy & Declarative Dynamic Routing** | Akraradet | P1 | 🔵 | Completed: Configured Traefik v3.7 on `brainlab-proxy` with Let's Encrypt SSL/TLS, Squid proxy egress (`192.41.170.82:3128`), and hot-reloading dynamic file routing (`/opt/brainlab/traefik/dynamic/routes.yaml`). Verified valid production SSL certificates on `example.brain.cs.ait.ac.th`, `dlms.brain.cs.ait.ac.th`, `dlms-dev.brain.cs.ait.ac.th`, and `print.brain.cs.ait.ac.th`. |
 | `NEXT-1.4` | **Configure Proxmox Google OIDC SSO Realm** | Akraradet | P2 | 🔴 | Register `https://192.41.170.19:8006/oauth2/callback` in GCP OAuth Console. Configure Google OpenID Connect (OIDC) realm in Proxmox VE (`pveum realm add google --type openid`), set default role `NoAccess`, and map SysAdmin `@ait.asia` accounts to `Administrator` / `PVEAdmin`. |
-| `NEXT-1.5` | **Lab Web Service Deployment Template** | Akraradet | P1 | 🟢 | Completed: Created `services/template/` boilerplate (`docker-compose.yml` & `README.md`) for researchers to deploy web apps with zero-touch Traefik auto-discovery labels. |
+| `NEXT-1.5` | **Two-Tier Lab Web Deployment Template** | Akraradet | P1 | 🔵 | Completed: Created `services/template/` boilerplate (`docker-compose.yml` & `README.md`) using Project-Level Traefik (HTTP Port 80 only) with edge SSL offloading at `brainlab-proxy` and declarative Terraform route management (`var.proxy_routes`). Deployed and verified live on `brainlab-services` (`https://example.brain.cs.ait.ac.th`). |
 
 ---
 
@@ -100,7 +100,7 @@ flowchart TD
 | :--- | :--- | :---: | :---: | :---: | :--- |
 | `NEXT-2.1` | **Draft Web Print Service Codebase** | Akraradet | P1 | 🟢 | Completed: FastAPI backend, pure-Python RFC 1179 LPD spooler, Google OAuth2, members.yaml student ID mapping, 10× color warning. |
 | `NEXT-2.2` | **Deploy Web Print on Proxmox Application VM** | Akraradet | P1 | 🔴 | Deploy `services/printing/docker-compose.yml` on the new Proxmox VM listening on port 8080. |
-| `NEXT-2.3` | **Expose `print.brain.cs.ait.ac.th` via Traefik Edge** | Akraradet | P1 | 🔴 | Configure Traefik on `brainlab-mgmt-vm` to route `print.brain.cs.ait.ac.th` over NetBird WireGuard mesh to the Proxmox VM. |
+| `NEXT-2.3` | **Expose `print.brain.cs.ait.ac.th` via Traefik Edge** | Akraradet | P1 | 🟢 | Completed: Configured Cloud DNS and edge route on `brainlab-proxy` forwarding `print.brain.cs.ait.ac.th` to `brainlab-services` (`10.10.250.2:80`) with Let's Encrypt TLS. |
 | `NEXT-2.4` | **End-to-End Web Print Verification** | Akraradet | P1 | 🔴 | Submit test PDF from external browser via Google login to Ricoh (Lobby) and HP Magnum (Room 212); verify quota accounting. |
 
 ---
@@ -110,7 +110,7 @@ flowchart TD
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
 | `NEXT-3.1` | **Hand over Environment to DLMS Researchers** | Akraradet | P2 | 🟢 | Completed: Confirmed members in `prj-dlms-users` (`oakaugustine@gmail.com`, `ppthwe99@gmail.com`, `ephoney1141@gmail.com`) can connect via NetBird; CNAME `dlms-dev.brain.cs.ait.ac.th` active. |
-| `NEXT-3.2` | **Deploy DLMS Application Containers** | DLMS Team | P2 | 🟡 | Ready for DLMS team deployment: backend API, database, and RTSP stream ingest containers bridging to cameras `192.168.1.2` and `192.168.1.3`. |
+| `NEXT-3.2` | **Deploy DLMS Application Containers** | DLMS Team | P2 | 🔵 | Completed & Live: Deployed project-level Traefik (Port 80) and frontend on `dlms-server` (`10.10.250.1:80`). Verified public HTTPS routing via `brainlab-proxy` (`https://dlms.brain.cs.ait.ac.th` & `https://dlms-dev.brain.cs.ait.ac.th`). Ready for backend API, database, and RTSP stream ingest containers (`192.168.1.2` and `192.168.1.3`). |
 
 ---
 

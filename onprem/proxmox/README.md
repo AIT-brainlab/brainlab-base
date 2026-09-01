@@ -56,10 +56,12 @@ onprem/proxmox/
     │   └── secrets.auto.tfvars         # Git-ignored API token configuration
     │
     └── vms/                            # 🚀 Layer 2: Virtual Machine Provisioner
-        ├── main.tf                     # Application VM 119 (32 vCPUs, 64GB RAM, 150GB disk on WDBlue)
+        ├── main.tf                     # Application VMs (VM 100 proxy, VM 119 dlms-server, VM 120 services)
+        ├── routes.tf                   # Declarative Traefik dynamic routes generator (routes.yaml)
         ├── providers.tf                # bpg/proxmox provider & GCS state (prefix: onprem/proxmox/vms)
-        ├── variables.tf                # VM hardware, network, and cloud-init parameters
-        ├── cloud-init.yaml.tftpl       # Automated Docker Engine + NetBird WireGuard mesh enrollment
+        ├── variables.tf                # VM hardware, network, proxy_routes, and cloud-init parameters
+        ├── outputs.tf                  # VM IDs, IPs, and configured proxy routes
+        ├── cloud-init.yaml.tftpl       # Automated Docker + Traefik file provider + NetBird enrollment
         └── secrets.auto.tfvars         # Git-ignored API token & NetBird setup key
 ```
 
