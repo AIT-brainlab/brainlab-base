@@ -162,6 +162,9 @@ brainlab-base/
     - Graduated members and alumni signing in via personal `@gmail.com` MUST have their persistent `csim_account: stXXXXXX` bound in `members.yaml`.
     - Pure-Python RFC 1179 LPD spooler packets MUST pass `P<csim_account>` (e.g. `Pst121413`) to `banyan.cs.ait.ac.th:515` to ensure automated page quota accounting.
     - Unlinked accounts without a valid CSIM student ID MUST be blocked (`HTTP 403`) with a clear error prompt under Quota Attribution in the UI.
+43. **Poppler pdftops CLI Arguments & Page Slicing Invariant**:
+    - When converting PDF to PostScript using Poppler `pdftops`, never pass Ghostscript arguments (`-level2gray`). Use `-level2 -processcolorformat MONO8` for monochrome and `-level3` for color.
+    - Page range parsers must safely handle single-page inputs (`"2"` -> `(2, 2)`), standard ranges (`"2-5"`), open ranges (`"3-"`, `"-4"`), and empty strings clamped to `[1, total_pages]`.
 
 ---
 
