@@ -73,12 +73,10 @@ resource "terraform_data" "sync_traefik_routes" {
 
   provisioner "local-exec" {
     command = <<EOT
-      ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        ubuntu@${var.proxy_netbird_ip} \
-        "cat << 'EOF' | sudo tee /opt/brainlab/traefik/dynamic/routes.yaml
+cat << 'EOF' | ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@${var.proxy_netbird_host} "sudo tee /opt/brainlab/traefik/dynamic/routes.yaml > /dev/null"
 ${local.traefik_dynamic_routes_yaml}
-EOF"
-    EOT
+EOF
+EOT
   }
 }
 

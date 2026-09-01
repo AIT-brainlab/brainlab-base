@@ -194,8 +194,8 @@ variable "proxy_routes" {
   }
 }
 
-variable "proxy_netbird_ip" {
-  description = "NetBird overlay IP for brainlab-proxy VM (VM 100)"
+variable "proxy_netbird_host" {
+  description = "NetBird MagicDNS hostname or IP for brainlab-proxy VM (VM 100)"
   type        = string
-  default     = "100.74.224.198"
+  default     = "brainlab-proxy"
 }
