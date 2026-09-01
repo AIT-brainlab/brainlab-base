@@ -150,6 +150,18 @@ brainlab-base/
     - If a Proxmox virtual machine is purged or destroyed out-of-band via `qm destroy <vmid>`, `terraform state rm proxmox_virtual_environment_vm.<name>` MUST be executed before re-running `terraform apply` to prevent HTTP 500 state drift errors (`unable to create VM <vmid> - VM <vmid> already exists`).
 39. **On-Premise GCS Remote State Partitioning Invariant**:
     - On-premise Proxmox Terraform modules MUST persist remote state in `gs://ait-brainlab-mgmt-tfstate` under dedicated `onprem/proxmox/` prefixes (`onprem/proxmox/foundation` for host governance and `onprem/proxmox/vms` for tenant application VMs).
+40. **Proxmox VM 1-File-Per-VM & Static SDN IP Invariant**:
+    - In `onprem/proxmox/terraform/vms/`, virtual machines MUST be declared in independent 1-file-per-VM modules (`vm-proxy.tf`, `vm-services.tf`, `vm-dlms.tf`).
+    - Every tenant VM MUST be assigned a deterministic, static IP tied to its VM ID on the Proxmox SDN NAT VNet (`10.10.250.100` for VM 100, `10.10.250.119` for VM 119, `10.10.250.120` for VM 120), eliminating DHCP lease rotation and IP swapping across boots.
+    - All `proxmox_virtual_environment_vm` resources MUST include `lifecycle { ignore_changes = [initialization[0].user_data_file_id] }` to guarantee running VMs are never destroyed during Day-2 Cloud-Init updates.
+41. **Decoupled Ingress GitOps & NetBird MagicDNS Route Sync**:
+    - `cloud-init.yaml.tftpl` on `brainlab-proxy` MUST NOT embed dynamic routing rules.
+    - Routing changes in `var.proxy_routes` MUST be synchronized dynamically via `terraform_data.sync_traefik_routes` using NetBird MagicDNS (`brainlab-proxy.netbird.selfhosted`), piping raw YAML into Traefik's hot-reloaded `/opt/brainlab/traefik/dynamic/routes.yaml` in 0.5s without VM restarts or downtime.
+42. **CSIM Student Quota Accounting & Pure LPD Printing Invariant**:
+    - In `services/printing/`, Google OAuth2 SSO users are resolved to their verified CSIM student accounts via `members.yaml` (`csim_account: stXXXXXX`).
+    - Graduated members and alumni signing in via personal `@gmail.com` MUST have their persistent `csim_account: stXXXXXX` bound in `members.yaml`.
+    - Pure-Python RFC 1179 LPD spooler packets MUST pass `P<csim_account>` (e.g. `Pst121413`) to `banyan.cs.ait.ac.th:515` to ensure automated page quota accounting.
+    - Unlinked accounts without a valid CSIM student ID MUST be blocked (`HTTP 403`) with a clear error prompt under Quota Attribution in the UI.
 
 ---
 

@@ -1,83 +1,75 @@
-# 🖥️ Proxmox VE Application VM Provisioner (`onprem/terraform/proxmox/`)
+# 🖥️ Proxmox VE Application VM Provisioner (`onprem/proxmox/terraform/vms/`)
 
 ## 📌 Architecture & Overview
 
-This Terraform IaC module provisions local multi-tenant virtual machines (such as the shared Application VM for **Remote Web Print** and **DLMS Project workloads**) directly on the AIT Brainlab on-premise Proxmox VE hypervisor (`192.41.170.19`).
+This Terraform IaC module manages on-premise virtual machines and dynamic edge ingress on the AIT Brainlab Proxmox VE hypervisor (`192.41.170.19`).
 
-It leverages the modern `bpg/proxmox` provider to automate VM creation, Cloud-Init user-data snippet upload, static IP binding on CSIM LAN (`vmbr0`), and automated NetBird VPN enrollment on first boot.
+It provisions a decoupled **Two-Tier Ingress & Application VM Stack** using the `bpg/proxmox` provider, with persistent remote state stored in Google Cloud Storage (`gs://ait-brainlab-mgmt-tfstate/onprem/proxmox/vms`).
 
 ---
 
-## 🏗 Directory Layout
+## 🏗️ Directory Layout (1-File-Per-VM Architecture)
 
 ```text
-onprem/terraform/proxmox/
-├── README.md              # Operator SOP & Prerequisite Guide (this file)
-├── providers.tf       # Provider configuration (bpg/proxmox ~> 0.60.0)
-├── main.tf            # Proxmox VM & Cloud-Init snippet resources
-├── variables.tf       # VM sizing, networking, and token variables
-├── outputs.tf         # VM ID, IP address, and MAC address outputs
-└── cloud-init.yaml.tftpl # Cloud-Init template (Docker + NetBird Mesh setup)
+onprem/proxmox/terraform/vms/
+├── README.md              # Documentation & Runbook (this file)
+├── providers.tf           # bpg/proxmox provider & GCS backend config
+├── main.tf                # Read-only Proxmox data sources
+├── vm-proxy.tf            # 🌐 VM 100: brainlab-proxy (10G Public Ingress)
+├── vm-services.tf         # 🖨️ VM 120: brainlab-services (Web Print & Lab Administration)
+├── vm-dlms.tf             # 🚀 VM 119: dlms-server (Dedicated AI Vision / DLMS Platform)
+├── routes.tf              # ⚡ Traefik GitOps dynamic route sync (0.5s hot-reload)
+├── variables.tf           # Sizing, static IPs, and proxy_routes declarative map
+├── outputs.tf             # Endpoint URLs and service summaries
+└── cloud-init.yaml.tftpl  # Base Day 0 Cloud-Init template (Docker + NetBird)
 ```
 
 ---
 
-## 🔑 One-Time Prerequisites on Proxmox VE Host (`192.41.170.19`)
+## 🌐 Live VM & Network Inventory
 
-### 1. Create API Token for Terraform Automation
-Run on the Proxmox host shell (`ssh root@192.41.170.19`):
-
-```bash
-# 1. Create automation user in pve realm
-pveum user add terraform-prov@pve --comment "Terraform Automation Service Account"
-
-# 2. Assign Administrator role on root pool
-pveum acl modify / --user terraform-prov@pve --role Administrator
-
-# 3. Generate API Token
-pveum user token add terraform-prov@pve tf-token --privsep 0
-```
-
-> **Note**: Save the returned Token ID (`terraform-prov@pve!tf-token`) and Secret Key safely into GCP Secret Manager or export them as environment variables.
+| VM ID | Hostname | Config File | Network Interfaces | Role / Capabilities |
+| :--- | :--- | :--- | :--- | :--- |
+| **100** | `brainlab-proxy` | [`vm-proxy.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/vm-proxy.tf) | `net0`: `192.41.170.39/24` (vmbr1)<br>`net1`: `10.10.250.100/16` (SDN) | Traefik v3 Edge Proxy (Port 443 SSL, Rate Limiting, 25MB Body Cap) |
+| **119** | `dlms-server` | [`vm-dlms.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/vm-dlms.tf) | `net0`: `10.10.250.119/16` (SDN) | Dedicated DLMS Research Platform (16 vCPUs / 32GB RAM) |
+| **120** | `brainlab-services` | [`vm-services.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/vm-services.tf) | `net0`: `10.10.250.120/16` (SDN) | Web Print Portal (`services/printing`) & Shared Lab Tools |
 
 ---
 
-### 2. Download Ubuntu 24.04 LTS Cloud Image to Proxmox Storage
-Run on the Proxmox host shell:
+## ⚡ Dynamic Ingress GitOps (0s Downtime Route Management)
 
-```bash
-cd /var/lib/vz/template/iso/
-wget https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img
-```
+To add, edit, or remove a public service route:
+1. Declare the domain and target in `proxy_routes` inside [`variables.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/variables.tf):
+   ```hcl
+   proxy_routes = {
+     my_service = {
+       domain     = "my-service.brain.cs.ait.ac.th"
+       target_url = "http://10.10.250.120:80"
+       aliases    = []
+     }
+   }
+   ```
+2. Run `terraform apply`.
+3. `terraform_data.sync_traefik_routes` pushes the updated `routes.yaml` directly to `brainlab-proxy` over NetBird MagicDNS in **0.5 seconds**.
+4. Traefik automatically hot-reloads the new route with **0 VM destruction and 0 container restarts**.
 
 ---
 
-## 🚀 Execution Guide
+## 🚀 Execution & Deployment Runbook
 
-### Step 1: Export Authentication Variables
+### Step 1: Initialize & Plan
 ```bash
-export TF_VAR_proxmox_api_token="terraform-prov@pve!tf-token=YOUR_API_TOKEN_UUID"
-export TF_VAR_netbird_setup_key="YOUR_EPHEMERAL_NETBIRD_SETUP_KEY"
-```
+cd onprem/proxmox/terraform/vms/
 
-### Step 2: Initialize & Apply Terraform
-```bash
-cd onprem/terraform/proxmox/
-
-# Initialize provider & backend
+# Initialize GCS backend and provider
 terraform init
 
-# Validate configuration
+# Validate execution plan
 terraform plan
+```
 
-# Apply & provision VM
+### Step 2: Apply
+```bash
 terraform apply
 ```
 
----
-
-## 📋 Verification Baseline
-After `terraform apply` completes:
-1. Proxmox VE Web GUI (`https://192.41.170.19:8006`) displays VM ID `119` (`brainlab-app-vm`) running on `pve`.
-2. The VM boots up, applies cloud-init user-data, installs Docker Engine, and enrolls into NetBird mesh under Setup Key `dlms-server-enrollment`.
-3. Verify reachability over WireGuard mesh: `ping 100.103.x.x` or direct CSIM IP `ping 192.41.170.19`.

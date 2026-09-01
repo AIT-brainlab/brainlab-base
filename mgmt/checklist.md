@@ -86,11 +86,11 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-1.1` | **Provision Application VMs on Proxmox VE** | Akraradet | P1 | 🟢 | Completed: Provisioned `brainlab-proxy` (VM 100), `dlms-server` (VM 119), and `brainlab-services` (VM 120) via `onprem/proxmox/terraform/vms/` IaC module with GCS remote state persistence (`gs://ait-brainlab-mgmt-tfstate/onprem/proxmox/vms`). |
-| `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🟢 | Completed: Enrolled `brainlab-proxy` (`192.41.170.39`) & `brainlab-services` (`100.74.10.218`) into `brainlab-cluster`, and `dlms-server` (`100.74.18.96`) into `prj-dlms-servers`. |
-| `NEXT-1.3` | **Deploy Edge Proxy & Declarative Dynamic Routing** | Akraradet | P1 | 🔵 | Completed: Configured Traefik v3.7 on `brainlab-proxy` with Let's Encrypt SSL/TLS, Squid proxy egress (`192.41.170.82:3128`), and hot-reloading dynamic file routing (`/opt/brainlab/traefik/dynamic/routes.yaml`). Verified valid production SSL certificates on `example.brain.cs.ait.ac.th`, `dlms.brain.cs.ait.ac.th`, `dlms-dev.brain.cs.ait.ac.th`, and `print.brain.cs.ait.ac.th`. |
+| `NEXT-1.1` | **Provision Application VMs on Proxmox VE** | Akraradet | P1 | 🔵 | Completed & Live: Provisioned `brainlab-proxy` (VM 100: `10.10.250.100`), `dlms-server` (VM 119: `10.10.250.119`), and `brainlab-services` (VM 120: `10.10.250.120`) via `onprem/proxmox/terraform/vms/` using 1-file-per-VM pattern (`vm-proxy.tf`, `vm-services.tf`, `vm-dlms.tf`) with GCS remote state persistence (`gs://ait-brainlab-mgmt-tfstate/onprem/proxmox/vms`). |
+| `NEXT-1.2` | **Dual-Group NetBird Mesh Enrollment** | Akraradet | P1 | 🔵 | Completed & Live: Enrolled `brainlab-proxy` (`192.41.170.39` / MagicDNS `brainlab-proxy`) & `brainlab-services` (`100.74.8.102`) into `brainlab-cluster`, and `dlms-server` (`100.74.253.239`) into `prj-dlms-servers`. |
+| `NEXT-1.3` | **Deploy Edge Proxy & Declarative Dynamic Routing** | Akraradet | P1 | 🔵 | Completed & Live: Traefik v3.7 on `brainlab-proxy` with Let's Encrypt SSL/TLS, Squid proxy egress (`192.41.170.82:3128`), security headers (HSTS, Anti-Clickjacking, nosniff), 100 req/min rate limiting, 25 MB max body size, and instant GitOps hot-reloading (`terraform_data.sync_traefik_routes` via NetBird MagicDNS). Verified valid production SSL certificates on `print.brain.cs.ait.ac.th`, `example.brain.cs.ait.ac.th`, `dlms.brain.cs.ait.ac.th`, and `dlms-dev.brain.cs.ait.ac.th`. |
 | `NEXT-1.4` | **Configure Proxmox Google OIDC SSO Realm** | Akraradet | P2 | 🔴 | Register `https://192.41.170.19:8006/oauth2/callback` in GCP OAuth Console. Configure Google OpenID Connect (OIDC) realm in Proxmox VE (`pveum realm add google --type openid`), set default role `NoAccess`, and map SysAdmin `@ait.asia` accounts to `Administrator` / `PVEAdmin`. |
-| `NEXT-1.5` | **Two-Tier Lab Web Deployment Template** | Akraradet | P1 | 🔵 | Completed: Created `services/template/` boilerplate (`docker-compose.yml` & `README.md`) using Project-Level Traefik (HTTP Port 80 only) with edge SSL offloading at `brainlab-proxy` and declarative Terraform route management (`var.proxy_routes`). Deployed and verified live on `brainlab-services` (`https://example.brain.cs.ait.ac.th`). |
+| `NEXT-1.5` | **Two-Tier Lab Web Deployment Template** | Akraradet | P1 | 🔵 | Completed & Live: Created `services/template/` boilerplate (`docker-compose.yml` & `README.md`) using Project-Level Traefik (HTTP Port 80 only) with edge SSL offloading at `brainlab-proxy` and declarative Terraform route management (`var.proxy_routes`). Deployed and verified live on `brainlab-services` (`https://example.brain.cs.ait.ac.th`). |
 
 ---
 
@@ -98,10 +98,10 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-2.1` | **Draft Web Print Service Codebase** | Akraradet | P1 | 🟢 | Completed: FastAPI backend, pure-Python RFC 1179 LPD spooler, Google OAuth2, single source of truth URL `members.yaml` identity mapping, 10× color warning. |
-| `NEXT-2.2` | **Deploy Web Print on Proxmox Services VM** | Akraradet | P1 | 🔵 | Completed & Verified Live: Deployed unified services compose stack on `brainlab-services` (`10.10.250.2` / NetBird `100.74.10.218`) running project Traefik (Port 80), `web-print`, and `example-app`. |
+| `NEXT-2.1` | **Draft Web Print Service Codebase** | Akraradet | P1 | 🔵 | Completed & Live: FastAPI backend, pure-Python RFC 1179 LPD spooler, Google OAuth2 SSO, declarative `csim_account` student ID resolver in `members.yaml`, Poppler `pdftops` duplex/monochrome/color conversion, robust page range slicing, and 10× color quota guardrails. |
+| `NEXT-2.2` | **Deploy Web Print on Proxmox Services VM** | Akraradet | P1 | 🔵 | Completed & Verified Live: Deployed unified services compose stack on `brainlab-services` (`10.10.250.120` / NetBird `100.74.8.102`) under `/projects/print` and `/projects/traefik` attached to shared `traefik-net`. |
 | `NEXT-2.3` | **Expose `print.brain.cs.ait.ac.th` via Traefik Edge** | Akraradet | P1 | 🔵 | Completed & Verified Live: Cloud DNS A record, edge Traefik route on `brainlab-proxy` (`192.41.170.39`), and Let's Encrypt production SSL active and serving 200 OK. |
-| `NEXT-2.4` | **End-to-End Web Print Verification** | Akraradet | P1 | 🔴 | Submit test PDF from external browser via Google login to Ricoh (Lobby) and HP Magnum (Room 212); verify quota accounting. |
+| `NEXT-2.4` | **End-to-End Web Print Verification** | Akraradet | P1 | 🔵 | Completed & Verified Live: Successfully uploaded and printed test documents via Google OAuth SSO to the CSIM Lobby **Ricoh IM C2000** printer over NetBird WireGuard mesh to `banyan.cs.ait.ac.th:515` with automated CSIM student quota deduction (`Pst121413`). |
 
 ---
 
