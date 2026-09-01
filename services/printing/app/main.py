@@ -166,13 +166,15 @@ async def auth_callback(request: Request):
         return RedirectResponse(url="/?error=unauthorized_domain")
 
     username = identity_resolver.resolve_username(email)
+    csim_account = identity_resolver.resolve_csim_account(email)
     request.session["user"] = {
         "email": email,
         "name": user_info.get("name", username),
         "picture": user_info.get("picture", ""),
-        "username": username
+        "username": username,
+        "csim_account": csim_account
     }
-    logger.info(f"User logged in: {email} -> CSIM account '{username}'")
+    logger.info(f"User logged in: {email} -> POSIX '{username}' / CSIM '{csim_account}'")
     return RedirectResponse(url="/")
 
 
@@ -237,6 +239,12 @@ async def submit_print_job(
         raise HTTPException(status_code=400, detail="Only PDF documents (.pdf) are supported.")
 
     username = user["username"]
+    print_account = user.get("csim_account")
+    if not print_account:
+        raise HTTPException(
+            status_code=403,
+            detail="No CSIM student ID linked to your account. Print quota cannot be attributed. Please contact an administrator to register your student ID in members.yaml."
+        )
 
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
         tmp_pdf_path = tmp_pdf.name
@@ -257,7 +265,7 @@ async def submit_print_job(
             except ValueError:
                 pass
 
-        logger.info(f"Processing PDF '{file.filename}' ({total_pages} pages) for {username} on {target_queue}")
+        logger.info(f"Processing PDF '{file.filename}' ({total_pages} pages) for {print_account} (posix: {username}) on {target_queue}")
 
         # Convert PDF to PostScript with duplex/color injection
         ps_payload = convert_pdf_to_postscript(
@@ -273,7 +281,7 @@ async def submit_print_job(
         for i in range(max(1, min(copies, 20))):
             job_id = lpd_client.submit_job(
                 queue=target_queue,
-                user=username,
+                user=print_account,
                 job_title=file.filename.replace(" ", "_"),
                 payload=ps_payload,
                 is_postscript=True

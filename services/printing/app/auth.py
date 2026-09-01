@@ -80,19 +80,44 @@ class IdentityResolver:
         try:
             data = yaml.safe_load(raw_content) or {}
             members = data.get("members", [])
-            new_mappings = {}
+            new_uname_mappings = {}
+            new_csim_mappings = {}
+
             for m in members:
                 uname = m.get("username")
                 if not uname:
                     continue
+
+                # Derive CSIM Student Account / Printing ID
+                csim_acc = m.get("csim_account") or m.get("student_id") or m.get("printer_id")
+                if not csim_acc:
+                    uid = m.get("uid")
+                    if isinstance(uid, int) and uid >= 100000:
+                        csim_acc = f"st{uid}"
+                    else:
+                        p_email = m.get("primary_email", "")
+                        match = re.match(r"^(st\d+)@", p_email.lower().strip())
+                        if match:
+                            csim_acc = match.group(1)
+                        else:
+                            csim_acc = None
+
                 p_email = m.get("primary_email")
                 if p_email:
-                    new_mappings[p_email.lower().strip()] = uname
+                    clean_p = p_email.lower().strip()
+                    new_uname_mappings[clean_p] = uname
+                    if csim_acc:
+                        new_csim_mappings[clean_p] = csim_acc
+
                 for s_email in m.get("secondary_emails", []):
                     if s_email:
-                        new_mappings[s_email.lower().strip()] = uname
+                        clean_s = s_email.lower().strip()
+                        new_uname_mappings[clean_s] = uname
+                        if csim_acc:
+                            new_csim_mappings[clean_s] = csim_acc
 
-            self.email_to_username = new_mappings
+            self.email_to_username = new_uname_mappings
+            self.email_to_csim_account = new_csim_mappings
             self.last_updated = datetime.now(timezone.utc)
             logger.info(f"Active identity mappings: {len(self.email_to_username)} user accounts from {source_used}")
             return {
@@ -113,23 +138,34 @@ class IdentityResolver:
             }
 
     def resolve_username(self, email: str) -> str:
-        """
-        Extracts student ID / username for CSIM quota accounting:
-        1. Checks members.yaml (e.g. personal gmail -> st121413).
-        2. If institutional (@ait.asia or @ait.ac.th), extracts local part (st121413@ait.asia -> st121413).
-        3. Fallback: sanitize email prefix.
-        """
+        """Extracts standard POSIX username."""
         clean_email = email.lower().strip()
         if clean_email in self.email_to_username:
             return self.email_to_username[clean_email]
 
-        # Check standard AIT patterns (e.g. st121413, akraradets)
         match = re.match(r"^([a-zA-Z0-9_\.\-]+)@(ait\.asia|ait\.ac\.th)$", clean_email)
         if match:
             return match.group(1)
 
-        # Fallback: sanitized prefix
         return clean_email.split("@")[0].replace(".", "_")
+
+    def resolve_csim_account(self, email: str) -> Optional[str]:
+        """
+        Extracts verified CSIM student ID (e.g. st121413) for printer accounting:
+        1. Checks members.yaml mapping (e.g. personal gmail or alumni -> st121413).
+        2. If institutional @ait.asia / @ait.ac.th starting with stXXXXXX, extracts student ID.
+        3. Returns None if no valid CSIM student quota ID is linked.
+        """
+        clean_email = email.lower().strip()
+        if clean_email in getattr(self, "email_to_csim_account", {}):
+            return self.email_to_csim_account[clean_email]
+
+        # If email itself is stXXXXXX@ait.asia
+        match = re.match(r"^(st\d+)@(ait\.asia|ait\.ac\.th)$", clean_email)
+        if match:
+            return match.group(1)
+
+        return None
 
     def is_authorized(self, email: str) -> bool:
         """Validates if user belongs to AIT domain or is registered in members.yaml."""

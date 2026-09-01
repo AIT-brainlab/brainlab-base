@@ -31,7 +31,7 @@
                     {% endif %}
                     <div class="text-xs">
                         <span class="font-semibold text-slate-200">{{ user.name }}</span>
-                        <span class="text-indigo-400 font-mono">({{ user.username }})</span>
+                        <span class="text-indigo-400 font-mono">({{ user.csim_account or user.username }})</span>
                     </div>
                     <a href="/logout" class="text-xs text-rose-400 hover:text-rose-300 ml-2 font-medium">Sign out</a>
                 </div>
@@ -189,10 +189,20 @@
                     </div>
 
                     <!-- Submit Action Button -->
+                    {% if user.csim_account %}
                     <button type="submit" id="submitBtn" disabled class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2">
                         <span id="btnIcon">🖨️</span>
                         <span id="btnText">Select PDF to Print</span>
                     </button>
+                    {% else %}
+                    <div class="space-y-2">
+                        <button type="button" disabled class="w-full py-3.5 bg-rose-900/60 border border-rose-700/60 opacity-60 cursor-not-allowed text-rose-200 font-bold text-sm rounded-xl flex items-center justify-center gap-2">
+                            <span>🚫</span>
+                            <span>Printing Disabled (No CSIM Student ID Linked)</span>
+                        </button>
+                        <p class="text-[11px] text-center text-rose-400 font-medium">Please ask an administrator to add your CSIM student ID (e.g. <code>stXXXXXX</code>) to <code>members.yaml</code>.</p>
+                    </div>
+                    {% endif %}
                 </form>
 
             </div>
@@ -201,8 +211,8 @@
             <div class="space-y-6">
 
                 <!-- Account & Quota Badge -->
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 text-xs space-y-3">
-                    <h4 class="font-bold text-slate-200 flex items-center gap-1.5">
+                <div class="bg-slate-950/60 border {% if user.csim_account %}border-slate-800/80{% else %}border-rose-800/80 bg-rose-950/20{% endif %} rounded-2xl p-5 text-xs space-y-3">
+                    <h4 class="font-bold {% if user.csim_account %}text-slate-200{% else %}text-rose-300{% endif %} flex items-center gap-1.5">
                         <span>👤</span> Quota Attribution
                     </h4>
                     <div class="space-y-1.5 text-slate-400">
@@ -212,13 +222,39 @@
                         </div>
                         <div class="flex justify-between py-1 border-b border-slate-800/60">
                             <span>CSIM Student ID:</span>
-                            <span class="font-mono text-indigo-400 font-semibold">{{ user.username }}</span>
+                            {% if user.csim_account %}
+                            <span class="font-mono text-emerald-400 font-bold flex items-center gap-1">
+                                <span>✅</span> {{ user.csim_account }}
+                            </span>
+                            {% else %}
+                            <span class="font-mono text-rose-400 font-bold flex items-center gap-1">
+                                <span>❌</span> Not Linked
+                            </span>
+                            {% endif %}
                         </div>
                         <div class="flex justify-between py-1">
                             <span>Accounting Host:</span>
-                            <span class="font-mono text-slate-300">banyan (515)</span>
+                            <span class="font-mono text-slate-300">banyan.cs.ait.ac.th:515</span>
                         </div>
                     </div>
+
+                    {% if not user.csim_account %}
+                    <div class="mt-3 bg-rose-950/80 border border-rose-700/80 rounded-xl p-3 text-[11px] text-rose-200 space-y-1.5">
+                        <div class="font-bold text-rose-300 flex items-center gap-1.5">
+                            <span>⚠️</span> Quota Attribution Error
+                        </div>
+                        <p class="leading-relaxed text-rose-300/90">
+                            Your Google account is recognized, but no <strong>CSIM student ID</strong> (e.g. <code>st12xxxx</code>) is bound to your profile. The print server requires a student ID to deduct page quota.
+                        </p>
+                        <p class="text-[10px] text-rose-400 font-mono">
+                            Fix: Add <code>csim_account: stXXXXXX</code> under your entry in <code>mgmt/identity/members.yaml</code>.
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="mt-2 text-[11px] text-emerald-400/80 flex items-center gap-1">
+                        <span>ℹ️</span> Quota will be automatically billed to <strong>{{ user.csim_account }}</strong>.
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Live Queue Status Monitor -->
