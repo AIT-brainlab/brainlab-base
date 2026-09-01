@@ -123,7 +123,7 @@ resource "proxmox_virtual_environment_vm" "proxy" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "10.10.250.100/16"
       }
     }
 
@@ -173,8 +173,13 @@ resource "proxmox_virtual_environment_vm" "dlms_server" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "10.10.250.119/16"
+        gateway = "10.10.0.1"
       }
+    }
+
+    dns {
+      servers = ["192.41.170.15", "8.8.8.8"]
     }
 
     user_data_file_id = proxmox_virtual_environment_file.cloud_user_data_dlms.id
@@ -219,8 +224,13 @@ resource "proxmox_virtual_environment_vm" "brainlab_services" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = "10.10.250.120/16"
+        gateway = "10.10.0.1"
       }
+    }
+
+    dns {
+      servers = ["192.41.170.15", "8.8.8.8"]
     }
 
     user_data_file_id = proxmox_virtual_environment_file.cloud_user_data_services.id

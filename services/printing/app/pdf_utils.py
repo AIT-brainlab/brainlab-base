@@ -41,20 +41,20 @@ def convert_pdf_to_postscript(
             cmd.extend(["-l", str(last_page)])
 
         # Duplex option
-        if duplex == "two-sided-long-edge":
-            cmd.append("-duplex")
-        elif duplex == "two-sided-short-edge":
+        if duplex in ("two-sided-long-edge", "two-sided-short-edge"):
             cmd.append("-duplex")
 
         # Color mode
         if color_mode == "monochrome":
-            cmd.append("-level2gray")
+            cmd.extend(["-level2", "-processcolorformat", "MONO8"])
         else:
             cmd.append("-level3")
 
         cmd.extend([pdf_path, tmp_ps_path])
 
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if res.returncode != 0:
+            raise RuntimeError(f"pdftops conversion failed (exit code {res.returncode}): {res.stderr.strip()}")
 
         with open(tmp_ps_path, "rb") as f:
             ps_bytes = f.read()
