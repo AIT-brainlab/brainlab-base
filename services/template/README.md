@@ -20,54 +20,45 @@
 
 ## 🛠️ Deploying Application Services on Tenant VMs
 
-### 1. Copy the Template
-Copy `services/template/docker-compose.yml` to your project folder on the VM:
+### 1. Project Directory Layout Standard
+All application stacks on tenant VMs are organized under `/projects/<project-name>` owned by the `ubuntu` user:
 
-```bash
-mkdir -p /home/ubuntu/my-project
-cp docker-compose.yml /home/ubuntu/my-project/
-cd /home/ubuntu/my-project/
+```text
+/projects/
+├── traefik/                # Project-Level Ingress (Port 80 -> traefik-net)
+│   └── docker-compose.yml
+├── print/                  # print.brain.cs.ait.ac.th
+│   └── docker-compose.yml
+├── example/                # example.brain.cs.ait.ac.th
+│   └── docker-compose.yml
+└── <my-app>/               # Your project container stack
+    └── docker-compose.yml
 ```
 
-### 2. Configure Service Labels
-Define routing rules using standard Docker labels:
+### 2. Copy the Template & Configure Labels
+Create your project directory under `/projects/<my-app>` and attach to the shared `traefik-net`:
+
+```bash
+mkdir -p /projects/my-app
+cd /projects/my-app
+```
 
 ```yaml
 services:
-  traefik:
-    image: traefik:v3.7
-    container_name: app-traefik
+  my-app:
+    image: ghcr.io/ait-brainlab/my-app:latest
     restart: unless-stopped
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - app-net
-
-  frontend:
-    image: my-frontend:latest
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.my-app.rule=Host(`my-app.brain.cs.ait.ac.th`)"
+      - "traefik.http.routers.my-app.entrypoints=web"
+      - "traefik.http.services.my-app.loadbalancer.server.port=8080"
     networks:
-      - app-net
+      - traefik-net
 
-  backend:
-    image: my-backend:latest
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
-      - "traefik.http.routers.backend.entrypoints=web"
-      - "traefik.http.services.backend.loadbalancer.server.port=8000"
-    networks:
-      - app-net
+networks:
+  traefik-net:
+    external: true
 ```
 
 ### 3. Deploy Stack

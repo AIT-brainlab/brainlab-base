@@ -1,51 +1,18 @@
-# 🚀 Official AIT Brainlab Web Application Deployment Template
-# Deploy directly on tenant VMs (e.g. dlms-server, tokyo) with: docker compose up -d
-
-version: '3.8'
-
 services:
-  # 1. Project-Level Traefik (HTTP Port 80 Ingress only — SSL offloaded by brainlab-proxy)
-  traefik:
-    image: traefik:v3.7
-    container_name: app-traefik
-    restart: unless-stopped
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - app-net
-
-  # 2. Main Web Application (Frontend / API)
-  my-app:
+  example-app:
     image: httpd:alpine
-    container_name: my-app
+    container_name: example-app
     restart: unless-stopped
-    environment:
-      - TZ=Asia/Bangkok
-      - HTTP_PROXY=http://192.41.170.82:3128
-      - HTTPS_PROXY=http://192.41.170.82:3128
-      - NO_PROXY=localhost,127.0.0.1,192.41.170.0/24,100.64.0.0/10,10.0.0.0/8,*.brain.cs.ait.ac.th
     command: >
-      sh -c "echo 'welcome to my application' > /usr/local/apache2/htdocs/index.html && exec httpd-foreground"
+      sh -c "echo '<h1>Welcome to example.brain.cs.ait.ac.th</h1><p>Served via Two-Tier Ingress on brainlab-services (/projects/example)</p>' > /usr/local/apache2/htdocs/index.html && exec httpd-foreground"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.my-app.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.my-app.entrypoints=web"
-      - "traefik.http.services.my-app.loadbalancer.server.port=80"
+      - "traefik.http.routers.example.rule=Host(`example.brain.cs.ait.ac.th`)"
+      - "traefik.http.routers.example.entrypoints=web"
+      - "traefik.http.services.example.loadbalancer.server.port=80"
     networks:
-      - app-net
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+      - traefik-net
 
 networks:
-  app-net:
-    driver: bridge
+  traefik-net:
+    external: true

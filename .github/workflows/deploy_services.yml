@@ -77,11 +77,11 @@ jobs:
           host: ${{ secrets.SERVICES_VM_NETBIRD_IP || '100.74.10.218' }}
           username: ubuntu
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          target: /home/ubuntu/services
+          target: /projects/print
           source: 'services/printing/docker-compose.yml'
           strip_components: 2
 
-      - name: Deploy Services Stack via SSH
+      - name: Deploy Print Stack via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVICES_VM_NETBIRD_IP || '100.74.10.218' }}
@@ -89,18 +89,17 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /home/ubuntu/services
+            cd /projects/print
 
             # 1. Log in to GHCR on host
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 2. Pull latest container images and restart
+            # 2. Pull latest container image and restart
             docker compose pull || true
             docker compose up -d --remove-orphans
 
-            # 3. Verify Health of both services on Project Traefik
+            # 3. Verify Health of print service on Project Traefik
             sleep 5
             curl -f -H "Host: print.brain.cs.ait.ac.th" http://localhost:80/health || (echo "Print service health check failed" && exit 1)
-            curl -f -H "Host: example.brain.cs.ait.ac.th" http://localhost:80 || (echo "Example app health check failed" && exit 1)
 
-            echo "✔ Both example.brain and print.brain deployed and verified healthy!"
+            echo "✔ print.brain.cs.ait.ac.th deployed and verified healthy in /projects/print!"

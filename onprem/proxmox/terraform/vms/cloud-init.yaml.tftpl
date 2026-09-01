@@ -95,13 +95,18 @@ packages:
   - docker-compose-v2
 
 runcmd:
-  # 1. Enable & restart Docker with proxy configuration & QEMU Guest Agent
+  # 1. Standard application projects directory
+  - mkdir -p /projects
+  - chown -R ubuntu:ubuntu /projects
+  - chmod 755 /projects
+
+  # 2. Enable & restart Docker with proxy configuration & QEMU Guest Agent
   - systemctl daemon-reload
   - systemctl enable --now docker
   - systemctl restart docker
   - systemctl enable --now qemu-guest-agent
   
-  # 2. Enroll into NetBird Mesh via CSIM Proxy Bootstrapper
+  # 3. Enroll into NetBird Mesh via CSIM Proxy Bootstrapper
 %{ if netbird_setup_key != "" ~}
   - curl -fsSL -x http://192.41.170.82:3128 https://raw.githubusercontent.com/AIT-brainlab/brainlab-base/main/docs/infra/onprem/scripts/bootstrap_netbird_csim.sh | bash -s -- ${netbird_setup_key}
 %{ endif ~}

@@ -1,23 +1,4 @@
-version: '3.8'
-
 services:
-  # 1. Project-Level Traefik (HTTP Port 80 Ingress only — SSL offloaded by brainlab-proxy)
-  traefik:
-    image: traefik:v3.7
-    container_name: services-traefik
-    restart: unless-stopped
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - services-net
-
-  # 2. Remote Web Print Service
   web-print:
     build:
       context: .
@@ -42,7 +23,7 @@ services:
       - "traefik.http.routers.web-print.entrypoints=web"
       - "traefik.http.services.web-print.loadbalancer.server.port=8080"
     networks:
-      - services-net
+      - traefik-net
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 15s
@@ -50,25 +31,10 @@ services:
       retries: 3
       start_period: 10s
 
-  # 3. Example Demo Application
-  example-app:
-    image: httpd:alpine
-    container_name: example-app
-    restart: unless-stopped
-    command: >
-      sh -c "echo '<h1>Welcome to example.brain.cs.ait.ac.th</h1><p>Served via Two-Tier Ingress on brainlab-services</p>' > /usr/local/apache2/htdocs/index.html && exec httpd-foreground"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.example.rule=Host(`example.brain.cs.ait.ac.th`)"
-      - "traefik.http.routers.example.entrypoints=web"
-      - "traefik.http.services.example.loadbalancer.server.port=80"
-    networks:
-      - services-net
-
-networks:
-  services-net:
-    driver: bridge
-
 volumes:
   print_spool:
     driver: local
+
+networks:
+  traefik-net:
+    external: true
