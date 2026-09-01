@@ -19,7 +19,7 @@ from authlib.integrations.starlette_client import OAuth
 
 from .auth import IdentityResolver
 from .lpd import LPDClient
-from .pdf_utils import analyze_pdf, convert_pdf_to_postscript
+from .pdf_utils import analyze_pdf, convert_pdf_to_postscript, parse_page_range
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("web-print")
@@ -255,17 +255,10 @@ async def submit_print_job(
         if not is_valid or total_pages <= 0:
             raise HTTPException(status_code=400, detail="Uploaded file is corrupted or invalid PDF.")
 
-        # Parse page ranges if provided (e.g. "1-3")
-        f_page, l_page = None, None
-        if page_range and "-" in page_range:
-            parts = page_range.split("-")
-            try:
-                f_page = int(parts[0].strip())
-                l_page = int(parts[1].strip())
-            except ValueError:
-                pass
+        # Parse page ranges (e.g. "2", "2-5", "3-", "-4", or all pages)
+        f_page, l_page = parse_page_range(page_range, total_pages)
 
-        logger.info(f"Processing PDF '{file.filename}' ({total_pages} pages) for {print_account} (posix: {username}) on {target_queue}")
+        logger.info(f"Processing PDF '{file.filename}' (pages {f_page}-{l_page} of {total_pages}) for {print_account} (posix: {username}) on {target_queue}")
 
         # Convert PDF to PostScript with duplex/color injection
         ps_payload = convert_pdf_to_postscript(
@@ -289,7 +282,7 @@ async def submit_print_job(
             job_ids.append(job_id)
 
         quota_multiplier = 10 if actual_color == "color" else 1
-        effective_pages = (l_page - f_page + 1 if (f_page and l_page) else total_pages) * copies
+        effective_pages = (l_page - f_page + 1) * copies
 
         return {
             "success": True,
