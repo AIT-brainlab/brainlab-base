@@ -35,7 +35,10 @@ write_files:
 %{ if vm_name == "brainlab-proxy" ~}
   - path: /opt/brainlab/traefik/dynamic/routes.yaml
     content: |
-      ${indent(6, dynamic_routes_yaml)}
+      # Initial placeholder - Dynamically updated by Terraform routes.tf
+      http:
+        routers: {}
+        services: {}
 
   - path: /opt/brainlab/proxy/docker-compose.yml
     content: |

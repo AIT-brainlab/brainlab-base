@@ -193,3 +193,9 @@ variable "proxy_routes" {
     }
   }
 }
+
+variable "proxy_netbird_ip" {
+  description = "NetBird overlay IP for brainlab-proxy VM (VM 100)"
+  type        = string
+  default     = "100.74.224.198"
+}

@@ -65,3 +65,20 @@ locals {
   traefik_dynamic_routes_yaml = yamlencode(local.traefik_dynamic_config)
 }
 
+# 3. Dynamic GitOps Route Sync to Brainlab-Proxy via NetBird Mesh
+resource "terraform_data" "sync_traefik_routes" {
+  triggers_replace = [
+    local.traefik_dynamic_routes_yaml
+  ]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        ubuntu@${var.proxy_netbird_ip} \
+        "cat << 'EOF' | sudo tee /opt/brainlab/traefik/dynamic/routes.yaml
+${local.traefik_dynamic_routes_yaml}
+EOF"
+    EOT
+  }
+}
+
