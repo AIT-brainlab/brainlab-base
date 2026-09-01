@@ -185,8 +185,9 @@ def index(request: Request):
     user = get_current_user(request)
     error = request.query_params.get("error")
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "user": user, "error": error}
+        request=request,
+        name="index.html",
+        context={"user": user, "error": error}
     )
 
 
