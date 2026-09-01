@@ -1,0 +1,106 @@
+name: 🚀 Build & Deploy Lab Services (brainlab-services)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/printing/**'
+      - '.github/workflows/deploy_services.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ait-brainlab/web-print
+
+jobs:
+  # ----------------------------------------------------------
+  # 1. Build & Push Web Print Image to GHCR
+  # ----------------------------------------------------------
+  build-and-push:
+    name: 🐳 Build & Push Print Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/printing
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ----------------------------------------------------------
+  # 2. Deploy Services Stack to VM 120 (brainlab-services)
+  # ----------------------------------------------------------
+  deploy-to-services-vm:
+    name: 🚀 Deploy to brainlab-services VM
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Connect to NetBird Mesh
+        uses: netbirdio/netbird-action@v1
+        with:
+          setup-key: ${{ secrets.NETBIRD_CI_SETUP_KEY }}
+
+      - name: Copy Compose to Target VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVICES_VM_NETBIRD_IP || '100.74.10.218' }}
+          username: ubuntu
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          target: /home/ubuntu/services
+          source: 'services/printing/docker-compose.yml'
+          strip_components: 2
+
+      - name: Deploy Services Stack via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVICES_VM_NETBIRD_IP || '100.74.10.218' }}
+          username: ubuntu
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/services
+
+            # 1. Log in to GHCR on host
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # 2. Pull latest container images and restart
+            docker compose pull || true
+            docker compose up -d --remove-orphans
+
+            # 3. Verify Health of both services on Project Traefik
+            sleep 5
+            curl -f -H "Host: print.brain.cs.ait.ac.th" http://localhost:80/health || (echo "Print service health check failed" && exit 1)
+            curl -f -H "Host: example.brain.cs.ait.ac.th" http://localhost:80 || (echo "Example app health check failed" && exit 1)
+
+            echo "✔ Both example.brain and print.brain deployed and verified healthy!"

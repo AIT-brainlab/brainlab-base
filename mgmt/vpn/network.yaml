@@ -28,6 +28,10 @@ groups:
   - name: csim-printers
     description: "CSIM Department printers and print server resources"
 
+  # Automation & CI/CD Runners
+  - name: ci-cd-runners
+    description: "Ephemeral GitHub Actions CI/CD runners for automated on-prem deployment"
+
 # ----------------------------------------------------------
 # 2. Zero-Trust Access Control Policies
 # ----------------------------------------------------------
@@ -92,6 +96,18 @@ policies:
         sources: [sysadmin, brainlab-cluster]
         destinations: [csim-printers, sysadmin]
 
+  # 6. CI/CD automated deployment access to target servers
+  - name: CI-CD-Deploy-Access
+    description: "Allow GitHub Actions CI/CD runners to access target application servers for automated deployment"
+    enabled: true
+    rules:
+      - name: cicd-ssh-access
+        action: accept
+        protocol: all
+        bidirectional: false
+        sources: [ci-cd-runners]
+        destinations: [brainlab-cluster, prj-dlms-servers]
+
 # ----------------------------------------------------------
 # 3. Server Setup Keys (Day 1 Host Onboarding)
 # ----------------------------------------------------------
@@ -118,6 +134,12 @@ setup_keys:
     type: reusable
     expires_in_days: 365
     auto_groups: [prj-dlms-servers]
+    usage_limit: 0
+
+  - name: ci-cd-runner-enrollment
+    type: reusable
+    expires_in_days: 365
+    auto_groups: [ci-cd-runners]
     usage_limit: 0
 
 # ----------------------------------------------------------

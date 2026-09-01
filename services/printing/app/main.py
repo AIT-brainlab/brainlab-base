@@ -33,17 +33,69 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(current_dir, "templates"))
 app.mount("/static", StaticFiles(directory=os.path.join(current_dir, "static")), name="static")
 
+import asyncio
+from contextlib import asynccontextmanager
+
 # Configuration
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 BASE_URL = os.getenv("BASE_URL", "https://print.brain.cs.ait.ac.th").rstrip("/")
 PRINT_SERVER_HOST = os.getenv("PRINT_SERVER_HOST", "192.41.170.5")
 PRINT_SERVER_PORT = int(os.getenv("PRINT_SERVER_PORT", "515"))
-MEMBERS_YAML_PATH = os.getenv("MEMBERS_YAML_PATH", "/app/members.yaml")
+MEMBERS_YAML_PATH = os.getenv("MEMBERS_YAML_PATH", "")
+MEMBERS_YAML_URL = os.getenv("MEMBERS_YAML_URL", "https://raw.githubusercontent.com/AIT-brainlab/brainlab-base/main/mgmt/identity/members.yaml")
+REFRESH_INTERVAL_SECONDS = int(os.getenv("MEMBERS_REFRESH_INTERVAL", 30 * 86400)) # Monthly (30 days)
 
 # Services
-identity_resolver = IdentityResolver(members_yaml_path=MEMBERS_YAML_PATH)
+identity_resolver = IdentityResolver(members_yaml_path=MEMBERS_YAML_PATH, members_yaml_url=MEMBERS_YAML_URL)
 lpd_client = LPDClient(host=PRINT_SERVER_HOST, port=PRINT_SERVER_PORT)
+
+from zoneinfo import ZoneInfo
+
+# Timezone & Schedulers
+BKK_TZ = ZoneInfo("Asia/Bangkok")
+
+def seconds_until_next_month_1st() -> float:
+    """Calculates exact seconds until 00:00:00 on the 1st day of the upcoming month (ICT)."""
+    now = datetime.now(BKK_TZ)
+    if now.month == 12:
+        next_month = 1
+        next_year = now.year + 1
+    else:
+        next_month = now.month + 1
+        next_year = now.year
+    
+    target = datetime(next_year, next_month, 1, 0, 0, 0, tzinfo=BKK_TZ)
+    diff = (target - now).total_seconds()
+    return max(diff, 60.0)
+
+async def periodic_member_refresh():
+    """Cron-like scheduler: auto-syncs members.yaml from GitHub on the 1st of every month at 00:00 ICT."""
+    while True:
+        try:
+            wait_seconds = seconds_until_next_month_1st()
+            days_left = wait_seconds / 86400.0
+            logger.info(f"Directory auto-sync scheduled in {days_left:.1f} days (1st of upcoming month at 00:00 ICT)")
+            await asyncio.sleep(wait_seconds)
+            logger.info("Executing scheduled 1st-of-the-month directory sync from GitHub...")
+            identity_resolver.load_members()
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Error during monthly member refresh: {e}")
+            await asyncio.sleep(3600)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: spawn periodic background task
+    task = asyncio.create_task(periodic_member_refresh())
+    yield
+    # Shutdown: cancel task
+    task.cancel()
+
+app = FastAPI(title="AIT Brainlab Web Print Portal", version="1.0.0", lifespan=lifespan)
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, max_age=86400 * 7)
+app.mount("/static", StaticFiles(directory=os.path.join(current_dir, "static")), name="static")
 
 # OAuth Setup
 oauth = OAuth()
@@ -64,7 +116,20 @@ def get_current_user(request: Request) -> Optional[dict]:
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "web-print"}
+    return {
+        "status": "ok",
+        "service": "web-print",
+        "members_loaded": len(identity_resolver.email_to_username),
+        "last_updated": identity_resolver.last_updated.isoformat() if identity_resolver.last_updated else None
+    }
+
+
+@app.post("/api/members/refresh")
+@app.get("/api/members/refresh")
+def refresh_members():
+    """Manually triggers directory reload from GitHub raw URL."""
+    result = identity_resolver.load_members()
+    return result
 
 
 @app.get("/login")

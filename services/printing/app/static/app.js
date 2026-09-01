@@ -176,6 +176,45 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Directory Sync Handler
+    const refreshMembersBtn = document.getElementById("refreshMembersBtn");
+    const syncIcon = document.getElementById("syncIcon");
+    const membersSyncStatus = document.getElementById("membersSyncStatus");
+
+    refreshMembersBtn?.addEventListener("click", async () => {
+        if (syncIcon) syncIcon.classList.add("animate-spin");
+        if (membersSyncStatus) {
+            membersSyncStatus.textContent = "Syncing...";
+            membersSyncStatus.className = "text-amber-400 font-mono";
+        }
+
+        try {
+            const resp = await fetch("/api/members/refresh", { method: "POST" });
+            const data = await resp.json();
+            if (data.success) {
+                if (membersSyncStatus) {
+                    membersSyncStatus.textContent = `${data.count} Members`;
+                    membersSyncStatus.className = "text-emerald-400 font-mono";
+                }
+                alert(`✅ Directory Synced!\n\nLoaded ${data.count} member accounts from ${data.source}.\nLast updated: ${data.last_updated}`);
+            } else {
+                if (membersSyncStatus) {
+                    membersSyncStatus.textContent = "Sync Warning";
+                    membersSyncStatus.className = "text-rose-400 font-mono";
+                }
+                alert(`⚠️ Directory Sync: ${data.message}`);
+            }
+        } catch (err) {
+            if (membersSyncStatus) {
+                membersSyncStatus.textContent = "Failed";
+                membersSyncStatus.className = "text-rose-400 font-mono";
+            }
+            alert(`❌ Error syncing directory: ${err.message}`);
+        } finally {
+            if (syncIcon) syncIcon.classList.remove("animate-spin");
+        }
+    });
+
     document.getElementById("refreshQueueBtn")?.addEventListener("click", fetchQueueStatus);
     fetchQueueStatus();
 });

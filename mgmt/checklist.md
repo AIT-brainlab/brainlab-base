@@ -98,9 +98,9 @@ flowchart TD
 
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `NEXT-2.1` | **Draft Web Print Service Codebase** | Akraradet | P1 | 🟢 | Completed: FastAPI backend, pure-Python RFC 1179 LPD spooler, Google OAuth2, members.yaml student ID mapping, 10× color warning. |
-| `NEXT-2.2` | **Deploy Web Print on Proxmox Application VM** | Akraradet | P1 | 🔴 | Deploy `services/printing/docker-compose.yml` on the new Proxmox VM listening on port 8080. |
-| `NEXT-2.3` | **Expose `print.brain.cs.ait.ac.th` via Traefik Edge** | Akraradet | P1 | 🟢 | Completed: Configured Cloud DNS and edge route on `brainlab-proxy` forwarding `print.brain.cs.ait.ac.th` to `brainlab-services` (`10.10.250.2:80`) with Let's Encrypt TLS. |
+| `NEXT-2.1` | **Draft Web Print Service Codebase** | Akraradet | P1 | 🟢 | Completed: FastAPI backend, pure-Python RFC 1179 LPD spooler, Google OAuth2, single source of truth URL `members.yaml` identity mapping, 10× color warning. |
+| `NEXT-2.2` | **Deploy Web Print on Proxmox Services VM** | Akraradet | P1 | 🔵 | Completed & Verified Live: Deployed unified services compose stack on `brainlab-services` (`10.10.250.2` / NetBird `100.74.10.218`) running project Traefik (Port 80), `web-print`, and `example-app`. |
+| `NEXT-2.3` | **Expose `print.brain.cs.ait.ac.th` via Traefik Edge** | Akraradet | P1 | 🔵 | Completed & Verified Live: Cloud DNS A record, edge Traefik route on `brainlab-proxy` (`192.41.170.39`), and Let's Encrypt production SSL active and serving 200 OK. |
 | `NEXT-2.4` | **End-to-End Web Print Verification** | Akraradet | P1 | 🔴 | Submit test PDF from external browser via Google login to Ricoh (Lobby) and HP Magnum (Room 212); verify quota accounting. |
 
 ---
