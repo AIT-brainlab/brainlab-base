@@ -35,7 +35,7 @@ write_files:
 %{ if vm_name == "brainlab-proxy" ~}
   - path: /opt/brainlab/traefik/dynamic/routes.yaml
     content: |
-${indent(6, dynamic_routes_yaml)}
+      ${indent(6, dynamic_routes_yaml)}
 
   - path: /opt/brainlab/proxy/docker-compose.yml
     content: |

@@ -7,7 +7,7 @@
 # ==========================================================
 
 locals {
-  # 1. Declarative Traefik HTTP Routers & Services Structure
+  # 1. Declarative Traefik HTTP Routers, Middlewares & Services Structure
   traefik_dynamic_config = {
     http = {
       routers = {
@@ -17,7 +17,34 @@ locals {
           tls = {
             certResolver = "letsencrypt"
           }
-          service = "${name}-service"
+          middlewares = ["security-headers", "rate-limit", "request-size-limit"]
+          service     = "${name}-service"
+        }
+      }
+      middlewares = {
+        security-headers = {
+          headers = {
+            browserXssFilter        = true
+            contentTypeNosniff      = true
+            frameDeny               = true
+            sslRedirect             = true
+            stsSeconds              = 31536000
+            stsIncludeSubdomains    = true
+            stsPreload              = true
+            referrerPolicy          = "strict-origin-when-cross-origin"
+          }
+        }
+        rate-limit = {
+          rateLimit = {
+            average = 100
+            burst   = 50
+          }
+        }
+        request-size-limit = {
+          buffering = {
+            maxRequestBodyBytes = 26214400 # 25 MB max upload limit
+            memRequestBodyBytes = 2097152  # 2 MB memory buffer before spilling to disk
+          }
         }
       }
       services = {
@@ -37,3 +64,4 @@ locals {
   # 2. Rendered YAML string
   traefik_dynamic_routes_yaml = yamlencode(local.traefik_dynamic_config)
 }
+

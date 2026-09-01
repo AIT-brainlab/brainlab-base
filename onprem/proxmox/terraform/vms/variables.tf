@@ -178,17 +178,17 @@ variable "proxy_routes" {
   default = {
     dlms = {
       domain     = "dlms.brain.cs.ait.ac.th"
-      target_url = "http://10.10.250.1:80"
+      target_url = "http://10.10.250.2:80"
       aliases    = ["dlms-dev.brain.cs.ait.ac.th"]
     }
     services = {
       domain     = "print.brain.cs.ait.ac.th"
-      target_url = "http://10.10.250.2:80"
+      target_url = "http://10.10.250.1:80"
       aliases    = []
     }
     example = {
       domain     = "example.brain.cs.ait.ac.th"
-      target_url = "http://10.10.250.2:80"
+      target_url = "http://10.10.250.1:80"
       aliases    = []
     }
   }

@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - HTTP_PROXY=http://192.41.170.82:3128
+        - HTTPS_PROXY=http://192.41.170.82:3128
     image: ghcr.io/ait-brainlab/web-print:latest
     container_name: web-print
     restart: unless-stopped
