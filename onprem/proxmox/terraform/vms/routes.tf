@@ -12,7 +12,7 @@ locals {
     http = {
       routers = {
         for name, route in var.proxy_routes : "${name}-router" => {
-          rule        = join(" || ", concat(["Host(`${route.domain}`)"], [for alias in route.aliases : "Host(`${alias}`)"]))
+          rule        = coalesce(route.rule_override, join(" || ", concat(["Host(`${route.domain}`)"], [for alias in route.aliases : "Host(`${alias}`)"])))
           entryPoints = ["websecure"]
           tls = {
             certResolver = "letsencrypt"

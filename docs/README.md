@@ -23,3 +23,4 @@ Welcome to the central documentation, operational runbooks, and handover guides 
 | [**SysAdmin Troubleshooting**](troubleshooting.md) | Diagnostic and resolution steps for CUDA, NFS, Proxy, and Jupyter issues | All Admins |
 | [**Roles & Handover**](roles_and_responsibilities.md) | Division of operational responsibilities between Infra and Service Admins | Future Maintainers |
 | [**Hybrid Cloud Architecture**](hybrid_cloud_storage.md) | Storage decoupling, K8s CSI abstraction, and unified POSIX identity across clusters | Infra & Cloud Admins |
+| [**Project Deployment Guide**](project_deployment_guide.md) | Standard deployment guide for tenant VMs, Traefik microservices, and databases | Project Teams & Developers |

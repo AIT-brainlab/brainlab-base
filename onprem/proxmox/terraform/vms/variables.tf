@@ -171,25 +171,32 @@ variable "proxy_gateway" {
 variable "proxy_routes" {
   description = "Declarative map of reverse proxy routes managed by brainlab-proxy (domain -> upstream target URL)"
   type = map(object({
-    domain     = string
-    target_url = string
-    aliases    = optional(list(string), [])
+    domain        = string
+    target_url    = string
+    aliases       = optional(list(string), [])
+    rule_override = optional(string, "")
   }))
   default = {
     dlms = {
-      domain     = "dlms.brain.cs.ait.ac.th"
-      target_url = "http://10.10.250.119:80"
-      aliases    = ["dlms-dev.brain.cs.ait.ac.th"]
+      domain        = "dlms.brain.cs.ait.ac.th"
+      target_url    = "http://10.10.250.119:80"
+      aliases       = [
+        "front.dlms.brain.cs.ait.ac.th",
+        "back.dlms.brain.cs.ait.ac.th"
+      ]
+      rule_override = "Host(`dlms.brain.cs.ait.ac.th`) || Host(`front.dlms.brain.cs.ait.ac.th`) || Host(`back.dlms.brain.cs.ait.ac.th`) || HostRegexp(`{sub:[a-z0-9-]+}.dlms.brain.cs.ait.ac.th`)"
     }
     services = {
-      domain     = "print.brain.cs.ait.ac.th"
-      target_url = "http://10.10.250.120:80"
-      aliases    = []
+      domain        = "print.brain.cs.ait.ac.th"
+      target_url    = "http://10.10.250.120:80"
+      aliases       = []
+      rule_override = ""
     }
     example = {
-      domain     = "example.brain.cs.ait.ac.th"
-      target_url = "http://10.10.250.120:80"
-      aliases    = []
+      domain        = "example.brain.cs.ait.ac.th"
+      target_url    = "http://10.10.250.120:80"
+      aliases       = []
+      rule_override = ""
     }
   }
 }

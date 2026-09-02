@@ -110,7 +110,7 @@ flowchart TD
 | Task ID | Task Description | Owner | Priority | Status | Details / Deliverable |
 | :--- | :--- | :---: | :---: | :---: | :--- |
 | `NEXT-3.1` | **Hand over Environment to DLMS Researchers** | Akraradet | P2 | 🟢 | Completed: Confirmed members in `prj-dlms-users` (`oakaugustine@gmail.com`, `ppthwe99@gmail.com`, `ephoney1141@gmail.com`) can connect via NetBird; CNAME `dlms-dev.brain.cs.ait.ac.th` active. |
-| `NEXT-3.2` | **Deploy DLMS Application Containers** | DLMS Team | P2 | 🔵 | Completed & Live: Deployed project-level Traefik (Port 80) and frontend on `dlms-server` (`10.10.250.1:80`). Verified public HTTPS routing via `brainlab-proxy` (`https://dlms.brain.cs.ait.ac.th` & `https://dlms-dev.brain.cs.ait.ac.th`). Ready for backend API, database, and RTSP stream ingest containers (`192.168.1.2` and `192.168.1.3`). |
+| `NEXT-3.2` | **Deploy DLMS Application Containers** | DLMS Team | P2 | 🔵 | Completed & Live: Deployed project-level Traefik (Port 80) and microservices stack (frontend & backend) on `dlms-server` (`10.10.250.119:80`). Verified public HTTPS routing with Let's Encrypt SSL via `brainlab-proxy` for wildcard `*.dlms.brain.cs.ait.ac.th` (`https://dlms.brain.cs.ait.ac.th`, `https://front.dlms.brain.cs.ait.ac.th`, and `https://back.dlms.brain.cs.ait.ac.th`). Ready for database and RTSP stream ingest containers (`192.168.1.2` and `192.168.1.3`). |
 
 ---
 
