@@ -182,9 +182,10 @@ variable "proxy_routes" {
       target_url    = "http://10.10.250.119:80"
       aliases       = [
         "front.dlms.brain.cs.ait.ac.th",
-        "back.dlms.brain.cs.ait.ac.th"
+        "back.dlms.brain.cs.ait.ac.th",
+        "iobox.dlms.brain.cs.ait.ac.th"
       ]
-      rule_override = "Host(`dlms.brain.cs.ait.ac.th`) || Host(`front.dlms.brain.cs.ait.ac.th`) || Host(`back.dlms.brain.cs.ait.ac.th`) || HostRegexp(`{sub:[a-z0-9-]+}.dlms.brain.cs.ait.ac.th`)"
+      rule_override = ""
     }
     services = {
       domain        = "print.brain.cs.ait.ac.th"
