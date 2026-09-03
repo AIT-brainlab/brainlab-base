@@ -307,7 +307,9 @@ members:
 
   - username: aryas
     display_name: "Arya Shah"
-    primary_email: st125462@ait.asia
+    primary_email: aryaforhire@gmail.com
+    secondary_emails:
+      - st125462@ait.asia
     uid: 125462
     gid: 2002
     home_directory: /mnt/pool-1/home/aryas

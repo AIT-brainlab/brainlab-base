@@ -98,24 +98,12 @@ variable "nameserver" {
   default     = "192.41.170.15"
 }
 
-variable "netbird_brainlab_cluster_key" {
-  description = "NetBird setup key for nodes joining group brainlab-cluster (e.g. brainlab-proxy, brainlab-services)"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "netbird_dlms_servers_key" {
-  description = "NetBird setup key for nodes joining group prj-dlms-servers (e.g. dlms-server)"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
 variable "ssh_public_keys" {
-  description = "List of SSH public keys for root/admin login"
+  description = "List of SSH public keys for admin login (ubuntu user)"
   type        = list(string)
-  default     = []
+  default = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDJDfu8nCfNFJsoHyYK3WMn194MmH/1i/OyhqyhqEbK+ brainlab-admin-key"
+  ]
 }
 
 # General Lab Services VM (VM 120) Specifications

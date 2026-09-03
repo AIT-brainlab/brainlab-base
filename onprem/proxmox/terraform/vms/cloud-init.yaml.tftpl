@@ -108,11 +108,6 @@ runcmd:
   - systemctl enable --now docker
   - systemctl restart docker
   - systemctl enable --now qemu-guest-agent
-  
-  # 3. Enroll into NetBird Mesh via CSIM Proxy Bootstrapper
-%{ if netbird_setup_key != "" ~}
-  - curl -fsSL -x http://192.41.170.82:3128 https://raw.githubusercontent.com/AIT-brainlab/brainlab-base/main/docs/infra/onprem/scripts/bootstrap_netbird_csim.sh | bash -s -- ${netbird_setup_key}
-%{ endif ~}
 
 %{ if vm_name == "brainlab-proxy" ~}
   # 3. Launch Traefik Edge Proxy service stack

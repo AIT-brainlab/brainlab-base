@@ -9,8 +9,8 @@
 
 Because AIT Brainlab uses **Google OAuth2 SSO** and **Declarative Identity-as-Code (`mgmt/identity/members.yaml`)**, member offboarding is fast, safe, and automated:
 
-1. **Institutional Deactivation**: When AIT IT deactivates the graduating student's `@ait.asia` Google account, their access to **NetBird VPN**, **JupyterHub**, and **Web Print** is **instantly revoked by Google** with zero manual intervention.
-2. **Alumni Transition**: If the member continues as an external collaborator, their personal email is added to `secondary_emails` in `mgmt/identity/members.yaml` (Multi-Email Binding), preserving their existing POSIX UID without copying data.
+1. **Institutional Deactivation & Compute Revocation**: When AIT IT deactivates the graduating student's `@ait.asia` Google account, their access to **JupyterHub GPU compute** and active VPN sessions is **instantly revoked by Google**. JupyterHub authorizes strictly against `primary_email`, preventing unauthorized GPU compute utilization.
+2. **Alumni Transition & Data Preservation**: If the member continues as an external collaborator, their personal email is added to `secondary_emails` in `mgmt/identity/members.yaml` (Multi-Email Binding), preserving their existing POSIX UID and TrueNAS files without copying data. *(Note: If an alumni is explicitly authorized to continue GPU compute, update their `primary_email` to their personal email).*
 
 ---
 
@@ -34,13 +34,13 @@ Because AIT Brainlab uses **Google OAuth2 SSO** and **Declarative Identity-as-Co
 #### Scenario A: Retain as Alumni / External Collaborator
 If the member transitions to alumni status:
 1. Open [`mgmt/identity/members.yaml`](../mgmt/identity/members.yaml).
-2. Add their approved personal email under `secondary_emails`:
+2. Add their approved personal email under `secondary_emails` (for identity preservation and Web Print) or promote it to `primary_email` if they are granted active GPU compute access:
    ```yaml
    - username: johndoe
      display_name: "John Doe"
-     primary_email: st123456@ait.asia
+     primary_email: st123456@ait.asia       # Or 'johndoe@gmail.com' if active JupyterHub GPU compute is approved
      secondary_emails:
-       - johndoe@gmail.com
+       - johndoe@gmail.com                  # Preserves POSIX mapping & Web Print
      uid: 123456
      gid: 2002
      home_directory: /mnt/pool-1/home/johndoe

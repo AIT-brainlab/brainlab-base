@@ -185,8 +185,19 @@ resource "google_compute_instance" "mgmt_vm" {
     scopes = ["cloud-platform"]
   }
 
+  metadata = {
+    ssh-keys = "ubuntu:${trimspace(file("${path.module}/../../keys/brainlab-admin-key.pub"))}"
+  }
+
   # Native GCE Automated Startup Script
   metadata_startup_script = local.startup_script_rendered
+
+  lifecycle {
+    ignore_changes = [
+      metadata_startup_script,
+      boot_disk[0].initialize_params[0].image,
+    ]
+  }
 
   depends_on = [
     google_project_service.compute_api,

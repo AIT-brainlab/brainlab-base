@@ -14,7 +14,6 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_services" {
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
       vm_name             = "brainlab-services"
-      netbird_setup_key   = var.netbird_brainlab_cluster_key
       ssh_public_keys     = var.ssh_public_keys
       dynamic_routes_yaml = ""
     })

@@ -74,7 +74,7 @@ jobs:
       - name: Copy Compose to Target VM
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SERVICES_VM_NETBIRD_IP || '100.74.10.218' }}
+          host: ${{ secrets.SERVICES_VM_NETBIRD_IP || 'brainlab-services' }}
           username: ubuntu
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           target: /projects/print
@@ -84,7 +84,7 @@ jobs:
       - name: Deploy Print Stack via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVICES_VM_NETBIRD_IP || '100.74.10.218' }}
+          host: ${{ secrets.SERVICES_VM_NETBIRD_IP || 'brainlab-services' }}
           username: ubuntu
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |

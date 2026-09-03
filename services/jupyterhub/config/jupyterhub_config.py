@@ -39,13 +39,17 @@ LLDAP_PASSWORD = os.environ.get('LLDAP_PASSWORD', '')
 LLDAP_BASE_DN = 'dc=brain,dc=cs,dc=ait,dc=ac,dc=th'
 
 def query_lldap_user(identifier):
-    """Queries LLDAP over NetBird to map an email or username to POSIX uid, uidNumber, and gidNumber."""
+    """
+    Queries LLDAP over NetBird to map an email or username to POSIX uid, uidNumber, and gidNumber.
+    Note: Authorizes strictly against 'primary_email' (mail) or POSIX username (uid).
+    Secondary emails are intentionally excluded so GPU compute is revoked upon graduation.
+    """
     if not identifier or not LLDAP_PASSWORD:
         return None
     try:
         server = ldap3.Server(LLDAP_URL, get_info=ldap3.NONE, connect_timeout=5)
         conn = ldap3.Connection(server, user=LLDAP_BIND_DN, password=LLDAP_PASSWORD, auto_bind=True)
-        # Search by either mail OR uid (username)
+        # Search strictly by primary email (mail) OR POSIX username (uid)
         search_filter = f"(&(objectClass=posixAccount)(|(mail={identifier})(uid={identifier})))"
         conn.search(
             search_base=f"ou=people,{LLDAP_BASE_DN}",

@@ -64,7 +64,8 @@ Every single element of the management plane is either **declared in Git** or **
 | Component | Technology | Where State Lives | Self-Healing / Recovery |
 | :--- | :--- | :--- | :--- |
 | **👤 User Directory** | LLDAP | Git ([`mgmt/identity/members.yaml`](identity/members.yaml)) + GCS (`backups/lldap/users.db`) | Restored from GCS in 1s on boot. Synced to Git via [`sync_users.py`](identity/sync_users.py). |
-| **📡 VPN Network** | NetBird | Web UI / Ansible + GCS (`backups/netbird/store.db`) | Restored from GCS in 1s on boot. Automated peer enrollment via Ansible Day 1. |
+| **📡 VPN Network** | NetBird | Git ([`mgmt/vpn/network.yaml`](vpn/network.yaml)) + GCS (`backups/netbird/store.db`) | Restored from GCS in 1s on boot. Automated peer enrollment via [`enroll_node.py`](vpn/enroll_node.py). |
+| **🔑 Master Admin Key** | ED25519 | Git ([`mgmt/keys/brainlab-admin-key.pub`](keys/brainlab-admin-key.pub)) + Secret Manager (`brainlab-admin-ssh-key`) | 100% Day-0 automated injection. Disaster recovery via [Key Recovery SOP](../docs/infra/day0_and_key_recovery.md). |
 | **🌐 Domain Routing** | Cloud DNS | Git ([`foundation/dns.tf`](terraform/foundation/dns.tf)) | 100% managed on Google Anycast network. Zero downtime during VM reboots. |
 | **👥 Governance** | IAM | Git ([`foundation/iam.tf`](terraform/foundation/iam.tf)) | Root owners & automation service account versioned in Git. |
 | **🔐 Credentials** | Secret Manager | GCP Secret Manager | Protected by `lifecycle.prevent_destroy = true`. |

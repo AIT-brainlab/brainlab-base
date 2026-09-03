@@ -45,7 +45,7 @@ output "google_oauth_client_secret_secret_id" {
   value       = google_secret_manager_secret.google_oauth_client_secret.secret_id
 }
 
-output "netbird_setup_key_secret_id" {
-  description = "Secret Manager ID for NetBird Setup Key"
-  value       = google_secret_manager_secret.netbird_setup_key.secret_id
+output "admin_ssh_key_secret_id" {
+  description = "Secret Manager ID for Master Administrative SSH Key"
+  value       = google_secret_manager_secret.admin_ssh_key.secret_id
 }

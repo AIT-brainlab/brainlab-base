@@ -117,9 +117,9 @@ resource "google_secret_manager_secret" "netbird_mgmt_token" {
   depends_on = [google_project_service.secretmanager_api]
 }
 
-# Secret 6: NetBird Server Reusable Setup Key
-resource "google_secret_manager_secret" "netbird_setup_key" {
-  secret_id = "netbird-setup-key"
+# Secret 6: Master Administrative SSH Private Key (Disaster Recovery Vault)
+resource "google_secret_manager_secret" "admin_ssh_key" {
+  secret_id = "brainlab-admin-ssh-key"
 
   replication {
     auto {}

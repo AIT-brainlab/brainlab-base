@@ -9,7 +9,9 @@ AIT Brainlab operates a multi-user JupyterHub environment providing containerize
 - **Hub URL**: `https://la.cs.ait.ac.th`
 - **Spawner**: Custom `DockerSpawner` dynamically mapping user UIDs/GIDs and allocating GPUs (e.g. dual NVIDIA RTX A6000) per user.
 - **Storage**: User working directory lands at `/home/{username}`, mounting TrueNAS NFS `/mnt/pool-1/home/{username}` as `work`, plus FastSSD datasets.
-- **Authentication**: Google OAuth2 SSO (`@ait.asia`) dynamically querying Cloud LLDAP (`brainlab-mgmt-vm:3890`) for numeric POSIX UID/GID (`2002:brainlab`).
+- **Authentication (AuthN & AuthZ)**: Google OAuth2 SSO dynamically queried against Cloud LLDAP (`brainlab-mgmt-vm:3890`).
+  - **Primary Email Enforcement**: JupyterHub authorization strictly validates against the user's **`primary_email`** (or POSIX `uid`) in `members.yaml` via LDAP search filter `(&(objectClass=posixAccount)(|(mail={identifier})(uid={identifier})))`.
+  - **Security & Lifecycle Invariant**: Secondary personal emails (`secondary_emails`) are intentionally excluded from JupyterHub access. When a student graduates and their institutional `@ait.asia` account is deactivated by AIT, their access to GPU compute resources is automatically revoked with zero manual intervention.
 - **Service Management**: Controlled via Docker Compose (`docker compose up -d`).
 
 ---

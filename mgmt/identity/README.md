@@ -34,9 +34,10 @@ Identity is **100% decoupled from Terraform** to eliminate chicken-and-egg depen
 1. **AuthN vs. AuthZ Separation**:
    - **Authentication (AuthN)** is 100% handled by **Google OAuth2 SSO**. LLDAP stores **NO passwords** for human users (`NULL` password hashes in database).
    - **Authorization & POSIX (AuthZ)** is handled by LLDAP, mapping authenticated emails (`@ait.asia` or `@gmail.com`) to numeric Unix UIDs and home directories.
-2. **Multi-Email Binding**:
-   - A single POSIX user account (`akraradets`, UID `121413`) can bind multiple authorized emails (`st121413@ait.asia` + `akraradets@gmail.com`).
-   - Graduated members and alumni access the exact same account and files on TrueNAS without permission changes or `chown`.
+2. **Multi-Email Binding & Service Matrix**:
+   - A single POSIX user account (`akraradets`, UID `121413`) can declare a `primary_email` and optional `secondary_emails`.
+   - **`primary_email` (Institutional/Authoritative)**: Used for heavy GPU compute access (**JupyterHub** on `la`) and primary POSIX mapping. JupyterHub authorizes strictly against `primary_email` to ensure automatic revocation of compute resources when an institutional account is deactivated upon graduation.
+   - **`secondary_emails` (Personal/Alumni)**: Used for lightweight service identity mapping (such as **Web Print** CSIM student quota resolution and NetBird VPN mesh alumni tracking) and POSIX UID preservation without file copying or `chown`.
 3. **Simplified Group Structure**:
    - **`brainlab`**: Primary group for all active researchers, students, faculty, and alumni.
    - **`admin`**: Strictly for the master lab service account (`bci` / `brainlab@ait.asia`).
@@ -69,17 +70,24 @@ members:
 
 ## 🚀 How to Add or Update a Member
 
-1. **Edit [`members.yaml`](members.yaml)** (or submit a GitHub Pull Request).
-2. **Dry Run (Preview Changes)**:
+### Option A: Automatic Synchronization (GitOps CI/CD)
+1. **Edit [`members.yaml`](members.yaml)** and push to the `main` branch.
+2. The GitHub Action workflow [`.github/workflows/sync_identity.yml`](../../.github/workflows/sync_identity.yml) automatically joins the NetBird WireGuard mesh and applies changes to LLDAP in real-time.
+
+### Option B: Local / Manual Synchronization
+1. **Connect to NetBird Mesh** (Required to bypass Traefik's mesh-only allowlist on `ldap.brain.cs.ait.ac.th`):
+   ```bash
+   netbird up
+   ```
+2. **Preview Changes (Dry Run)**:
    ```bash
    ./mgmt/identity/sync_users.py
    ```
+   *(Displays exact field-level diffs, group additions/removals, and orphaned accounts).*
 3. **Apply Changes to Live LLDAP**:
    ```bash
    ./mgmt/identity/sync_users.py --apply
    ```
-
-The script connects to `https://ldap.brain.cs.ait.ac.th`, reads `lldap-admin-password` from GCP Secret Manager, and applies additions or modifications in milliseconds.
 
 ---
 
