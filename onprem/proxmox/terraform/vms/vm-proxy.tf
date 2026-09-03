@@ -13,9 +13,10 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_proxy" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      vm_name             = "brainlab-proxy"
-      ssh_public_keys     = var.ssh_public_keys
-      dynamic_routes_yaml = ""
+      vm_name                = "brainlab-proxy"
+      admin_ssh_public_keys  = var.admin_ssh_public_keys
+      deploy_ssh_public_keys = []
+      dynamic_routes_yaml    = ""
     })
 
     file_name = "cloud-init-brainlab-proxy.yaml"

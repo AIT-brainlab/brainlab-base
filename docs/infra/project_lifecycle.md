@@ -68,7 +68,18 @@ google_dns_record_set.brainlab_a_records["wildcard_<project>"] = {
 
 ## 🖥️ Step 2: Proxmox VM Provisioning (Terraform)
 
-### 1. Create VM Definition File
+### 1. Generate Project SSH Keypair
+On your workstation, generate the dedicated project deployment keypair:
+```bash
+# Generate project deploy keypair
+ssh-keygen -t ed25519 -C "deploy@<project>-server" -f ~/.ssh/deploy-<project>
+
+# Copy public key into repo
+mkdir -p mgmt/keys/projects
+cp ~/.ssh/deploy-<project>.pub mgmt/keys/projects/deploy-<project>.pub
+```
+
+### 2. Create VM Definition File
 Create `onprem/proxmox/terraform/vms/vm-<project>.tf`:
 
 ```hcl
@@ -82,9 +93,10 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_<project>" {
 
   source_raw {
     data = templatefile("${path.module}/cloud-init.yaml.tftpl", {
-      vm_name             = "<project>-server"
-      ssh_public_keys     = var.ssh_public_keys
-      dynamic_routes_yaml = ""
+      vm_name                = "<project>-server"
+      admin_ssh_public_keys  = var.admin_ssh_public_keys
+      deploy_ssh_public_keys = [trimspace(file("${path.module}/../../../../mgmt/keys/projects/deploy-<project>.pub"))]
+      dynamic_routes_yaml    = ""
     })
 
     file_name = "cloud-init-<project>-server.yaml"
@@ -252,7 +264,7 @@ In the new project repository (`AIT-brainlab/<project>`) $\rightarrow$ **Setting
 | Secret Name | Value | Purpose |
 | :--- | :--- | :--- |
 | `NETBIRD_CI_SETUP_KEY` | The Reusable CI/CD Key (from Step 4) | Joins GitHub runner to NetBird mesh in group `prj-<project>-cicd` |
-| `VM_SSH_PRIVATE_KEY` | Master Admin Key / Project Deploy Key | Authenticates SSH connection to `ubuntu@<project>-server` |
+| `VM_SSH_PRIVATE_KEY` | Contents of `~/.ssh/deploy-<project>` | Authenticates SSH connection to `deploy@<project>-server` |
 
 ### 2. Add Deployment Workflow (`.github/workflows/deploy.yml`)
 
@@ -280,7 +292,7 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: <project>-server # Resolves via MagicDNS!
-          username: ubuntu
+          username: deploy
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           target: /projects/<project>
           source: 'docker-compose.yml'
@@ -289,7 +301,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: <project>-server
-          username: ubuntu
+          username: deploy
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             cd /projects/<project>

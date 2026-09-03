@@ -77,9 +77,19 @@ users:
     shell: /bin/bash
     groups: docker, sudo
     ssh_authorized_keys:
-%{ for key in ssh_public_keys ~}
+%{ for key in admin_ssh_public_keys ~}
       - ${key}
 %{ endfor ~}
+%{ if length(deploy_ssh_public_keys) > 0 ~}
+  - name: deploy
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    groups: docker, sudo
+    ssh_authorized_keys:
+%{ for key in deploy_ssh_public_keys ~}
+      - ${key}
+%{ endfor ~}
+%{ endif ~}
 
 package_update: true
 package_upgrade: false

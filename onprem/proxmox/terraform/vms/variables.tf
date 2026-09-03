@@ -98,11 +98,19 @@ variable "nameserver" {
   default     = "192.41.170.15"
 }
 
-variable "ssh_public_keys" {
-  description = "List of SSH public keys for admin login (ubuntu user)"
+variable "admin_ssh_public_keys" {
+  description = "List of SSH public keys for master admin login (ubuntu user)"
   type        = list(string)
   default = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDJDfu8nCfNFJsoHyYK3WMn194MmH/1i/OyhqyhqEbK+ brainlab-admin-key"
+  ]
+}
+
+variable "dlms_deploy_ssh_public_keys" {
+  description = "List of SSH public keys for DLMS project deployment (deploy user)"
+  type        = list(string)
+  default = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ3wy6w+Eb0SONJo5DD+tvvCL+oVtg/FuFkbn/z8/yVT deploy@dlms-server"
   ]
 }
 
