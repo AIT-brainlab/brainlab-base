@@ -110,7 +110,11 @@ packages:
 runcmd:
   # 1. Standard application projects directory
   - mkdir -p /projects
+%{ if length(deploy_ssh_public_keys) > 0 ~}
+  - chown -R deploy:docker /projects
+%{ else ~}
   - chown -R ubuntu:docker /projects
+%{ endif ~}
   - chmod 775 /projects
 
   # 2. Enable & restart Docker with proxy configuration & QEMU Guest Agent
