@@ -367,8 +367,12 @@ def sync_policies(base_url, token, declared_policies, group_name_to_id, dry_run=
     return synced_count
 
 def sync_setup_keys(base_url, token, declared_keys, group_name_to_id, dry_run=True):
-    """Synchronize server setup keys."""
+    """Synchronize server setup keys (if declared)."""
     print(f"\n{BLUE}--- 🔑 Synchronizing Server Setup Keys ---{NC}")
+    if not declared_keys:
+        print(f"  {CYAN}ℹ Setup keys are managed on-demand (zero static keys in GitOps).{NC}")
+        return 0
+
     existing = api_request(base_url, "/setup-keys", token)
     existing_map = {k["name"]: k for k in existing}
 

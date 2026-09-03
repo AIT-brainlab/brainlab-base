@@ -124,47 +124,7 @@ policies:
         destinations: [prj-dlms-servers]
 
 # ----------------------------------------------------------
-# 3. Server Setup Keys (Day 1 Host Onboarding)
-# ----------------------------------------------------------
-setup_keys:
-  - name: brainlab-cluster-enrollment
-    type: reusable
-    expires_in_days: 365
-    auto_groups: [brainlab-cluster]
-    usage_limit: 0
-
-  - name: mgmt-vm-enrollment
-    type: reusable
-    expires_in_days: 365
-    auto_groups: [mgmt-cluster]
-    usage_limit: 0
-
-  - name: dlms-edge-enrollment
-    type: reusable
-    expires_in_days: 365
-    auto_groups: [prj-dlms-servers]
-    usage_limit: 0
-
-  - name: dlms-server-enrollment
-    type: reusable
-    expires_in_days: 365
-    auto_groups: [prj-dlms-servers]
-    usage_limit: 0
-
-  - name: ci-cd-runner-enrollment
-    type: reusable
-    expires_in_days: 365
-    auto_groups: [ci-cd-runners]
-    usage_limit: 0
-
-  - name: dlms-cicd-runner-enrollment
-    type: reusable
-    expires_in_days: 365
-    auto_groups: [prj-dlms-cicd]
-    usage_limit: 0
-
-# ----------------------------------------------------------
-# 4. Internal Mesh DNS Overrides (CNAME to MagicDNS)
+# 3. Internal Mesh DNS Overrides (CNAME to MagicDNS)
 # ----------------------------------------------------------
 dns_zones:
   - name: "Brainlab Internal Zone"
