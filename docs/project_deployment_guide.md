@@ -5,13 +5,27 @@
 
 ---
 
+## 📝 0. How to Request a New Project
+
+Before provisioning begins, the project lead or student researcher submits the following details to **`brainlab@ait.asia`**:
+
+| Required Field | Description | Example |
+| :--- | :--- | :--- |
+| **Project Name** | Short lowercase slug for your VM and folders | `dlms`, `smartcity`, `traffic-ai` |
+| **Repository URL** | GitHub repository containing your application | `https://github.com/AIT-brainlab/dlms-backend` |
+| **Target Domain** | Public FQDN (must end in `.brain.cs.ait.ac.th` or `.dpi.ait.ac.th`) | `dlms.brain.cs.ait.ac.th` or `demo.dpi.ait.ac.th` |
+| **Team Emails** | Google accounts (`@ait.asia`) for NetBird access | `st123456@ait.asia`, `lead@ait.asia` |
+
+---
+
 ## 📦 1. What You Receive From Lab Admin
 
-When your research project is provisioned, the Lab SysAdmin provides you with:
-1. **🌐 Domain**: `https://<project>.brain.cs.ait.ac.th` (and wildcards `https://*.<project>.brain.cs.ait.ac.th`)
-2. **🖥️ VM Hostname**: `<project>-server`
-3. **🔑 SSH Deploy Key**: `deploy-<project>` (private key for user `deploy`)
-4. **📡 NetBird VPN Access**: Added to group `prj-<project>-users` via your `@ait.asia` Google account.
+Once approved, the Lab SysAdmin provisions your VM and provides:
+1. **🌐 Public HTTPS URL**: `https://<project>.brain.cs.ait.ac.th` (or `.dpi.ait.ac.th`)
+2. **🖥️ VM MagicDNS Hostname**: `<project>-server`
+3. **🔑 SSH Deploy Private Key**: `deploy-<project>` (dedicated for user `deploy`)
+4. **🤖 NetBird CI/CD Setup Key**: For your GitHub Actions workflow secret `NETBIRD_CI_SETUP_KEY`
+5. **📡 NetBird VPN Access**: Added to group `prj-<project>-users` for your team members.
 
 ---
 

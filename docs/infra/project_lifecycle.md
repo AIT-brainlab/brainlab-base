@@ -20,13 +20,26 @@ flowchart TD
 
 ---
 
+## 📥 Step 0: Project Request & Intake Validation
+
+Before provisioning infrastructure, the SysAdmin verifies the intake request from the research team:
+
+| Input Requirement | Validation Rules | Accepted Formats |
+| :--- | :--- | :--- |
+| **Project Slug** | Lowercase alphanumeric slug with hyphens | e.g., `dlms`, `smartcity`, `traffic-ai` |
+| **Repository URL** | Valid GitHub repository for CI/CD | `https://github.com/AIT-brainlab/<project>` |
+| **Domain FQDN** | **Must end with `.brain.cs.ait.ac.th` or `.dpi.ait.ac.th`** | `<project>.brain.cs.ait.ac.th` or `<project>.dpi.ait.ac.th` |
+| **Team Accounts** | Registered `@ait.asia` Google accounts | Added to `members.yaml` and NetBird group `prj-<project>-users` |
+
+---
+
 ## 📋 Step 1: Domain Allocation & Edge Ingress Routing
 
 ### 1. Choose Project Taxonomy
 * **Project Name**: `<project>` (e.g. `dlms`, `smartcity`)
 * **Domains**:
-  * Root Domain: `<project>.brain.cs.ait.ac.th`
-  * Wildcard Subdomains: `*.<project>.brain.cs.ait.ac.th` (`api.`, `front.`, `dev.`, etc.)
+  * Root Domain: `<project>.brain.cs.ait.ac.th` or `<project>.dpi.ait.ac.th`
+  * Wildcard Subdomains: `*.<project>.brain.cs.ait.ac.th` (or `*.<project>.dpi.ait.ac.th`)
 * **Proxmox Internal NAT IP**: `10.10.250.X` (e.g., `10.10.250.125`)
 
 ### 2. Configure Edge Traefik on `brainlab-proxy`
