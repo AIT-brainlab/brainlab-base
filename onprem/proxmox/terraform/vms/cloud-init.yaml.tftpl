@@ -110,8 +110,8 @@ packages:
 runcmd:
   # 1. Standard application projects directory
   - mkdir -p /projects
-  - chown -R ubuntu:ubuntu /projects
-  - chmod 755 /projects
+  - chown -R ubuntu:docker /projects
+  - chmod 775 /projects
 
   # 2. Enable & restart Docker with proxy configuration & QEMU Guest Agent
   - systemctl daemon-reload
