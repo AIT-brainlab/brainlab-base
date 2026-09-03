@@ -24,21 +24,24 @@ groups:
   - name: prj-dlms-servers
     description: "DLMS application, database, and backend Docker host VM"
 
+  - name: prj-dlms-cicd
+    description: "DLMS repository GitHub Actions runners for automated deployment"
+
   # External Infrastructure Tags: CSIM Printers
   - name: csim-printers
     description: "CSIM Department printers and print server resources"
 
   # Automation & CI/CD Runners
   - name: ci-cd-runners
-    description: "Ephemeral GitHub Actions CI/CD runners for automated on-prem deployment"
+    description: "Ephemeral GitHub Actions CI/CD runners for core lab services (brainlab-services)"
 
 # ----------------------------------------------------------
 # 2. Zero-Trust Access Control Policies
 # ----------------------------------------------------------
 policies:
-  # 1. SysAdmin administrative access to core lab infrastructure and clusters
+  # 1. SysAdmin administrative access to core lab infrastructure and clusters (Zero access to tenant projects)
   - name: SysAdmin-Infra-Access
-    description: "Administrative access to CSIM on-prem cluster, management plane, and routed LAN resources"
+    description: "Administrative access strictly to CSIM on-prem cluster, management plane, and routed LAN resources"
     enabled: true
     rules:
       - name: sysadmin-infra-rules
@@ -96,17 +99,29 @@ policies:
         sources: [sysadmin, brainlab-cluster]
         destinations: [csim-printers, sysadmin]
 
-  # 6. CI/CD automated deployment access to target servers
-  - name: CI-CD-Deploy-Access
-    description: "Allow GitHub Actions CI/CD runners to access target application servers for automated deployment"
+  # 6. Core Lab CI/CD automated deployment access to brainlab-cluster
+  - name: Brainlab-CICD-Deploy-Access
+    description: "Allow core lab GitHub Actions CI/CD runners to deploy to brainlab-cluster (e.g. brainlab-services)"
     enabled: true
     rules:
-      - name: cicd-ssh-access
+      - name: brainlab-cicd-ssh-access
         action: accept
         protocol: all
         bidirectional: false
         sources: [ci-cd-runners]
-        destinations: [brainlab-cluster, prj-dlms-servers]
+        destinations: [brainlab-cluster]
+
+  # 7. DLMS Project CI/CD automated deployment access strictly to prj-dlms-servers
+  - name: DLMS-CICD-Deploy-Access
+    description: "Allow DLMS repository GitHub Actions CI/CD runners to deploy strictly to DLMS servers"
+    enabled: true
+    rules:
+      - name: dlms-cicd-ssh-access
+        action: accept
+        protocol: all
+        bidirectional: false
+        sources: [prj-dlms-cicd]
+        destinations: [prj-dlms-servers]
 
 # ----------------------------------------------------------
 # 3. Server Setup Keys (Day 1 Host Onboarding)
@@ -140,6 +155,12 @@ setup_keys:
     type: reusable
     expires_in_days: 365
     auto_groups: [ci-cd-runners]
+    usage_limit: 0
+
+  - name: dlms-cicd-runner-enrollment
+    type: reusable
+    expires_in_days: 365
+    auto_groups: [prj-dlms-cicd]
     usage_limit: 0
 
 # ----------------------------------------------------------

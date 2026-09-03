@@ -453,10 +453,13 @@ def sync_dns_zones(base_url, token, declared_zones, group_name_to_id, dry_run=Tr
         rec_map = {r["name"]: r for r in existing_records}
 
         for rec in zone_cfg.get("records", []):
-            rec_name = rec["name"]
+            rec_name = rec.get("name", "")
             rec_type = rec.get("type", "A")
-            content = rec["content"]
+            content = rec.get("content") or rec.get("value") or rec.get("target") or ""
             ttl = rec.get("ttl", 300)
+
+            if not rec_name or not content:
+                continue
 
             if rec_name in rec_map:
                 print(f"    {GREEN}✔ DNS Record exists:{NC} {rec_name} -> {content}")
