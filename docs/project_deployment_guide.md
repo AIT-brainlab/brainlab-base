@@ -42,26 +42,40 @@ All server access, database ports, and development endpoints are secured inside 
 
 ---
 
-## 🔑 3. SSH into Your Project Server
+## 🔑 3. Working on Your Project VM (SSH & VS Code Remote)
 
-1. Save your private key to `~/.ssh/deploy-<project>` and enforce permissions:
-   ```bash
-   chmod 600 ~/.ssh/deploy-<project>
-   ```
+Every team member can work directly on the VM using their issued `deploy-<project>` SSH key.
 
-2. Add a shortcut to your `~/.ssh/config`:
-   ```ssh-config
-   Host <project>-server
-     HostName <project>-server
-     User deploy
-     IdentityFile ~/.ssh/deploy-<project>
-     IdentitiesOnly yes
-   ```
+### Step 1: Save Your Private Key
+Save the key to your workstation and set permissions:
+```bash
+# Save key file
+chmod 600 ~/.ssh/deploy-<project>
+```
 
-3. Connect to your server:
-   ```bash
-   ssh <project>-server
-   ```
+### Step 2: Configure `~/.ssh/config`
+Add this entry to your `~/.ssh/config`:
+```ssh-config
+Host <project>-server
+  HostName <project>-server
+  User deploy
+  IdentityFile ~/.ssh/deploy-<project>
+  IdentitiesOnly yes
+  ServerAliveInterval 60
+```
+
+### Step 3: Connect to the Server
+```bash
+ssh <project>-server
+```
+
+### 💻 Using VS Code Remote - SSH:
+You can use VS Code to edit code and run scripts directly on the VM:
+1. Install the **Remote - SSH** extension in VS Code.
+2. Press `F1` (or `Cmd+Shift+P`) $\rightarrow$ select **Remote-SSH: Connect to Host...** $\rightarrow$ choose `<project>-server`.
+3. Open folder `/projects/<project>/` to edit code, inspect model checkpoints, and run tests in the integrated terminal.
+
+> **💡 Permission Tip**: The `deploy` user is a member of group `docker` and owns `/projects/<project>/`. You can run `docker compose`, edit files, and view logs directly without needing `sudo`.
 
 ---
 
