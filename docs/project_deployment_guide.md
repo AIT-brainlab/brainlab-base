@@ -29,16 +29,39 @@ Once approved, the Lab SysAdmin provisions your VM and provides:
 
 ---
 
-## 📡 2. Connect to NetBird VPN
+## 📡 2. Connect to NetBird VPN (Self-Hosted Control Plane)
 
-All server access, database ports, and development endpoints are secured inside the NetBird WireGuard mesh:
+All server access, database ports, and development endpoints are secured inside our private WireGuard mesh.
 
-1. Download and install NetBird from [netbird.io](https://netbird.io/).
-2. Click **Sign in** and authenticate with your **`@ait.asia`** Google Account.
-3. Verify connection in your terminal:
-   ```bash
-   netbird status
-   ```
+### Step 1: Install NetBird Client
+Download and install the official NetBird client for macOS, Windows, or Linux from [netbird.io](https://netbird.io/).
+
+### Step 2: Configure Self-Hosted Server URL (⚠️ Required)
+Our lab runs a dedicated, self-hosted NetBird control plane. You **must** change the server URL before logging in:
+
+* **GUI App (macOS / Windows)**:
+  1. Open the NetBird application.
+  2. Click the **Settings (⚙️ Gear Icon)** $\rightarrow$ select **Advanced Settings** / **Change Server**.
+  3. Enter the Management Server URL:
+     ```text
+     https://netbird.brain.cs.ait.ac.th
+     ```
+  4. Click **Save** and then click **Connect / Sign in**.
+
+* **CLI (Linux / Terminal)**:
+  ```bash
+  netbird up --management-url https://netbird.brain.cs.ait.ac.th
+  ```
+
+### Step 3: Authenticate with Google
+Log in with your authorized **`@ait.asia`** Google Account when the browser window opens.
+
+### Step 4: Verify Connection
+Check your terminal:
+```bash
+netbird status
+```
+Ensure `Management: Connected`, `Signal: Connected`, and your target `<project>-server` is listed in your peers!
 
 ---
 
