@@ -46,3 +46,34 @@ df -h | grep /mnt/pool-1/home
 # Verify directory ownership & permissions
 ls -la /mnt/pool-1/home/
 ```
+
+---
+
+## 5. NetBird WireGuard Mesh Auto-Connection on Boot
+
+TrueNAS SCALE is an appliance OS. ZFS pools (`/mnt/pool-1`) are mounted late in the boot sequence, and kernel `iptables` NAT redirection rules are wiped on reboot. To make `cairo` reconnect to the NetBird WireGuard mesh automatically after every reboot:
+
+### Step 1: Deploy the Startup Script
+Create `/mnt/pool-1/bin/start-netbird.sh` (or copy from [`start_netbird_cairo.sh`](scripts/start_netbird_cairo.sh)):
+```bash
+chmod +x /mnt/pool-1/bin/start-netbird.sh
+```
+
+### Step 2: Register as a TrueNAS Post-Init Script Task
+Run via TrueNAS Shell / SSH (or configure in Web UI under **System Settings -> Advanced -> Init/Shutdown Scripts**):
+```bash
+midclt call initshutdownscript.create '{
+  "type": "SCRIPT",
+  "script": "/mnt/pool-1/bin/start-netbird.sh",
+  "when": "POSTINIT",
+  "enabled": true,
+  "timeout": 60,
+  "comment": "NetBird Mesh Auto-Connect"
+}'
+```
+This guarantees that after every reboot or TrueNAS upgrade, once `/mnt/pool-1` is mounted, TrueNAS automatically:
+1. Re-applies the kernel `iptables REDIRECT` rule to port 33443.
+2. Restarts the CSIM forward proxy tunnel.
+3. Re-establishes the NetBird WireGuard mesh tunnel to `netbird.brain.cs.ait.ac.th`.
+4. Refreshes TrueNAS LDAP directory services.
+

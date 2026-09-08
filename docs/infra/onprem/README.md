@@ -34,14 +34,14 @@ Welcome to the **On-Premise Infrastructure** administration hub. These guides pr
 Whenever TrueNAS SCALE is upgraded, or when enrolling any physical server behind the CSIM firewall (`la`, `tokyo`, `cairo`), run this single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AIT-brainlab/brainlab-base/main/infra/onprem/scripts/bootstrap_netbird_csim.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/AIT-brainlab/brainlab-base/main/docs/infra/onprem/scripts/bootstrap_netbird_csim.sh | sudo bash
 ```
 
 ### What this does automatically:
 1. Synchronizes clock to `Asia/Bangkok` via Squid proxy (eliminates token clock skew).
 2. Resolves live Google Cloud public IP dynamically from DNS.
 3. Automatically installs NetBird client if missing.
-4. Auto-injects self-hosted URL (`https://netbird2.brain.cs.ait.ac.th`) into `/var/lib/netbird/default.json`.
+4. Auto-injects self-hosted URL (`https://netbird.brain.cs.ait.ac.th`) into `/var/lib/netbird/default.json`.
 5. Starts background Squid CONNECT tunnel on port `33443` (leaves port 443 100% free for TrueNAS Web GUI or JupyterHub).
 6. Sets kernel `iptables REDIRECT` rule.
 7. Connects node to NetBird WireGuard mesh and outputs `netbird status`.

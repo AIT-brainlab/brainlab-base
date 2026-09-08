@@ -121,6 +121,8 @@ flowchart TD
 | `NEXT-4.1` | **Complete Ansible Host Enrollment Playbooks** | Akraradet | P2 | 🟡 | Finalize `mgmt/ansible/enroll_netbird.yml` for automated zero-touch provisioning of Proxmox VMs and future nodes. |
 | `NEXT-4.2` | **Disaster Recovery GCS Restore Smoke Test** | Akraradet | P3 | 🔴 | Script a sandbox test that restores `users.db` and `store.db` from `gs://ait-brainlab-mgmt-tfstate/backups/`. |
 | `NEXT-4.3` | **Annual NetBird PAT Rotation Monitoring** | Whole Team | P3 | 🟢 | Monitored by `.github/workflows/netbird_pat_reminder.yml` (runs 1st of every month; triggers alert 30 days before expiration). |
+| `NEXT-4.4` | **Persist Proxmox Host SDN IPTables Rules (`10.10.0.0/16`)** | Akraradet | P1 | 🟡 | Make the `iptables -t nat -A POSTROUTING -s 10.10.0.0/16 -j MASQUERADE` and FORWARD rules permanent across Proxmox host (`192.41.170.19`) reboots via `iptables-persistent` or `/etc/network/interfaces` `post-up` hook, and update Proxmox SDN subnet to `10.10.0.0/16`. |
+| `NEXT-4.5` | **Persist NetBird Auto-Connect on TrueNAS (`cairo`)** | Akraradet | P1 | 🔵 | Registered TrueNAS Post-Init task pointing to `/mnt/pool-1/bin/start-netbird.sh`. Verified identity backup on `/mnt/pool-1/netbird/config.json`. Ensure reboot verification. |
 
 ---
 
