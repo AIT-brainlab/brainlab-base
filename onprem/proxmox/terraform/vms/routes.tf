@@ -17,7 +17,7 @@ locals {
           tls = {
             certResolver = "letsencrypt"
           }
-          middlewares = ["security-headers", "rate-limit", "request-size-limit"]
+          middlewares = coalesce(route.middlewares, ["security-headers", "rate-limit", "request-size-limit"])
           service     = "${name}-service"
         }
       }

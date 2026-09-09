@@ -171,6 +171,7 @@ variable "proxy_routes" {
     target_url    = string
     aliases       = optional(list(string), [])
     rule_override = optional(string, "")
+    middlewares   = optional(list(string))
   }))
   default = {
     dlms = {
@@ -179,21 +180,25 @@ variable "proxy_routes" {
       aliases       = [
         "front.dlms.brain.cs.ait.ac.th",
         "back.dlms.brain.cs.ait.ac.th",
-        "iobox.dlms.brain.cs.ait.ac.th"
+        "iobox.dlms.brain.cs.ait.ac.th",
+        "bus.dlms.brain.cs.ait.ac.th"
       ]
       rule_override = ""
+      middlewares   = ["security-headers", "rate-limit"]
     }
     services = {
       domain        = "print.brain.cs.ait.ac.th"
       target_url    = "http://10.10.250.120:80"
       aliases       = []
       rule_override = ""
+      middlewares   = ["security-headers", "rate-limit", "request-size-limit"]
     }
     example = {
       domain        = "example.brain.cs.ait.ac.th"
       target_url    = "http://10.10.250.120:80"
       aliases       = []
       rule_override = ""
+      middlewares   = ["security-headers", "rate-limit", "request-size-limit"]
     }
   }
 }

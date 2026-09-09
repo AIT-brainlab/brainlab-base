@@ -30,26 +30,41 @@ onprem/proxmox/terraform/vms/
 
 | VM ID | Hostname | Config File | Network Interfaces | Role / Capabilities |
 | :--- | :--- | :--- | :--- | :--- |
-| **100** | `brainlab-proxy` | [`vm-proxy.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/vm-proxy.tf) | `net0`: `192.41.170.39/24` (vmbr1)<br>`net1`: `10.10.250.100/16` (SDN) | Traefik v3 Edge Proxy (Port 443 SSL, Rate Limiting, 25MB Body Cap) |
-| **119** | `dlms-server` | [`vm-dlms.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/vm-dlms.tf) | `net0`: `10.10.250.119/16` (SDN) | Dedicated DLMS Research Platform (16 vCPUs / 32GB RAM) |
-| **120** | `brainlab-services` | [`vm-services.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/vm-services.tf) | `net0`: `10.10.250.120/16` (SDN) | Web Print Portal (`services/printing`) & Shared Lab Tools |
+| **100** | `brainlab-proxy` | [`vm-proxy.tf`](vm-proxy.tf) | `net0`: `192.41.170.39/24` (vmbr1)<br>`net1`: `10.10.250.100/16` (SDN) | Traefik v3 Edge Proxy (Port 443 SSL, Dashboard Port 8000 over NetBird) |
+| **119** | `dlms-server` | [`vm-dlms.tf`](vm-dlms.tf) | `net0`: `10.10.250.119/16` (SDN) | Dedicated DLMS Research Platform (16 vCPUs / 32GB RAM) |
+| **120** | `brainlab-services` | [`vm-services.tf`](vm-services.tf) | `net0`: `10.10.250.120/16` (SDN) | Web Print Portal (`services/printing`) & Shared Lab Tools |
+
+---
+
+## 📊 Traefik Edge Proxy Dashboard (NetBird Mesh Only)
+
+Traefik's real-time administrative Web UI & API is exposed on host port `8000` on `brainlab-proxy` and restricted to the NetBird WireGuard mesh:
+* **Dashboard URL**: [http://brainlab-proxy:8000/dashboard/](http://brainlab-proxy:8000/dashboard/) (or `http://100.74.227.45:8000/dashboard/`)
+* **Access Control**: Traefik `ipallowlist` middleware allows only `100.64.0.0/10` and `127.0.0.1/32`. External requests and non-mesh local LAN queries receive HTTP 403 Forbidden.
 
 ---
 
 ## ⚡ Dynamic Ingress GitOps (0s Downtime Route Management)
 
 To add, edit, or remove a public service route:
-1. Declare the domain and target in `proxy_routes` inside [`variables.tf`](file:///Users/akraradets/Projects/AIT-brainlab/brainlab-base/onprem/proxmox/terraform/vms/variables.tf):
+1. Declare the domain, upstream target, and optional `middlewares` in `proxy_routes` inside [`variables.tf`](variables.tf):
    ```hcl
    proxy_routes = {
-     my_service = {
-       domain     = "my-service.brain.cs.ait.ac.th"
-       target_url = "http://10.10.250.120:80"
-       aliases    = []
+     dlms = {
+       domain        = "dlms.brain.cs.ait.ac.th"
+       target_url    = "http://10.10.250.119:80"
+       aliases       = [
+         "front.dlms.brain.cs.ait.ac.th",
+         "back.dlms.brain.cs.ait.ac.th",
+         "iobox.dlms.brain.cs.ait.ac.th",
+         "bus.dlms.brain.cs.ait.ac.th"
+       ]
+       rule_override = ""
+       middlewares   = ["security-headers", "rate-limit"] # Omit request-size-limit for WebSocket streaming
      }
    }
    ```
-2. Run `terraform apply`.
+2. Run `terraform apply -target=terraform_data.sync_traefik_routes`.
 3. `terraform_data.sync_traefik_routes` pushes the updated `routes.yaml` directly to `brainlab-proxy` over NetBird MagicDNS in **0.5 seconds**.
 4. Traefik automatically hot-reloads the new route with **0 VM destruction and 0 container restarts**.
 

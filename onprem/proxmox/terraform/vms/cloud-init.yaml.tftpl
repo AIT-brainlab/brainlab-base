@@ -36,9 +36,6 @@ write_files:
   - path: /opt/brainlab/traefik/dynamic/routes.yaml
     content: |
       # Initial placeholder - Dynamically updated by Terraform routes.tf
-      http:
-        routers: {}
-        services: {}
 
   - path: /opt/brainlab/proxy/docker-compose.yml
     content: |
@@ -56,6 +53,10 @@ write_files:
             - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
             - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
             - "--entrypoints.websecure.address=:443"
+            - "--entrypoints.dashboard.address=:8000"
+            - "--api.dashboard=true"
+            - "--providers.docker=true"
+            - "--providers.docker.exposedbydefault=false"
             - "--certificatesresolvers.letsencrypt.acme.email=brainlab@ait.asia"
             - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
             - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
@@ -65,10 +66,18 @@ write_files:
           ports:
             - "80:80"
             - "443:443"
+            - "8000:8000"
           volumes:
             - "/var/run/docker.sock:/var/run/docker.sock:ro"
             - "/opt/brainlab/traefik/acme.json:/etc/traefik/acme.json"
             - "/opt/brainlab/traefik/dynamic:/etc/traefik/dynamic:ro"
+          labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.dashboard.rule=PathPrefix(`/`)"
+            - "traefik.http.routers.dashboard.entrypoints=dashboard"
+            - "traefik.http.routers.dashboard.service=api@internal"
+            - "traefik.http.routers.dashboard.middlewares=netbird-only"
+            - "traefik.http.middlewares.netbird-only.ipallowlist.sourcerange=100.64.0.0/10,127.0.0.1/32"
 %{ endif ~}
 
 users:

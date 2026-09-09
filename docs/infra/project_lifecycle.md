@@ -42,25 +42,29 @@ Before provisioning infrastructure, the SysAdmin verifies the intake request fro
   * Wildcard Subdomains: `*.<project>.brain.cs.ait.ac.th` (or `*.<project>.dpi.ait.ac.th`)
 * **Proxmox Internal NAT IP**: `10.10.250.X` (e.g., `10.10.250.125`)
 
-### 2. Configure Edge Traefik on `brainlab-proxy`
-SSH into `brainlab-proxy` and add the backend route in `/opt/brainlab/proxy/dynamic/projects.yml`:
+### 2. Configure Edge Traefik on `brainlab-proxy` via GitOps
+In [`onprem/proxmox/terraform/vms/variables.tf`](../../onprem/proxmox/terraform/vms/variables.tf), add the project to `proxy_routes`:
 
-```yaml
-http:
-  routers:
-    <project>-router:
-      rule: "Host(`<project>.brain.cs.ait.ac.th`) || HostRegexp(`{subdomain:[a-z0-9-]+}.<project>.brain.cs.ait.ac.th`)"
-      entryPoints: ["websecure"]
-      service: "<project>-service"
-      tls:
-        certResolver: "letsencrypt"
-
-  services:
-    <project>-service:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.250.X:80"
+```hcl
+proxy_routes = {
+  <project> = {
+    domain        = "<project>.brain.cs.ait.ac.th"
+    target_url    = "http://10.10.250.X:80"
+    aliases       = [
+      "api.<project>.brain.cs.ait.ac.th"
+    ]
+    rule_override = ""
+    middlewares   = ["security-headers", "rate-limit"]
+  }
+}
 ```
+
+Apply the route with zero downtime:
+```bash
+cd onprem/proxmox/terraform/vms
+terraform apply -target=terraform_data.sync_traefik_routes
+```
+Traefik hot-reloads the configuration and automatically issues Let's Encrypt SSL certificates for all specified hostnames. Traefik's status and routing table can be monitored at [http://brainlab-proxy:8000/dashboard/](http://brainlab-proxy:8000/dashboard/) over the NetBird mesh.
 
 ### 3. Add Cloud DNS Record in Foundation
 In [`mgmt/terraform/foundation/dns.tf`](../../mgmt/terraform/foundation/dns.tf), ensure the wildcard DNS record is present:

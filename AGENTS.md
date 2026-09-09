@@ -165,6 +165,10 @@ brainlab-base/
 43. **Poppler pdftops CLI Arguments & Page Slicing Invariant**:
     - When converting PDF to PostScript using Poppler `pdftops`, never pass Ghostscript arguments (`-level2gray`). Use `-level2 -processcolorformat MONO8` for monochrome and `-level3` for color.
     - Page range parsers must safely handle single-page inputs (`"2"` -> `(2, 2)`), standard ranges (`"2-5"`), open ranges (`"3-"`, `"-4"`), and empty strings clamped to `[1, total_pages]`.
+44. **Traefik Edge Proxy Dashboard & WebSocket Ingress Standards**:
+    - The Traefik Web UI / API on `brainlab-proxy` MUST be exposed on host port `8000` (`--entrypoints.dashboard.address=:8000`) and strictly restricted to the internal WireGuard mesh via Traefik's `ipallowlist` middleware (`traefik.http.middlewares.netbird-only.ipallowlist.sourcerange=100.64.0.0/10,127.0.0.1/32`), returning HTTP 403 to unauthenticated external or institutional LAN requests.
+    - Routes handling real-time WebSocket connections or streaming APIs (such as `dlms` for `bus.dlms.brain.cs.ait.ac.th` and `iobox.dlms.brain.cs.ait.ac.th`) MUST NOT be wrapped in Traefik's `buffering` middleware (`request-size-limit`), as buffering request/response bodies breaks persistent HTTP connection upgrade handshakes.
+    - In `cloud-init.yaml.tftpl`, the initial `/opt/brainlab/traefik/dynamic/routes.yaml` file MUST NOT contain empty map keys (`routers: {}`), which cause Traefik v3 parsing failures (`routers cannot be a standalone element`).
 
 ---
 
