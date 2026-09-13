@@ -144,3 +144,12 @@ resource "google_dns_record_set" "dpi_www" {
   ttl          = 216000
   rrdatas      = ["192.168.1.10"]
 }
+
+# DPI netbird Server (CNAME Record)
+resource "google_dns_record_set" "dpi_netbird" {
+  name         = "netbird.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["netbird.base.dpi.ait.ac.th."]
+}
