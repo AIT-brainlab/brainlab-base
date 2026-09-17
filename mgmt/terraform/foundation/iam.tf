@@ -17,8 +17,7 @@ resource "google_project_service" "iam_apis" {
 locals {
   authorized_owners = [
     "user:brainlab@ait.asia",
-    "user:st121413@ait.asia",
-    "user:akraradets@gmail.com",
+    "user:st121413@ait.asia"
   ]
 }
 

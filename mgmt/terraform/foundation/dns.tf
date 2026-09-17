@@ -153,3 +153,22 @@ resource "google_dns_record_set" "dpi_netbird" {
   ttl          = 300
   rrdatas      = ["netbird.base.dpi.ait.ac.th."]
 }
+
+# DPI Rancher Server (CNAME Record)
+resource "google_dns_record_set" "dpi_rancher" {
+  name         = "rancher.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = ["rancher.base.dpi.ait.ac.th."]
+}
+
+
+# DPI AI4 Server (CNAME Record)
+resource "google_dns_record_set" "dpi_ai4" {
+  name         = "ai4.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "A"
+  ttl          = 300
+  rrdatas      = ["127.0.0.1"]
+}
