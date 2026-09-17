@@ -126,7 +126,18 @@ runcmd:
 %{ endif ~}
   - chmod 775 /projects
 
-  # 2. Enable & restart Docker with proxy configuration & QEMU Guest Agent
+  # 2. Configure Docker client proxy defaults
+  - mkdir -p /home/ubuntu/.docker /root/.docker
+  - 'echo ''{"proxies":{"default":{"httpProxy":"http://192.41.170.82:3128","httpsProxy":"http://192.41.170.82:3128","noProxy":"localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,192.168.0.0/16,100.64.0.0/10,.brain.cs.ait.ac.th"}}}'' > /home/ubuntu/.docker/config.json'
+  - chown -R ubuntu:ubuntu /home/ubuntu/.docker && chmod 600 /home/ubuntu/.docker/config.json
+  - cp /home/ubuntu/.docker/config.json /root/.docker/config.json && chmod 600 /root/.docker/config.json
+%{ if length(deploy_ssh_public_keys) > 0 ~}
+  - mkdir -p /home/deploy/.docker
+  - cp /home/ubuntu/.docker/config.json /home/deploy/.docker/config.json
+  - chown -R deploy:docker /home/deploy/.docker && chmod 600 /home/deploy/.docker/config.json
+%{ endif ~}
+
+  # 3. Enable & restart Docker with proxy configuration & QEMU Guest Agent
   - systemctl daemon-reload
   - systemctl enable --now docker
   - systemctl restart docker

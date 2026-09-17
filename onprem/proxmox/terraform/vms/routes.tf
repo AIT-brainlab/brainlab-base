@@ -68,7 +68,8 @@ locals {
 # 3. Dynamic GitOps Route Sync to Brainlab-Proxy via NetBird Mesh
 resource "terraform_data" "sync_traefik_routes" {
   triggers_replace = [
-    local.traefik_dynamic_routes_yaml
+    local.traefik_dynamic_routes_yaml,
+    var.proxy_ip
   ]
 
   provisioner "local-exec" {

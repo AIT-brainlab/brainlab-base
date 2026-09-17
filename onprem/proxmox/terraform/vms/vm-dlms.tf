@@ -53,7 +53,7 @@ resource "proxmox_virtual_environment_vm" "dlms_server" {
   }
 
   network_device {
-    bridge = var.bridge
+    bridge = "vmbr1"
   }
 
   initialization {
@@ -61,13 +61,13 @@ resource "proxmox_virtual_environment_vm" "dlms_server" {
 
     ip_config {
       ipv4 {
-        address = "10.10.250.119/16"
-        gateway = "10.10.0.1"
+        address = "192.168.1.119/24"
+        gateway = "192.168.1.1"
       }
     }
 
     dns {
-      servers = ["192.41.170.15", "8.8.8.8"]
+      servers = ["192.168.1.1", "192.41.170.15", "8.8.8.8"]
     }
 
     user_data_file_id = proxmox_virtual_environment_file.cloud_user_data_dlms.id

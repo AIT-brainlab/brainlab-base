@@ -176,7 +176,7 @@ variable "proxy_routes" {
   default = {
     dlms = {
       domain        = "dlms.brain.cs.ait.ac.th"
-      target_url    = "http://10.10.250.119:80"
+      target_url    = "http://192.168.1.119:80"
       aliases       = [
         "front.dlms.brain.cs.ait.ac.th",
         "back.dlms.brain.cs.ait.ac.th",

@@ -31,7 +31,7 @@ onprem/proxmox/terraform/vms/
 | VM ID | Hostname | Config File | Network Interfaces | Role / Capabilities |
 | :--- | :--- | :--- | :--- | :--- |
 | **100** | `brainlab-proxy` | [`vm-proxy.tf`](vm-proxy.tf) | `net0`: `192.168.1.100/24` (vmbr1)<br>`net1`: `10.10.250.100/16` (SDN) | Traefik v3 Edge Proxy (Port 443 SSL, Dashboard Port 8000 over NetBird) |
-| **119** | `dlms-server` | [`vm-dlms.tf`](vm-dlms.tf) | `net0`: `10.10.250.119/16` (SDN) | Dedicated DLMS Research Platform (16 vCPUs / 32GB RAM) |
+| **119** | `dlms-server` | [`vm-dlms.tf`](vm-dlms.tf) | `net0`: `192.168.1.119/24` (vmbr1) | Dedicated DLMS Research Platform (16 vCPUs / 32GB RAM) |
 | **120** | `brainlab-services` | [`vm-services.tf`](vm-services.tf) | `net0`: `10.10.250.120/16` (SDN) | Web Print Portal (`services/printing`) & Shared Lab Tools |
 
 ---
@@ -52,7 +52,7 @@ To add, edit, or remove a public service route:
    proxy_routes = {
      dlms = {
        domain        = "dlms.brain.cs.ait.ac.th"
-       target_url    = "http://10.10.250.119:80"
+       target_url    = "http://192.168.1.119:80"
        aliases       = [
          "front.dlms.brain.cs.ait.ac.th",
          "back.dlms.brain.cs.ait.ac.th",
