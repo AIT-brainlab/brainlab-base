@@ -32,7 +32,7 @@ provider "proxmox" {
 
     node {
       name    = var.target_node
-      address = "192.41.170.19"
+      address = "proxmox.cs.ait.ac.th"
     }
   }
 }

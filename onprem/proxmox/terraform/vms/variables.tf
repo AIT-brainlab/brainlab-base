@@ -153,15 +153,15 @@ variable "proxy_disk_size" {
 }
 
 variable "proxy_ip" {
-  description = "Static IP address for VM 100 on vmbr1 CSIM LAN"
+  description = "Static IP address for VM 100 on vmbr1 (Private LAN)"
   type        = string
-  default     = "192.41.170.39/24"
+  default     = "192.168.1.100/24"
 }
 
 variable "proxy_gateway" {
-  description = "Gateway for vmbr1 CSIM LAN"
+  description = "Gateway for vmbr1 (Router LAN IP)"
   type        = string
-  default     = "192.41.170.23"
+  default     = "192.168.1.1"
 }
 
 variable "proxy_routes" {

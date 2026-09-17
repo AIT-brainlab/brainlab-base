@@ -30,7 +30,7 @@ onprem/proxmox/terraform/vms/
 
 | VM ID | Hostname | Config File | Network Interfaces | Role / Capabilities |
 | :--- | :--- | :--- | :--- | :--- |
-| **100** | `brainlab-proxy` | [`vm-proxy.tf`](vm-proxy.tf) | `net0`: `192.41.170.39/24` (vmbr1)<br>`net1`: `10.10.250.100/16` (SDN) | Traefik v3 Edge Proxy (Port 443 SSL, Dashboard Port 8000 over NetBird) |
+| **100** | `brainlab-proxy` | [`vm-proxy.tf`](vm-proxy.tf) | `net0`: `192.168.1.100/24` (vmbr1)<br>`net1`: `10.10.250.100/16` (SDN) | Traefik v3 Edge Proxy (Port 443 SSL, Dashboard Port 8000 over NetBird) |
 | **119** | `dlms-server` | [`vm-dlms.tf`](vm-dlms.tf) | `net0`: `10.10.250.119/16` (SDN) | Dedicated DLMS Research Platform (16 vCPUs / 32GB RAM) |
 | **120** | `brainlab-services` | [`vm-services.tf`](vm-services.tf) | `net0`: `10.10.250.120/16` (SDN) | Web Print Portal (`services/printing`) & Shared Lab Tools |
 

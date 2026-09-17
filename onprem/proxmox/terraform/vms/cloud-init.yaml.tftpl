@@ -22,15 +22,15 @@ write_files:
       https_proxy="http://192.41.170.82:3128"
       HTTP_PROXY="http://192.41.170.82:3128"
       HTTPS_PROXY="http://192.41.170.82:3128"
-      no_proxy="localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
-      NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
+      no_proxy="localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,192.168.0.0/16,100.64.0.0/10,.brain.cs.ait.ac.th"
+      NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,192.168.0.0/16,100.64.0.0/10,.brain.cs.ait.ac.th"
 
   - path: /etc/systemd/system/docker.service.d/http-proxy.conf
     content: |
       [Service]
       Environment="HTTP_PROXY=http://192.41.170.82:3128"
       Environment="HTTPS_PROXY=http://192.41.170.82:3128"
-      Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th"
+      Environment="NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,192.168.0.0/16,100.64.0.0/10,.brain.cs.ait.ac.th"
 
 %{ if vm_name == "brainlab-proxy" ~}
   - path: /opt/brainlab/traefik/dynamic/routes.yaml
@@ -47,7 +47,7 @@ write_files:
           environment:
             - HTTP_PROXY=http://192.41.170.82:3128
             - HTTPS_PROXY=http://192.41.170.82:3128
-            - NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,100.64.0.0/10,.brain.cs.ait.ac.th
+            - NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,192.168.0.0/16,100.64.0.0/10,.brain.cs.ait.ac.th
           command:
             - "--entrypoints.web.address=:80"
             - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
