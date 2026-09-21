@@ -10,28 +10,58 @@ locals {
   # 1. Declarative Traefik HTTP Routers, Middlewares & Services Structure
   traefik_dynamic_config = {
     http = {
-      routers = {
-        for name, route in var.proxy_routes : "${name}-router" => {
-          rule        = coalesce(route.rule_override, join(" || ", concat(["Host(`${route.domain}`)"], [for alias in route.aliases : "Host(`${alias}`)"])))
-          entryPoints = ["websecure"]
-          tls = {
-            certResolver = "letsencrypt"
+      routers = merge(
+        # Secure Routers (Port 443 with Let's Encrypt TLS for enable_tls = true)
+        {
+          for name, route in var.proxy_routes : "${name}-router" => {
+            rule        = coalesce(route.rule_override, join(" || ", concat(["Host(`${route.domain}`)"], [for alias in route.aliases : "Host(`${alias}`)"])))
+            entryPoints = ["websecure"]
+            tls = {
+              certResolver = "letsencrypt"
+            }
+            middlewares = coalesce(route.middlewares, ["security-headers", "rate-limit", "request-size-limit"])
+            service     = "${name}-service"
           }
-          middlewares = coalesce(route.middlewares, ["security-headers", "rate-limit", "request-size-limit"])
-          service     = "${name}-service"
+          if coalesce(route.enable_tls, true)
+        },
+        # HTTP-to-HTTPS Redirection Routers (Port 80 -> 443 for enable_tls = true)
+        {
+          for name, route in var.proxy_routes : "${name}-redirect-router" => {
+            rule        = coalesce(route.rule_override, join(" || ", concat(["Host(`${route.domain}`)"], [for alias in route.aliases : "Host(`${alias}`)"])))
+            entryPoints = ["web"]
+            middlewares = ["redirect-to-https"]
+            service     = "${name}-service"
+          }
+          if coalesce(route.enable_tls, true)
+        },
+        # HTTP-Only Routers (Port 80 without TLS for enable_tls = false)
+        {
+          for name, route in var.proxy_routes : "${name}-router" => {
+            rule        = coalesce(route.rule_override, join(" || ", concat(["Host(`${route.domain}`)"], [for alias in route.aliases : "Host(`${alias}`)"])))
+            entryPoints = ["web"]
+            middlewares = coalesce(route.middlewares, ["rate-limit"])
+            service     = "${name}-service"
+          }
+          if !coalesce(route.enable_tls, true)
         }
-      }
+      )
       middlewares = {
+        redirect-to-https = {
+          redirectScheme = {
+            scheme    = "https"
+            permanent = true
+          }
+        }
         security-headers = {
           headers = {
-            browserXssFilter        = true
-            contentTypeNosniff      = true
-            frameDeny               = true
-            sslRedirect             = true
-            stsSeconds              = 31536000
-            stsIncludeSubdomains    = true
-            stsPreload              = true
-            referrerPolicy          = "strict-origin-when-cross-origin"
+            browserXssFilter     = true
+            contentTypeNosniff   = true
+            frameDeny            = true
+            sslRedirect          = false
+            stsSeconds           = 31536000
+            stsIncludeSubdomains = true
+            stsPreload           = true
+            referrerPolicy       = "strict-origin-when-cross-origin"
           }
         }
         rate-limit = {

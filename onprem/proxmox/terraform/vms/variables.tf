@@ -172,19 +172,35 @@ variable "proxy_routes" {
     aliases       = optional(list(string), [])
     rule_override = optional(string, "")
     middlewares   = optional(list(string))
+    enable_tls    = optional(bool, true)
   }))
   default = {
     dlms = {
       domain        = "dlms.brain.cs.ait.ac.th"
-      target_url    = "http://192.168.1.119:80"
+      target_url    = "http://192.168.1.201:80"
       aliases       = [
         "front.dlms.brain.cs.ait.ac.th",
         "back.dlms.brain.cs.ait.ac.th",
         "iobox.dlms.brain.cs.ait.ac.th",
-        "bus.dlms.brain.cs.ait.ac.th"
+        "bus.dlms.brain.cs.ait.ac.th",
+        "example.dlms.brain.cs.ait.ac.th"
       ]
       rule_override = ""
-      middlewares   = ["security-headers", "rate-limit"]
+      middlewares   = ["rate-limit"]
+      enable_tls    = false
+    }
+    dlms_stg = {
+      domain        = "stg.dlms.brain.cs.ait.ac.th"
+      target_url    = "http://192.168.1.119:80"
+      aliases       = [
+        "front.stg.dlms.brain.cs.ait.ac.th",
+        "back.stg.dlms.brain.cs.ait.ac.th",
+        "iobox.stg.dlms.brain.cs.ait.ac.th",
+        "bus.stg.dlms.brain.cs.ait.ac.th"
+      ]
+      rule_override = "Host(`stg.dlms.brain.cs.ait.ac.th`) || HostRegexp(`^[a-z0-9-]+\\.stg\\.dlms\\.brain\\.cs\\.ait\\.ac\\.th$`)"
+      middlewares   = ["rate-limit"]
+      enable_tls    = false
     }
     services = {
       domain        = "print.brain.cs.ait.ac.th"
@@ -192,6 +208,7 @@ variable "proxy_routes" {
       aliases       = []
       rule_override = ""
       middlewares   = ["security-headers", "rate-limit", "request-size-limit"]
+      enable_tls    = true
     }
     example = {
       domain        = "example.brain.cs.ait.ac.th"
@@ -199,6 +216,7 @@ variable "proxy_routes" {
       aliases       = []
       rule_override = ""
       middlewares   = ["security-headers", "rate-limit", "request-size-limit"]
+      enable_tls    = true
     }
   }
 }

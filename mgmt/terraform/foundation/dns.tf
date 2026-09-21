@@ -30,12 +30,13 @@ locals {
   brainlab_records = {
     "ml"          = { name = "ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
     "wildcard_ml" = { name = "*.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
-    "mlflow_ml"   = { name = "mlflow.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
-    "traefik_ml"  = { name = "traefik.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
-    "dlms"          = { name = "dlms.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
-    "wildcard_dlms" = { name = "*.dlms.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
-    "print"         = { name = "print.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
-    "example"       = { name = "example.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
+    "mlflow_ml"         = { name = "mlflow.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
+    "traefik_ml"        = { name = "traefik.ml.brain.cs.ait.ac.th.", ip = "192.41.170.105", ttl = 300 }
+    "dlms"              = { name = "dlms.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
+    "wildcard_dlms"     = { name = "*.dlms.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
+    "wildcard_stg_dlms" = { name = "*.stg.dlms.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
+    "print"             = { name = "print.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
+    "example"           = { name = "example.brain.cs.ait.ac.th.", ip = "192.41.170.39", ttl = 300 }
   }
 }
 

@@ -50,8 +50,6 @@ write_files:
             - NO_PROXY=localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.41.170.0/24,192.168.0.0/16,100.64.0.0/10,.brain.cs.ait.ac.th
           command:
             - "--entrypoints.web.address=:80"
-            - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
             - "--entrypoints.websecure.address=:443"
             - "--entrypoints.dashboard.address=:8000"
             - "--api.dashboard=true"
