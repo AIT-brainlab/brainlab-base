@@ -95,7 +95,7 @@ resource "google_dns_record_set" "dpi_txt" {
 }
 
 # DPI AWS Sandbox Subdelegation (NS)
-resource "google_dns_record_set" "dpi_sandbox_ns" {
+resource "google_dns_record_set" "dpi_sandbox_a_ns" {
   name         = "sandbox-a.dpi.ait.ac.th."
   managed_zone = google_dns_managed_zone.dpi_zone.name
   type         = "NS"
@@ -133,6 +133,20 @@ resource "google_dns_record_set" "dpi_ait_vc_ns" {
     "ns-cloud-d2.googledomains.com.",
     "ns-cloud-d3.googledomains.com.",
     "ns-cloud-d4.googledomains.com."
+  ]
+}
+
+# DPI `sandbox` Subdelegation (NS)
+resource "google_dns_record_set" "dpi_sandbox_ns" {
+  name         = "sandbox.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "NS"
+  ttl          = 300
+  rrdatas = [
+    "ns-cloud-c1.googledomains.com.",
+    "ns-cloud-c2.googledomains.com.",
+    "ns-cloud-c3.googledomains.com.",
+    "ns-cloud-c4.googledomains.com.",
   ]
 }
 
