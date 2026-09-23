@@ -176,9 +176,9 @@ variable "proxy_routes" {
   }))
   default = {
     dlms = {
-      domain        = "dlms.brain.cs.ait.ac.th"
-      target_url    = "http://192.168.1.201:80"
-      aliases       = [
+      domain     = "dlms.brain.cs.ait.ac.th"
+      target_url = "http://192.168.1.201:80"
+      aliases = [
         "front.dlms.brain.cs.ait.ac.th",
         "back.dlms.brain.cs.ait.ac.th",
         "iobox.dlms.brain.cs.ait.ac.th",
@@ -190,15 +190,15 @@ variable "proxy_routes" {
       enable_tls    = false
     }
     dlms_stg = {
-      domain        = "stg.dlms.brain.cs.ait.ac.th"
-      target_url    = "http://192.168.1.119:80"
-      aliases       = [
-        "front.stg.dlms.brain.cs.ait.ac.th",
-        "back.stg.dlms.brain.cs.ait.ac.th",
-        "iobox.stg.dlms.brain.cs.ait.ac.th",
-        "bus.stg.dlms.brain.cs.ait.ac.th"
+      domain     = "dlms-stg.brain.cs.ait.ac.th"
+      target_url = "http://192.168.1.119:80"
+      aliases = [
+        "front.dlms-stg.brain.cs.ait.ac.th",
+        "back.dlms-stg.brain.cs.ait.ac.th",
+        "iobox.dlms-stg.brain.cs.ait.ac.th",
+        "bus.dlms-stg.brain.cs.ait.ac.th"
       ]
-      rule_override = "Host(`stg.dlms.brain.cs.ait.ac.th`) || HostRegexp(`^[a-z0-9-]+\\.stg\\.dlms\\.brain\\.cs\\.ait\\.ac\\.th$`)"
+      rule_override = ""
       middlewares   = ["rate-limit"]
       enable_tls    = false
     }
