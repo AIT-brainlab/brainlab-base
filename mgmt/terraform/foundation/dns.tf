@@ -136,6 +136,20 @@ resource "google_dns_record_set" "dpi_ait_vc_ns" {
   ]
 }
 
+# DPI `face-pad` Subdelegation (NS)
+resource "google_dns_record_set" "dpi_face_pad_ns" {
+  name         = "face-pad.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "NS"
+  ttl          = 300
+  rrdatas = [
+    "ns-cloud-e1.googledomains.com.",
+    "ns-cloud-e2.googledomains.com.",
+    "ns-cloud-e3.googledomains.com.",
+    "ns-cloud-e4.googledomains.com."
+  ]
+}
+
 # DPI `sandbox` Subdelegation (NS)
 resource "google_dns_record_set" "dpi_sandbox_ns" {
   name         = "sandbox.dpi.ait.ac.th."
