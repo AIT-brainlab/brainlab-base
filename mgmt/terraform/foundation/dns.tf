@@ -150,6 +150,20 @@ resource "google_dns_record_set" "dpi_face_pad_ns" {
   ]
 }
 
+# DPI `ai-mosip` Subdelegation (NS)
+resource "google_dns_record_set" "dpi_ai_mosip_ns" {
+  name         = "ai-mosip.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "NS"
+  ttl          = 300
+  rrdatas = [
+    "ns-cloud-b1.googledomains.com.",
+    "ns-cloud-b2.googledomains.com.",
+    "ns-cloud-b3.googledomains.com.",
+    "ns-cloud-b4.googledomains.com."
+  ]
+}
+
 # DPI `sandbox` Subdelegation (NS)
 resource "google_dns_record_set" "dpi_sandbox_ns" {
   name         = "sandbox.dpi.ait.ac.th."
