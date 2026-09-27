@@ -202,22 +202,6 @@ variable "proxy_routes" {
       middlewares   = ["rate-limit"]
       enable_tls    = false
     }
-    services = {
-      domain        = "print.brain.cs.ait.ac.th"
-      target_url    = "http://10.10.250.120:80"
-      aliases       = []
-      rule_override = ""
-      middlewares   = ["security-headers", "rate-limit", "request-size-limit"]
-      enable_tls    = true
-    }
-    example = {
-      domain        = "example.brain.cs.ait.ac.th"
-      target_url    = "http://10.10.250.120:80"
-      aliases       = []
-      rule_override = ""
-      middlewares   = ["security-headers", "rate-limit", "request-size-limit"]
-      enable_tls    = true
-    }
   }
 }
 
