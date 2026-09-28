@@ -228,5 +228,5 @@ resource "google_dns_record_set" "dpi_ai4" {
   managed_zone = google_dns_managed_zone.dpi_zone.name
   type         = "A"
   ttl          = 300
-  rrdatas      = ["127.0.0.1"]
+  rrdatas      = ["50.6.42.0"]
 }
