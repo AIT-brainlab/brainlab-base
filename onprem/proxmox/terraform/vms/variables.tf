@@ -182,6 +182,7 @@ variable "proxy_routes" {
         "front.dlms.brain.cs.ait.ac.th",
         "back.dlms.brain.cs.ait.ac.th",
         "iobox.dlms.brain.cs.ait.ac.th",
+        "cambox.dlms.brain.cs.ait.ac.th",
         "bus.dlms.brain.cs.ait.ac.th",
         "example.dlms.brain.cs.ait.ac.th"
       ]
@@ -196,6 +197,7 @@ variable "proxy_routes" {
         "front.dlms-stg.brain.cs.ait.ac.th",
         "back.dlms-stg.brain.cs.ait.ac.th",
         "iobox.dlms-stg.brain.cs.ait.ac.th",
+        "cambox.dlms-stg.brain.cs.ait.ac.th",
         "bus.dlms-stg.brain.cs.ait.ac.th"
       ]
       rule_override = ""
