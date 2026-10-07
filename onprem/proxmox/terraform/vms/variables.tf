@@ -197,6 +197,7 @@ variable "proxy_routes" {
         "front.dlms-stg.brain.cs.ait.ac.th",
         "back.dlms-stg.brain.cs.ait.ac.th",
         "iobox.dlms-stg.brain.cs.ait.ac.th",
+        "rabbitmq.dlms-stg.brain.cs.ait.ac.th",
         "cambox.dlms-stg.brain.cs.ait.ac.th",
         "bus.dlms-stg.brain.cs.ait.ac.th"
       ]
