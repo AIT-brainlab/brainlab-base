@@ -199,6 +199,8 @@ variable "proxy_routes" {
         "iobox.dlms-stg.brain.cs.ait.ac.th",
         "rabbitmq.dlms-stg.brain.cs.ait.ac.th",
         "cambox.dlms-stg.brain.cs.ait.ac.th",
+        "detector-1.dlms-stg.brain.cs.ait.ac.th",
+        "detector-2.dlms-stg.brain.cs.ait.ac.th",
         "bus.dlms-stg.brain.cs.ait.ac.th"
       ]
       rule_override = ""
