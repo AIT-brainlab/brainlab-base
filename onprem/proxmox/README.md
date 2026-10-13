@@ -34,7 +34,8 @@
 | **`100`** | **`brainlab-proxy`** | 4 | 8 GB | 50 GB | `net0`: `vmbr1` (`192.41.170.39/24`) | 🟢 **Live** | On-Premise 10G Edge Proxy VM (Traefik SSL/HTTP Edge Proxy) |
 | **`101`** | **`ml`** | 4 | 16 GB | 60 GB | `net0`: `vmbr1` (`192.41.170.105/24`) | 🟢 **Live** | MLflow experiment tracking server (`ml.brain.cs.ait.ac.th`) |
 | **`106`** | `aitgpt-dev` | 32 | 32 GB | 450 GB | `net0`: `vmbr1` (`192.41.170.17/24`) | Stopped | Large Model development VM |
-| **`119`** | **`dlms-server`** | 16 | 32 GB | 200 GB | `net0`: **`internet`** (SDN VNet / `10.10.250.1` / `100.74.18.96`) | 🟢 **Live** | Dedicated DLMS Server (AI Vision & RTSP Ingest `192.168.1.2:554`) |
+| **`118`** | **`dlms-prd`** | 16 | 32 GB | 200 GB | `net0`: `vmbr1` (`192.168.1.118/24`) | 🟡 **Staged** | Production DLMS Server (Docker Swarm Node, AI Vision & CCTV Streams) |
+| **`119`** | **`dlms-server`** | 16 | 32 GB | 200 GB | `net0`: `vmbr1` (`192.168.1.119/24`) | 🟢 **Live** | Dedicated DLMS Server (AI Vision & Staging) |
 | **`120`** | **`brainlab-services`** | 4 | 8 GB | 60 GB | `net0`: **`internet`** (SDN VNet / `100.74.10.218`) | 🟢 **Live** | General Lab Administrative Services (Web Printing Portal `print.brain.cs.ait.ac.th`) |
 | **`900`** | `VM 900` | 8 | 64 GB | - | `net0`: `vmbr1` (`BC:24:11:2F:39:CC`) | Stopped | Base VM template |
 
@@ -56,7 +57,8 @@ onprem/proxmox/
     │   └── secrets.auto.tfvars         # Git-ignored API token configuration
     │
     └── vms/                            # 🚀 Layer 2: Virtual Machine Provisioner
-        ├── main.tf                     # Application VMs (VM 100 proxy, VM 119 dlms-server, VM 120 services)
+        ├── main.tf                     # Application VMs (VM 100 proxy, VM 118 dlms-prd, VM 119 dlms-server, VM 120 services)
+        ├── vm-dlms-prd.tf              # Production DLMS Server (Docker Swarm Node)
         ├── routes.tf                   # Declarative Traefik dynamic routes generator (routes.yaml)
         ├── providers.tf                # bpg/proxmox provider & GCS state (prefix: onprem/proxmox/vms)
         ├── variables.tf                # VM hardware, network, proxy_routes, and cloud-init parameters
@@ -68,6 +70,14 @@ onprem/proxmox/
 ---
 
 ## 🚀 Operator SOP
+
+### Step 0: Load Admin SSH Key into Agent
+> [!IMPORTANT]
+> The `bpg/proxmox` provider connects via SSH (`agent = true`) to upload Cloud-Init snippets to the Proxmox host (`proxmox.cs.ait.ac.th`). Because Go's SSH client does not parse `~/.ssh/config`, load your key into the active SSH agent before running Terraform:
+> ```bash
+> ssh-add ~/.ssh/brainlab-admin-ssh-key
+> ```
+> *(Tip for macOS: Run `ssh-add --apple-use-keychain ~/.ssh/brainlab-admin-ssh-key` once to store it in Apple Keychain across sessions).*
 
 ### 1. Host Foundation Execution (`foundation/`)
 ```bash

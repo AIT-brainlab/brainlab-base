@@ -1,7 +1,12 @@
 # ==========================================================
-# 🖥️ AIT Brainlab - Proxmox VE Terraform Variables
+# 🖥️ AIT Brainlab - Proxmox VE Shared Infrastructure Variables
+# ==========================================================
+# Common Hypervisor, Storage, SDN & Ingress Variables
+# (Per-VM hardware, IDs & network variables are defined directly
+# within their respective vm-*.tf files)
 # ==========================================================
 
+# 1. Proxmox VE Provider Connection Settings
 variable "proxmox_endpoint" {
   description = "Proxmox VE API endpoint URL"
   type        = string
@@ -26,42 +31,7 @@ variable "target_node" {
   default     = "proxmox"
 }
 
-variable "vm_id" {
-  description = "Unique ID for the virtual machine on Proxmox VE"
-  type        = number
-  default     = 119
-}
-
-variable "vm_name" {
-  description = "Virtual Machine hostname/name"
-  type        = string
-  default     = "brainlab-app-vm"
-}
-
-variable "vm_description" {
-  description = "Proxmox VM note / description"
-  type        = string
-  default     = "AIT Brainlab On-Premise Shared Application VM (Web Print & DLMS Containers)"
-}
-
-variable "cores" {
-  description = "Number of CPU cores allocated (Simulates AMD Ryzen 9 9950X 16 vCPUs)"
-  type        = number
-  default     = 16
-}
-
-variable "memory" {
-  description = "RAM allocated in Megabytes (32768 = 32GB DDR5-5600)"
-  type        = number
-  default     = 32768
-}
-
-variable "disk_size" {
-  description = "Root disk size in Gigabytes"
-  type        = number
-  default     = 200
-}
-
+# 2. Storage & Datastore Pools
 variable "datastore_id" {
   description = "Proxmox datastore pool ID for VM disk storage"
   type        = string
@@ -74,16 +44,11 @@ variable "snippet_datastore_id" {
   default     = "local"
 }
 
+# 3. Base Hypervisor Network & DNS Defaults
 variable "bridge" {
   description = "Network bridge interface on Proxmox node (Proxmox SDN VNet)"
   type        = string
   default     = "internet"
-}
-
-variable "ip_address" {
-  description = "IP address configuration for the VM (CIDR notation or 'dhcp' for automated SDN DHCP)"
-  type        = string
-  default     = "dhcp"
 }
 
 variable "gateway" {
@@ -98,6 +63,7 @@ variable "nameserver" {
   default     = "192.41.170.15"
 }
 
+# 4. Global Administrative Credentials
 variable "admin_ssh_public_keys" {
   description = "List of SSH public keys for master admin login (ubuntu user)"
   type        = list(string)
@@ -106,64 +72,7 @@ variable "admin_ssh_public_keys" {
   ]
 }
 
-variable "dlms_deploy_ssh_public_keys" {
-  description = "List of SSH public keys for DLMS project deployment (deploy user)"
-  type        = list(string)
-  default = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ3wy6w+Eb0SONJo5DD+tvvCL+oVtg/FuFkbn/z8/yVT deploy@dlms-server"
-  ]
-}
-
-# General Lab Services VM (VM 120) Specifications
-variable "services_cores" {
-  description = "CPU cores allocated for VM 120 (brainlab-services)"
-  type        = number
-  default     = 4
-}
-
-variable "services_memory" {
-  description = "RAM allocated in Megabytes for VM 120 (8192 = 8GB)"
-  type        = number
-  default     = 8192
-}
-
-variable "services_disk_size" {
-  description = "Root disk size in Gigabytes for VM 120"
-  type        = number
-  default     = 60
-}
-
-# On-Premise 10G Edge Proxy VM (VM 100) Specifications
-variable "proxy_cores" {
-  description = "CPU cores allocated for VM 100 (proxy)"
-  type        = number
-  default     = 4
-}
-
-variable "proxy_memory" {
-  description = "RAM allocated in Megabytes for VM 100 (8192 = 8GB)"
-  type        = number
-  default     = 8192
-}
-
-variable "proxy_disk_size" {
-  description = "Root disk size in Gigabytes for VM 100"
-  type        = number
-  default     = 50
-}
-
-variable "proxy_ip" {
-  description = "Static IP address for VM 100 on vmbr1 (Private LAN)"
-  type        = string
-  default     = "192.168.1.100/24"
-}
-
-variable "proxy_gateway" {
-  description = "Gateway for vmbr1 (Router LAN IP)"
-  type        = string
-  default     = "192.168.1.1"
-}
-
+# 5. Declarative Ingress Reverse Proxy Routes
 variable "proxy_routes" {
   description = "Declarative map of reverse proxy routes managed by brainlab-proxy (domain -> upstream target URL)"
   type = map(object({
@@ -177,14 +86,16 @@ variable "proxy_routes" {
   default = {
     dlms = {
       domain     = "dlms.brain.cs.ait.ac.th"
-      target_url = "http://192.168.1.201:80"
+      target_url = "http://192.168.1.118:80"
       aliases = [
         "front.dlms.brain.cs.ait.ac.th",
         "back.dlms.brain.cs.ait.ac.th",
         "iobox.dlms.brain.cs.ait.ac.th",
+        "rabbitmq.dlms.brain.cs.ait.ac.th",
         "cambox.dlms.brain.cs.ait.ac.th",
-        "bus.dlms.brain.cs.ait.ac.th",
-        "example.dlms.brain.cs.ait.ac.th"
+        "detector-1.dlms.brain.cs.ait.ac.th",
+        "detector-2.dlms.brain.cs.ait.ac.th",
+        "bus.dlms.brain.cs.ait.ac.th"
       ]
       rule_override = ""
       middlewares   = ["rate-limit"]
@@ -208,10 +119,4 @@ variable "proxy_routes" {
       enable_tls    = false
     }
   }
-}
-
-variable "proxy_netbird_host" {
-  description = "NetBird MagicDNS hostname or IP for brainlab-proxy VM (VM 100)"
-  type        = string
-  default     = "brainlab-proxy"
 }

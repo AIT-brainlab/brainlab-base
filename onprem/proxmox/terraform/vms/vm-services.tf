@@ -5,7 +5,44 @@
 # Dedicated IP on internal Proxmox SDN NAT VNet: 10.10.250.120
 # ==========================================================
 
-# 1. Cloud-Init Snippet for VM 120
+# 1. Variables for VM 120 (brainlab-services)
+variable "services_vm_id" {
+  description = "Proxmox VM ID for brainlab-services"
+  type        = number
+  default     = 120
+}
+
+variable "services_cores" {
+  description = "CPU cores allocated for VM 120 (brainlab-services)"
+  type        = number
+  default     = 4
+}
+
+variable "services_memory" {
+  description = "RAM allocated in Megabytes for VM 120 (8192 = 8GB)"
+  type        = number
+  default     = 8192
+}
+
+variable "services_disk_size" {
+  description = "Root disk size in Gigabytes for VM 120"
+  type        = number
+  default     = 60
+}
+
+variable "services_ip" {
+  description = "Static IP address for VM 120 on internal Proxmox SDN NAT VNet"
+  type        = string
+  default     = "10.10.250.120/16"
+}
+
+variable "services_gateway" {
+  description = "Gateway for VM 120 on internal Proxmox SDN NAT VNet"
+  type        = string
+  default     = "10.10.0.1"
+}
+
+# 2. Cloud-Init Snippet for VM 120
 resource "proxmox_virtual_environment_file" "cloud_user_data_services" {
   content_type = "snippets"
   datastore_id = var.snippet_datastore_id
@@ -23,12 +60,12 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_services" {
   }
 }
 
-# 2. Proxmox Virtual Machine Resource (VM 120)
+# 3. Proxmox Virtual Machine Resource (VM 120)
 resource "proxmox_virtual_environment_vm" "brainlab_services" {
   name        = "brainlab-services"
   description = "AIT Brainlab General Services VM (Web Printing Portal & Lab Administration)"
   node_name   = var.target_node
-  vm_id       = 120
+  vm_id       = var.services_vm_id
   tags        = ["brainlab", "onprem", "services", "web-print"]
 
   agent {
@@ -61,8 +98,8 @@ resource "proxmox_virtual_environment_vm" "brainlab_services" {
 
     ip_config {
       ipv4 {
-        address = "10.10.250.120/16"
-        gateway = "10.10.0.1"
+        address = var.services_ip
+        gateway = var.services_gateway
       }
     }
 

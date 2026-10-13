@@ -17,7 +17,8 @@ onprem/proxmox/terraform/vms/
 ├── main.tf                # Read-only Proxmox data sources
 ├── vm-proxy.tf            # 🌐 VM 100: brainlab-proxy (10G Public Ingress)
 ├── vm-services.tf         # 🖨️ VM 120: brainlab-services (Web Print & Lab Administration)
-├── vm-dlms.tf             # 🚀 VM 119: dlms-server (Dedicated AI Vision / DLMS Platform)
+├── vm-dlms.tf             # 🚀 VM 119: dlms-server (Dedicated AI Vision / DLMS Staging)
+├── vm-dlms-prd.tf         # 🚀 VM 201: dlms-prd (Production AI Vision / Docker Swarm Node)
 ├── routes.tf              # ⚡ Traefik GitOps dynamic route sync (0.5s hot-reload)
 ├── variables.tf           # Sizing, static IPs, and proxy_routes declarative map
 ├── outputs.tf             # Endpoint URLs and service summaries
@@ -31,8 +32,9 @@ onprem/proxmox/terraform/vms/
 | VM ID | Hostname | Config File | Network Interfaces | Role / Capabilities |
 | :--- | :--- | :--- | :--- | :--- |
 | **100** | `brainlab-proxy` | [`vm-proxy.tf`](vm-proxy.tf) | `net0`: `192.168.1.100/24` (vmbr1)<br>`net1`: `10.10.250.100/16` (SDN) | Traefik v3 Edge Proxy (Port 443 SSL, Dashboard Port 8000 over NetBird) |
-| **119** | `dlms-server` | [`vm-dlms.tf`](vm-dlms.tf) | `net0`: `192.168.1.119/24` (vmbr1) | Dedicated DLMS Research Platform (16 vCPUs / 32GB RAM) |
+| **119** | `dlms-server` | [`vm-dlms.tf`](vm-dlms.tf) | `net0`: `192.168.1.119/24` (vmbr1) | Dedicated DLMS Research Platform / Staging (16 vCPUs / 32GB RAM) |
 | **120** | `brainlab-services` | [`vm-services.tf`](vm-services.tf) | `net0`: `10.10.250.120/16` (SDN) | Web Print Portal (`services/printing`) & Shared Lab Tools |
+| **118** | `dlms-prd` | [`vm-dlms-prd.tf`](vm-dlms-prd.tf) | `net0`: `192.168.1.118/24` (vmbr1) | Production DLMS Platform (Docker Swarm Node, 16 vCPUs / 32GB RAM) |
 
 ---
 
@@ -71,6 +73,14 @@ To add, edit, or remove a public service route:
 ---
 
 ## 🚀 Execution & Deployment Runbook
+
+### Step 0: Load Admin SSH Key into Agent
+> [!IMPORTANT]
+> The `bpg/proxmox` provider connects via SSH (`agent = true`) to upload Cloud-Init snippets to the Proxmox host (`proxmox.cs.ait.ac.th`). Because Go's SSH client does not parse `~/.ssh/config`, you must load your key into the active SSH agent before running Terraform:
+> ```bash
+> ssh-add ~/.ssh/brainlab-admin-ssh-key
+> ```
+> *(Tip for macOS: Run `ssh-add --apple-use-keychain ~/.ssh/brainlab-admin-ssh-key` once to store it in Apple Keychain).*
 
 ### Step 1: Initialize & Plan
 ```bash

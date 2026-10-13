@@ -12,6 +12,26 @@ output "dlms_server_vm_name" {
   value       = proxmox_virtual_environment_vm.dlms_server.name
 }
 
+output "dlms_server_vm_ip" {
+  description = "Static IP Address for DLMS Server"
+  value       = var.dlms_ip
+}
+
+output "dlms_prd_vm_id" {
+  description = "Proxmox VM ID for DLMS Production Server"
+  value       = proxmox_virtual_environment_vm.dlms_prd.vm_id
+}
+
+output "dlms_prd_vm_name" {
+  description = "Proxmox VM Name for DLMS Production Server"
+  value       = proxmox_virtual_environment_vm.dlms_prd.name
+}
+
+output "dlms_prd_vm_ip" {
+  description = "Static IP Address for DLMS Production Server"
+  value       = var.dlms_prd_ip
+}
+
 output "brainlab_services_vm_id" {
   description = "Proxmox VM ID for General Lab Services"
   value       = proxmox_virtual_environment_vm.brainlab_services.vm_id
@@ -20,6 +40,11 @@ output "brainlab_services_vm_id" {
 output "brainlab_services_vm_name" {
   description = "Proxmox VM Name for General Lab Services"
   value       = proxmox_virtual_environment_vm.brainlab_services.name
+}
+
+output "brainlab_services_vm_ip" {
+  description = "Static IP Address for General Lab Services"
+  value       = var.services_ip
 }
 
 output "proxy_vm_id" {

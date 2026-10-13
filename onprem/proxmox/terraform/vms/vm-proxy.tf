@@ -5,7 +5,56 @@
 # Dual-homed: net0 on 10G CSIM LAN (vmbr1) & net1 on internal SDN
 # ==========================================================
 
-# 1. Cloud-Init Snippet for VM 100
+# 1. Variables for VM 100 (brainlab-proxy)
+variable "proxy_vm_id" {
+  description = "Proxmox VM ID for brainlab-proxy"
+  type        = number
+  default     = 100
+}
+
+variable "proxy_cores" {
+  description = "CPU cores allocated for VM 100 (proxy)"
+  type        = number
+  default     = 4
+}
+
+variable "proxy_memory" {
+  description = "RAM allocated in Megabytes for VM 100 (8192 = 8GB)"
+  type        = number
+  default     = 8192
+}
+
+variable "proxy_disk_size" {
+  description = "Root disk size in Gigabytes for VM 100"
+  type        = number
+  default     = 50
+}
+
+variable "proxy_ip" {
+  description = "Static IP address for VM 100 on vmbr1 (Private LAN)"
+  type        = string
+  default     = "192.168.1.100/24"
+}
+
+variable "proxy_gateway" {
+  description = "Gateway for vmbr1 (Router LAN IP)"
+  type        = string
+  default     = "192.168.1.1"
+}
+
+variable "proxy_sdn_ip" {
+  description = "Static IP address for VM 100 on internal Proxmox SDN NAT VNet"
+  type        = string
+  default     = "10.10.250.100/16"
+}
+
+variable "proxy_netbird_host" {
+  description = "NetBird MagicDNS hostname or IP for brainlab-proxy VM (VM 100)"
+  type        = string
+  default     = "brainlab-proxy"
+}
+
+# 2. Cloud-Init Snippet for VM 100
 resource "proxmox_virtual_environment_file" "cloud_user_data_proxy" {
   content_type = "snippets"
   datastore_id = var.snippet_datastore_id
@@ -23,12 +72,12 @@ resource "proxmox_virtual_environment_file" "cloud_user_data_proxy" {
   }
 }
 
-# 2. Proxmox Virtual Machine Resource (VM 100)
+# 3. Proxmox Virtual Machine Resource (VM 100)
 resource "proxmox_virtual_environment_vm" "proxy" {
   name        = "brainlab-proxy"
   description = "AIT Brainlab On-Premise 10G Edge Proxy VM (Traefik SSL/HTTP Edge Proxy)"
   node_name   = var.target_node
-  vm_id       = 100
+  vm_id       = var.proxy_vm_id
   tags        = ["brainlab", "onprem", "proxy", "edge"]
 
   agent {
@@ -74,7 +123,7 @@ resource "proxmox_virtual_environment_vm" "proxy" {
 
     ip_config {
       ipv4 {
-        address = "10.10.250.100/16"
+        address = var.proxy_sdn_ip
       }
     }
 
