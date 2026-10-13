@@ -88,14 +88,15 @@ variable "proxy_routes" {
       domain     = "dlms.brain.cs.ait.ac.th"
       target_url = "http://192.168.1.118:80"
       aliases = [
-        "front.dlms.brain.cs.ait.ac.th",
+        "traefik.dlms.brain.cs.ait.ac.th",
         "back.dlms.brain.cs.ait.ac.th",
         "iobox.dlms.brain.cs.ait.ac.th",
-        "rabbitmq.dlms.brain.cs.ait.ac.th",
         "cambox.dlms.brain.cs.ait.ac.th",
+        "iobox.dlms.brain.cs.ait.ac.th",
         "detector-1.dlms.brain.cs.ait.ac.th",
         "detector-2.dlms.brain.cs.ait.ac.th",
-        "bus.dlms.brain.cs.ait.ac.th"
+        "bus.dlms.brain.cs.ait.ac.th",
+        "rabbitmq.dlms.brain.cs.ait.ac.th",
       ]
       rule_override = ""
       middlewares   = ["rate-limit"]
@@ -105,14 +106,15 @@ variable "proxy_routes" {
       domain     = "dlms-stg.brain.cs.ait.ac.th"
       target_url = "http://192.168.1.119:80"
       aliases = [
-        "front.dlms-stg.brain.cs.ait.ac.th",
+        "traefik.dlms-stg.brain.cs.ait.ac.th",
         "back.dlms-stg.brain.cs.ait.ac.th",
         "iobox.dlms-stg.brain.cs.ait.ac.th",
-        "rabbitmq.dlms-stg.brain.cs.ait.ac.th",
         "cambox.dlms-stg.brain.cs.ait.ac.th",
+        "iobox.dlms-stg.brain.cs.ait.ac.th",
         "detector-1.dlms-stg.brain.cs.ait.ac.th",
         "detector-2.dlms-stg.brain.cs.ait.ac.th",
-        "bus.dlms-stg.brain.cs.ait.ac.th"
+        "bus.dlms-stg.brain.cs.ait.ac.th",
+        "rabbitmq.dlms-stg.brain.cs.ait.ac.th",
       ]
       rule_override = ""
       middlewares   = ["rate-limit"]
