@@ -178,6 +178,20 @@ resource "google_dns_record_set" "dpi_sandbox_ns" {
   ]
 }
 
+# DPI `ait-itserv` Subdelegation (NS)
+resource "google_dns_record_set" "dpi_ait_itserv_ns" {
+  name         = "ait-itserv.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "NS"
+  ttl          = 300
+  rrdatas = [
+    "ns-cloud-c1.googledomains.com.",
+    "ns-cloud-c2.googledomains.com.",
+    "ns-cloud-c3.googledomains.com.",
+    "ns-cloud-c4.googledomains.com.",
+  ]
+}
+
 # Observation Cluster Subdelegation: obs.dpi.ait.ac.th (NS)
 # Awaiting zone creation in dedicated observation GCP project.
 # Replace placeholders with the 4 nameservers provided by the observation project's Cloud DNS.
