@@ -16,8 +16,9 @@ terraform {
 
   # Local or remote GCS backend prefix for on-premise state
   backend "gcs" {
-    bucket = "ait-brainlab-mgmt-tfstate"
-    prefix = "onprem/proxmox/vms"
+    bucket      = "ait-brainlab-mgmt-tfstate"
+    prefix      = "onprem/proxmox/vms"
+    credentials = "credential.json"
   }
 }
 

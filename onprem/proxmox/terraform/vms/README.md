@@ -74,13 +74,39 @@ To add, edit, or remove a public service route:
 
 ## 🚀 Execution & Deployment Runbook
 
-### Step 0: Load Admin SSH Key into Agent
+### Step 0: Prerequisites (SSH Agent & GCS Backend ADC)
+
+1. **Load Admin SSH Key into Agent**:
 > [!IMPORTANT]
 > The `bpg/proxmox` provider connects via SSH (`agent = true`) to upload Cloud-Init snippets to the Proxmox host (`proxmox.cs.ait.ac.th`). Because Go's SSH client does not parse `~/.ssh/config`, you must load your key into the active SSH agent before running Terraform:
 > ```bash
 > ssh-add ~/.ssh/brainlab-admin-ssh-key
 > ```
 > *(Tip for macOS: Run `ssh-add --apple-use-keychain ~/.ssh/brainlab-admin-ssh-key` once to store it in Apple Keychain).*
+
+2. **Obtain Google Cloud Credentials (`credential.json`) via ADC**:
+Terraform accesses the remote GCS state bucket (`ait-brainlab-mgmt-tfstate`) using `credential.json` in this directory:
+```bash
+# 1. Login with authorized Google account (e.g. stXXXXXX@ait.asia)
+gcloud auth login
+
+# 2. Set active GCP project
+gcloud config set project ait-brainlab-mgmt
+
+# 3. Generate Application Default Credentials (ADC)
+gcloud auth application-default login
+
+# 4. Set quota project for billing and API quota validation
+gcloud auth application-default set-quota-project ait-brainlab-mgmt
+
+# 5. Dynamically copy ADC credentials to local credential.json
+cp "$(gcloud info --format='value(config.paths.global_config_dir)')/application_default_credentials.json" credential.json
+
+# (Alternative) Or symlink so future token refreshes automatically propagate:
+# ln -sf "$(gcloud info --format='value(config.paths.global_config_dir)')/application_default_credentials.json" credential.json
+```
+> [!NOTE]
+> `$(gcloud info --format='value(config.paths.global_config_dir)')` dynamically resolves your active gcloud configuration directory (e.g. `~/.config/gcloud` on Linux or `%APPDATA%\gcloud` on Windows) across any operating system or custom `CLOUDSDK_CONFIG` path without hardcoding user home paths.
 
 ### Step 1: Initialize & Plan
 ```bash

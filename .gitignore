@@ -18,7 +18,9 @@
 *.secret.*
 **/secrets.toml
 **/.streamlit/secrets.toml
+credential.json
 credentials.json
+credential*.json
 client_secret*.json
 service-account*.json
 
