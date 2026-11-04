@@ -88,6 +88,7 @@ members:
    ```bash
    ./mgmt/identity/sync_users.py --apply
    ```
+   *(Authentication credentials for Secret Manager are resolved automatically: `$LLDAP_ADMIN_PASSWORD` $\rightarrow$ `.credentials/credential.json` / `--credentials` $\rightarrow$ `gcloud CLI`).*
 
 ---
 

@@ -11,17 +11,82 @@ import ssl
 import subprocess
 import urllib.request
 import urllib.error
+import urllib.parse
 import argparse
 import re
+import base64
 
 LLDAP_DEFAULT_URL = "https://ldap.brain.cs.ait.ac.th"
 PROJECT_ID = "ait-brainlab-mgmt"
 SYSTEM_USERS = {"admin", "ldapservice"}
 SYSTEM_GROUPS = {"lldap_admin", "lldap_password_manager", "lldap_strict_readonly"}
 
-def get_admin_password():
+# Rule 21 Invariant: Prevent campus HTTP proxy (Squid) from intercepting internal lab WireGuard traffic
+internal_no_proxy = "localhost,127.0.0.1,100.64.0.0/10,*.brain.cs.ait.ac.th,brain.cs.ait.ac.th"
+for env_k in ["no_proxy", "NO_PROXY"]:
+    curr = os.environ.get(env_k, "")
+    if internal_no_proxy not in curr:
+        os.environ[env_k] = f"{curr},{internal_no_proxy}".strip(",")
+
+def fetch_secret_with_credential_file(cred_path, secret_name="lldap-admin-password", project_id=PROJECT_ID):
+    with open(cred_path, "r", encoding="utf-8") as f:
+        creds = json.load(f)
+
+    cred_type = creds.get("type")
+    if cred_type == "authorized_user":
+        data = urllib.parse.urlencode({
+            "client_id": creds["client_id"],
+            "client_secret": creds["client_secret"],
+            "refresh_token": creds["refresh_token"],
+            "grant_type": "refresh_token"
+        }).encode()
+
+        token_req = urllib.request.Request("https://oauth2.googleapis.com/token", data=data, method="POST")
+        with urllib.request.urlopen(token_req, timeout=10) as resp:
+            token_data = json.loads(resp.read().decode())
+            access_token = token_data["access_token"]
+    else:
+        raise ValueError(f"Unsupported credential type '{cred_type}' for direct REST lookup.")
+
+    secret_url = f"https://secretmanager.googleapis.com/v1/projects/{project_id}/secrets/{secret_name}/versions/latest:access"
+    sec_req = urllib.request.Request(secret_url, headers={"Authorization": f"Bearer {access_token}"})
+    with urllib.request.urlopen(sec_req, timeout=10) as resp:
+        sec_data = json.loads(resp.read().decode())
+        raw_b64 = sec_data["payload"]["data"]
+        return base64.b64decode(raw_b64).decode("utf-8").strip()
+
+def get_admin_password(cred_path=None):
     if os.environ.get("LLDAP_ADMIN_PASSWORD"):
         return os.environ["LLDAP_ADMIN_PASSWORD"]
+
+    # 1. Try credentials file (.credentials/credential.json, credential.json, or via CLI/env)
+    candidate_paths = []
+    if cred_path:
+        candidate_paths.append(cred_path)
+    if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        candidate_paths.append(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    candidate_paths.extend([
+        ".credentials/credential.json",
+        os.path.join(repo_root, ".credentials", "credential.json"),
+        "credential.json",
+        os.path.join(repo_root, "credential.json")
+    ])
+
+    seen = set()
+    for path in candidate_paths:
+        abs_p = os.path.abspath(path)
+        if abs_p in seen:
+            continue
+        seen.add(abs_p)
+        if os.path.isfile(abs_p):
+            try:
+                return fetch_secret_with_credential_file(abs_p, "lldap-admin-password")
+            except Exception as e:
+                print(f"⚠️ Could not fetch secret using credential file '{path}': {e}", file=sys.stderr)
+
+    # 2. Fallback to gcloud CLI
     try:
         cmd = f"gcloud secrets versions access latest --secret=lldap-admin-password --project={PROJECT_ID}"
         pw = subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode().strip()
@@ -189,7 +254,15 @@ class LLDAPClient:
             data = json.loads(res.read().decode())
             self.token = data["token"]
         except urllib.error.HTTPError as e:
-            print(f"❌ Authentication failed (HTTP {e.code}): {e.read().decode()}", file=sys.stderr)
+            err_msg = e.read().decode().strip()
+            if e.code == 403 and "Forbidden" in err_msg:
+                print(f"❌ Access Denied (HTTP 403 Forbidden): Traefik mesh-only allowlist rejected your connection.", file=sys.stderr)
+                print(f"   💡 Root Cause: LLDAP is restricted to the NetBird WireGuard mesh (100.64.0.0/10).", file=sys.stderr)
+                print(f"   👉 1. Verify NetBird connection: 'netbird status' (connect with 'netbird up').", file=sys.stderr)
+                print(f"   👉 2. Check DNS resolution: ensure 'ldap.brain.cs.ait.ac.th' resolves via NetBird MagicDNS.", file=sys.stderr)
+                print(f"   👉 3. Check proxy: campus HTTP/HTTPS proxy must not route '*.brain.cs.ait.ac.th'.", file=sys.stderr)
+            else:
+                print(f"❌ Authentication failed (HTTP {e.code}): {err_msg}", file=sys.stderr)
             sys.exit(1)
 
     def gql(self, query):
@@ -463,6 +536,7 @@ def main():
     parser = argparse.ArgumentParser(description="Sync members.yaml to LLDAP via GraphQL")
     parser.add_argument("--file", default="mgmt/identity/members.yaml", help="Path to members.yaml")
     parser.add_argument("--url", default=LLDAP_DEFAULT_URL, help="LLDAP Base URL")
+    parser.add_argument("--credentials", default=None, help="Path to GCP credentials JSON file (e.g. .credentials/credential.json)")
     parser.add_argument("--apply", action="store_true", help="Apply changes to LLDAP (default is dry-run)")
     parser.add_argument("--prune", action="store_true", help="Delete orphaned accounts in LLDAP not present in members.yaml")
     args = parser.parse_args()
@@ -471,12 +545,14 @@ def main():
     print(f"👥 AIT Brainlab Identity GitOps Sync ({'APPLY' if args.apply else 'DRY RUN'})")
     print(f"   Target URL: {args.url}")
     print(f"   Source File: {args.file}")
+    if args.credentials:
+        print(f"   Credentials File: {args.credentials}")
     print("==========================================================")
 
     data = parse_simple_yaml(args.file)
     print(f"📖 Loaded {len(data['groups'])} groups and {len(data['members'])} members from {args.file}.")
 
-    pw = get_admin_password()
+    pw = get_admin_password(args.credentials)
     client = LLDAPClient(args.url, pw)
     client.login()
     print("✅ Authenticated successfully as admin to LLDAP.")

@@ -66,4 +66,5 @@ __pycache__/
 /.obsidian/workspace.json
 
 # --- Preserved Placeholders ---
+.credentials/*
 !.keeps

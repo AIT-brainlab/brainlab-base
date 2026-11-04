@@ -324,3 +324,12 @@ members:
     home_directory: /mnt/pool-1/home/nabing
     login_shell: /bin/bash
     groups: [brainlab]
+
+  - username: jiraponk
+    display_name: "Jirapon Kluaymaingarm"
+    primary_email: st126964@ait.asia
+    uid: 126964
+    gid: 2002
+    home_directory: /mnt/pool-1/home/jiraponk
+    login_shell: /bin/bash
+    groups: [brainlab]
