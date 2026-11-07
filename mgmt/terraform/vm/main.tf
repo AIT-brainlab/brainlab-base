@@ -21,14 +21,16 @@ terraform {
   }
 
   backend "gcs" {
-    bucket = "ait-brainlab-mgmt-tfstate"
-    prefix = "vm"
+    bucket      = "ait-brainlab-mgmt-tfstate"
+    prefix      = "vm"
+    credentials = "../../../.credentials/credential.json"
   }
 }
 
 provider "google" {
-  project = var.project_id
-  region  = var.region
+  project     = var.project_id
+  region      = var.region
+  credentials = file("${path.module}/../../../.credentials/credential.json")
 }
 
 # Required GCP API for Compute Engine
@@ -168,7 +170,7 @@ resource "google_compute_instance" "mgmt_vm" {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
       size  = 20
-      type  = "pd-standard"
+      type  = var.disk_type
     }
   }
 

@@ -70,3 +70,9 @@ variable "traefik_version" {
   default     = "v3.7"
 }
 
+variable "disk_type" {
+  description = "Boot disk type (pd-balanced for 120+ IOPS and lower latency, pd-standard for HDD)"
+  type        = string
+  default     = "pd-balanced"
+}
+

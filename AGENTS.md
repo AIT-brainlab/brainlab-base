@@ -169,6 +169,13 @@ brainlab-base/
     - The Traefik Web UI / API on `brainlab-proxy` MUST be exposed on host port `8000` (`--entrypoints.dashboard.address=:8000`) and strictly restricted to the internal WireGuard mesh via Traefik's `ipallowlist` middleware (`traefik.http.middlewares.netbird-only.ipallowlist.sourcerange=100.64.0.0/10,127.0.0.1/32`), returning HTTP 403 to unauthenticated external or institutional LAN requests.
     - Routes handling real-time WebSocket connections or streaming APIs (such as `dlms` for `bus.dlms.brain.cs.ait.ac.th` and `iobox.dlms.brain.cs.ait.ac.th`) MUST NOT be wrapped in Traefik's `buffering` middleware (`request-size-limit`), as buffering request/response bodies breaks persistent HTTP connection upgrade handshakes.
     - In `cloud-init.yaml.tftpl`, the initial `/opt/brainlab/traefik/dynamic/routes.yaml` file MUST NOT contain empty map keys (`routers: {}`), which cause Traefik v3 parsing failures (`routers cannot be a standalone element`).
+45. **Control Plane VM Memory Protection, Lightweight GCS REST Backups & Zero-Drift Rebuild**:
+    - Burstable control plane instances (`e2-micro`) MUST configure a minimum 2 GB swapfile (`/swapfile`) with `vm.swappiness = 10` prior to container startup to protect against memory exhaustion and kernel freezes during connection surges.
+    - Automated background tasks (such as 6-hourly SQLite backups of `users.db`, `store.db`, and `management.json`) MUST NOT invoke heavy Python-based CLI utilities like `gcloud storage cp`, which allocate 200–250 MB of memory and saturate disk I/O.
+    - Backups and bootstrap restore procedures MUST execute via native `curl` targeting Google Cloud Storage REST APIs (`uploadType=media` and `alt=media`) using local GCE instance metadata bearer tokens, keeping RAM overhead strictly under 5 MB and execution time under 2 seconds.
+    - `management.json` containing the active `DataStoreEncryptionKey` MUST be backed up alongside `store.db` and restored prior to container launch to prevent key regeneration and peer session desynchronization.
+    - Control plane VMs MUST mask `packagekit.service` to prevent desktop package indexing services from starving baseline CPU credits.
+    - When upgrading boot disk types (`pd-standard` $\rightarrow$ `pd-balanced`), Compute Engine forces instance replacement; execute the pre-rebuild safety checks documented in `mgmt/terraform/vm/README.md` before applying.
 
 ---
 

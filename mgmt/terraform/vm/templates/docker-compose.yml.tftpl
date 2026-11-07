@@ -70,7 +70,7 @@ services:
   # 📡 NetBird: Web Dashboard UI
   # ==========================================================
   netbird-dashboard:
-    image: netbirdio/dashboard:latest
+    image: netbirdio/dashboard:${netbird_version}
     container_name: netbird-dashboard
     restart: unless-stopped
     environment:

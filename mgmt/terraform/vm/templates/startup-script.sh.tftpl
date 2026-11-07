@@ -4,6 +4,23 @@
 # ==========================================================
 set -euo pipefail
 
+# ----------------------------------------------------------
+# 💾 [0/5] Ensure 2 GB Swapfile & Memory Protection for e2-micro
+# ----------------------------------------------------------
+if [ ! -f /swapfile ]; then
+    echo "Creating 2GB swapfile for memory protection..."
+    fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    sysctl vm.swappiness=10
+fi
+
+# Disable heavy desktop/background package indexers that exhaust e2-micro RAM/CPU
+systemctl stop packagekit 2>/dev/null || true
+systemctl mask packagekit 2>/dev/null || true
+
 echo "=========================================================="
 echo "🚀 [1/5] Updating OS Packages & Installing Docker CE..."
 echo "=========================================================="
@@ -28,8 +45,11 @@ mkdir -p /opt/brainlab/traefik /opt/brainlab/lldap/data /opt/brainlab/netbird/da
 touch /opt/brainlab/traefik/acme.json
 chmod 600 /opt/brainlab/traefik/acme.json
 
+# Fetch short-lived token from metadata server for lightweight curl REST operations
+GCS_TOKEN=$(curl -s -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" | jq -r .access_token)
+
 # Restore LLDAP Database from GCS if exists
-if gcloud storage cp "gs://${state_bucket}/backups/lldap/users.db" /opt/brainlab/lldap/data/users.db 2>/dev/null; then
+if curl -s -f -H "Authorization: Bearer $${GCS_TOKEN}" "https://storage.googleapis.com/storage/v1/b/${state_bucket}/o/backups%2Flldap%2Fusers.db?alt=media" -o /opt/brainlab/lldap/data/users.db; then
     echo "✅ Restored LLDAP users.db from GCS"
     chmod 600 /opt/brainlab/lldap/data/users.db
 else
@@ -37,7 +57,7 @@ else
 fi
 
 # Restore NetBird Database from GCS if exists
-if gcloud storage cp "gs://${state_bucket}/backups/netbird/store.db" /opt/brainlab/netbird/data/store.db 2>/dev/null; then
+if curl -s -f -H "Authorization: Bearer $${GCS_TOKEN}" "https://storage.googleapis.com/storage/v1/b/${state_bucket}/o/backups%2Fnetbird%2Fstore.db?alt=media" -o /opt/brainlab/netbird/data/store.db; then
     echo "✅ Restored NetBird store.db from GCS"
     chmod 600 /opt/brainlab/netbird/data/store.db
 else
@@ -47,8 +67,13 @@ fi
 # Add local loopback entry for self-referential SSL traffic (bypasses GCP Hairpin NAT)
 echo "127.0.0.1 ${netbird_subdomain}.${domain} ${lldap_subdomain}.${domain}" >> /etc/hosts
 
-# Generate NetBird Management Configuration with Google OAuth2 enabled
-cat << 'EOF' > /opt/brainlab/netbird/management.json
+# Restore NetBird management.json (contains DataStoreEncryptionKey) if exists, else generate initial
+if curl -s -f -H "Authorization: Bearer $${GCS_TOKEN}" "https://storage.googleapis.com/storage/v1/b/${state_bucket}/o/backups%2Fnetbird%2Fmanagement.json?alt=media" -o /opt/brainlab/netbird/management.json; then
+    echo "✅ Restored NetBird management.json from GCS (DataStoreEncryptionKey preserved)"
+    chmod 600 /opt/brainlab/netbird/management.json
+else
+    echo "ℹ️ No previous NetBird management.json found in GCS. Generating initial configuration..."
+    cat << 'EOF' > /opt/brainlab/netbird/management.json
 {
   "DataDir": "/var/lib/netbird",
   "Stuns": [
@@ -95,6 +120,7 @@ cat << 'EOF' > /opt/brainlab/netbird/management.json
   }
 }
 EOF
+fi
 
 echo "=========================================================="
 echo "🔐 [4/5] Writing Environment Secrets & Backup Automation..."
@@ -112,23 +138,43 @@ cat << 'EOF' > /opt/brainlab/docker-compose.yml
 ${docker_compose_content}
 EOF
 
-# Create Automated SQLite GCS Backup Script
+# Create Automated SQLite GCS Backup Script (ultra-lightweight curl REST API, ~3 MB RAM)
 cat << 'EOF' > /opt/brainlab/scripts/backup_to_gcs.sh
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Atomic snapshot of LLDAP users.db
+# Fetch short-lived token from local metadata server (instant, ~0 MB RAM)
+TOKEN=$(curl -s -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" | jq -r .access_token)
+
+# Atomic snapshot of LLDAP users.db (idle priority)
 if [ -f /opt/brainlab/lldap/data/users.db ]; then
-    sqlite3 /opt/brainlab/lldap/data/users.db ".backup /tmp/lldap_users.db"
-    gcloud storage cp /tmp/lldap_users.db "gs://${state_bucket}/backups/lldap/users.db" --quiet
+    nice -n 19 ionice -c 3 sqlite3 /opt/brainlab/lldap/data/users.db ".backup /tmp/lldap_users.db"
+    curl -s -f -X POST \
+      -H "Authorization: Bearer $${TOKEN}" \
+      -H "Content-Type: application/x-sqlite3" \
+      --data-binary "@/tmp/lldap_users.db" \
+      "https://storage.googleapis.com/upload/storage/v1/b/${state_bucket}/o?uploadType=media&name=backups/lldap/users.db" >/dev/null
     rm -f /tmp/lldap_users.db
 fi
 
-# Atomic snapshot of NetBird store.db
+# Atomic snapshot of NetBird store.db (idle priority)
 if [ -f /opt/brainlab/netbird/data/store.db ]; then
-    sqlite3 /opt/brainlab/netbird/data/store.db ".backup /tmp/netbird_store.db"
-    gcloud storage cp /tmp/netbird_store.db "gs://${state_bucket}/backups/netbird/store.db" --quiet
+    nice -n 19 ionice -c 3 sqlite3 /opt/brainlab/netbird/data/store.db ".backup /tmp/netbird_store.db"
+    curl -s -f -X POST \
+      -H "Authorization: Bearer $${TOKEN}" \
+      -H "Content-Type: application/x-sqlite3" \
+      --data-binary "@/tmp/netbird_store.db" \
+      "https://storage.googleapis.com/upload/storage/v1/b/${state_bucket}/o?uploadType=media&name=backups/netbird/store.db" >/dev/null
     rm -f /tmp/netbird_store.db
+fi
+
+# Backup NetBird management.json (contains DataStoreEncryptionKey)
+if [ -f /opt/brainlab/netbird/management.json ]; then
+    curl -s -f -X POST \
+      -H "Authorization: Bearer $${TOKEN}" \
+      -H "Content-Type: application/json" \
+      --data-binary "@/opt/brainlab/netbird/management.json" \
+      "https://storage.googleapis.com/upload/storage/v1/b/${state_bucket}/o?uploadType=media&name=backups/netbird/management.json" >/dev/null
 fi
 EOF
 chmod +x /opt/brainlab/scripts/backup_to_gcs.sh
