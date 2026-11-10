@@ -1,0 +1,30 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    mem_limit: ${OLLAMA_SYSTEM_RAM_LIMIT}
+    env_file:
+      - .env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['${OLLAMA_GPU_ID}']
+              capabilities: [gpu]
+    networks:
+      - jupyterhub-net
+
+volumes:
+  ollama_data:
+    name: ollama_data
+
+networks:
+  jupyterhub-net:
+    name: jupyterhub-net
+    external: true
