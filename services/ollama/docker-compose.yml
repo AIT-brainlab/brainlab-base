@@ -3,6 +3,7 @@ services:
     image: ollama/ollama:latest
     container_name: ollama
     restart: unless-stopped
+    ipc: host
     ports:
       - "${OLLAMA_PORT}:11434"
     volumes:
