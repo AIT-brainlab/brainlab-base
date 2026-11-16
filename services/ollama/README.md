@@ -47,11 +47,16 @@ The host server `la` is equipped with **dual NVIDIA RTX A6000 GPUs** (48 GB GDDR
 
 $$\text{OLLAMA\_GPU\_OVERHEAD} = (\text{Total GPU VRAM} - \text{Target Ollama VRAM}) \times 1024^3$$
 
-| Target Ollama VRAM | VRAM Left for JupyterHub | `OLLAMA_GPU_OVERHEAD` (Bytes) |
-| :--- | :--- | :--- |
-| **24 GB (50%)** | 24 GB | `25769803776` (Default) |
-| **30 GB (~62%)** | 18 GB | `19327352832` |
-| **18 GB (~38%)** | 30 GB | `32212254720` |
+| Target Ollama VRAM | VRAM Left for Other Tasks | `OLLAMA_GPU_OVERHEAD` (Bytes) | Notes |
+| :--- | :--- | :--- | :--- |
+| **44 GB (Max on GPU 1)** | 4 GB | `4294967296` (Current) | Recommended: leaves 4 GB buffer for CUDA/driver to prevent crashes |
+| **36 GB (~75%)** | 12 GB | `12884901888` | Leaves 12 GB on GPU 1 for lighter JupyterHub workloads |
+| **24 GB (50%)** | 24 GB | `25769803776` | Equal 50/50 split on GPU 1 |
+
+> [!IMPORTANT]
+> **VRAM Reservation vs Context Window (`num_ctx`)**:
+> `OLLAMA_GPU_OVERHEAD` is a server-level safety buffer reserving memory for the NVIDIA driver. It is separate from the context window.
+> Modern LLMs (like Qwen 2.5 / 3.8) support up to 256K native context; querying them without an explicit context window can cause Ollama to pre-allocate an unbounded 30+ GB KV-cache tensor buffer. Always bound requests using `options={"num_ctx": 4096}` (or 8192) in client calls to keep KV-cache under 2 GB.
 
 ---
 
@@ -78,16 +83,16 @@ All parameters are configured strictly in `.env`:
 # Hardware & Docker Deployment
 OLLAMA_GPU_ID=1
 OLLAMA_PORT=11434
-OLLAMA_SYSTEM_RAM_LIMIT=32g
+OLLAMA_SYSTEM_RAM_LIMIT=48g
 
-# GPU 1 VRAM Headroom (Reserves 24 GB for JupyterHub)
-OLLAMA_GPU_OVERHEAD=25769803776
+# GPU 1 VRAM Headroom (Reserves 4 GB safety buffer for CUDA/driver)
+OLLAMA_GPU_OVERHEAD=4294967296
 
 # Ollama Runtime Settings
 OLLAMA_HOST=0.0.0.0:11434
 OLLAMA_ORIGINS=*
 OLLAMA_KEEP_ALIVE=5m
-OLLAMA_MAX_LOADED_MODELS=1
+OLLAMA_MAX_LOADED_MODELS=2
 OLLAMA_NUM_PARALLEL=2
 
 # MPS Compute Throttling (Caps SM compute to 50% if host MPS is active)

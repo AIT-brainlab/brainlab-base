@@ -27,15 +27,22 @@ print()
 # ------------------------------------------------------------------------------
 # 2. See Active (Loaded) Models in GPU VRAM
 # ------------------------------------------------------------------------------
-print("=== 2. Active Models in GPU VRAM ===")
+print("=== 2. Active Models & Available VRAM ===")
+OLLAMA_VRAM_BUDGET_GB = 44.0
 ps_resp = client.ps()
 active = ps_resp.get("models", [])
+
+total_vram_used = sum((m.get("size_vram") if isinstance(m, dict) else getattr(m, "size_vram", 0)) or 0 for m in active)
+total_vram_used_gb = total_vram_used / (1024 ** 3)
+available_vram_gb = max(0.0, OLLAMA_VRAM_BUDGET_GB - total_vram_used_gb)
+
+print(f"📊 Budget: {OLLAMA_VRAM_BUDGET_GB:.2f} GB | Used: {total_vram_used_gb:.2f} GB | Available: {available_vram_gb:.2f} GB")
 if active:
     for m in active:
-        size_vram_gb = m.get("size_vram", 0) / (1024 ** 3)
+        size_vram_gb = ((m.get("size_vram") if isinstance(m, dict) else getattr(m, "size_vram", 0)) or 0) / (1024 ** 3)
         print(f"• {m.get('name')}: {size_vram_gb:.2f} GB VRAM (Expires at {m.get('expires_at')})")
 else:
-    print("ℹ️ No models currently loaded in GPU VRAM (idle).")
+    print("ℹ️ No models currently loaded in GPU VRAM (idle). Full 44.00 GB available.")
 print()
 
 # ------------------------------------------------------------------------------
@@ -75,7 +82,12 @@ messages = [
     {"role": "user", "content": "Explain the difference between full fine-tuning and LoRA in 2 bullet points."}
 ]
 
-stream = client.chat(model=TARGET_MODEL, messages=messages, stream=True)
+stream = client.chat(
+    model=TARGET_MODEL,
+    messages=messages,
+    options={"num_ctx": 4096},  # Bound context window to prevent VRAM spikes
+    stream=True
+)
 for chunk in stream:
     print(chunk["message"]["content"], end="", flush=True)
 print("\n")
