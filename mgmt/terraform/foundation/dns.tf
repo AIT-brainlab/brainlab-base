@@ -94,7 +94,7 @@ resource "google_dns_record_set" "dpi_txt" {
   ]
 }
 
-# DPI AWS Sandbox Subdelegation (NS)
+# brainlab AWS Sandbox Subdelegation (NS)
 resource "google_dns_record_set" "dpi_sandbox_a_ns" {
   name         = "sandbox-a.dpi.ait.ac.th."
   managed_zone = google_dns_managed_zone.dpi_zone.name
@@ -105,6 +105,20 @@ resource "google_dns_record_set" "dpi_sandbox_a_ns" {
     "ns-985.awsdns-59.net.",
     "ns-1212.awsdns-23.org.",
     "ns-2013.awsdns-59.co.uk."
+  ]
+}
+
+# dpiops AWS Sandbox Subdelegation (NS)
+resource "google_dns_record_set" "dpiops_mosip_obs_ns" {
+  name         = "mosip-obs.dpi.ait.ac.th."
+  managed_zone = google_dns_managed_zone.dpi_zone.name
+  type         = "NS"
+  ttl          = 300
+  rrdatas = [
+    "ns-158.awsdns-19.com.",
+    "ns-2036.awsdns-62.co.uk.",
+    "ns-1261.awsdns-29.org.",
+    "ns-662.awsdns-18.net."
   ]
 }
 
